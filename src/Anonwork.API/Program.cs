@@ -5,11 +5,15 @@ using Anonwork.Infrastructure;
 using Anonwork.Infrastructure.Repositories;
 using Microsoft.OpenApi;
 using System.Reflection;
+using DotNetEnv;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-DotNetEnv.Env.Load();
+Env.Load();
+builder.Configuration.AddEnvironmentVariables();
+
+var enableSwagger = Environment.GetEnvironmentVariable("EnableSwagger");
 
 builder.Services.AddCors(options =>
 {
@@ -56,10 +60,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 var app = builder.Build();
 
-
-var swaggerEnabled = builder.Configuration["EnableSwagger"];
 // Configure HTTP Pipeline
-var enableSwagger = builder.Configuration["EnableSwagger"];
 
 if (app.Environment.IsDevelopment() || enableSwagger == "true")
 {
