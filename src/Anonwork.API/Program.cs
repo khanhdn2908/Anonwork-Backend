@@ -5,12 +5,12 @@ using Anonwork.Infrastructure;
 using Anonwork.Infrastructure.Repositories;
 using Microsoft.OpenApi;
 using System.Reflection;
-using DotNetEnv;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-Env.Load();
+
 builder.Configuration.AddEnvironmentVariables();
 
 var enableSwagger = Environment.GetEnvironmentVariable("EnableSwagger");
