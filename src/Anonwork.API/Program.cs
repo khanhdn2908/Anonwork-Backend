@@ -10,7 +10,7 @@ using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+DotNetEnv.Env.Load();
 builder.Configuration.AddEnvironmentVariables();
 
 var enableSwagger = Environment.GetEnvironmentVariable("EnableSwagger");
