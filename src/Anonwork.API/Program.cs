@@ -9,6 +9,8 @@ using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
+DotNetEnv.Env.Load();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -54,12 +56,16 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 var app = builder.Build();
 
+
+var swaggerEnabled = builder.Configuration["EnableSwagger"];
 // Configure HTTP Pipeline
-//if (app.Environment.IsDevelopment())
-//{
+var enableSwagger = builder.Configuration["EnableSwagger"];
+
+if (app.Environment.IsDevelopment() || enableSwagger == "true")
+{
     app.UseSwagger();
     app.UseSwaggerUI();
-//}
+}
 
 if (!app.Environment.IsDevelopment())
 {
