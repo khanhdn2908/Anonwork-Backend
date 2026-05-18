@@ -1,0 +1,6 @@
+@Anonwork.API_HostAddress = http://localhost:5128
+
+GET {{Anonwork.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
