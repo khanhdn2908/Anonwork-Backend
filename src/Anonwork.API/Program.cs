@@ -62,7 +62,7 @@ var app = builder.Build();
 
 // Configure HTTP Pipeline
 
-if (app.Environment.IsDevelopment() || enableSwagger == "true")
+if (enableSwagger == "true")
 {
     app.UseSwagger();
     app.UseSwaggerUI();
