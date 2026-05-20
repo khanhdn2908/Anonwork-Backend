@@ -21,7 +21,20 @@ namespace Anonwork.Infrastructure
         {
 
             services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+                options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"))
+                       .UseSnakeCaseNamingConvention());
+
+            var redisUrl = configuration["REDIS_URL"]
+                ?? throw new InvalidOperationException("REDIS_URL is not configured.");
+
+            var redisConfig = redisUrl.Replace("redis://", "").Replace("rediss://", "");
+
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConfig;
+                options.InstanceName = "anonwork:";
+            });
+
 
             //services.AddSingleton<Supabase.Client>(provider =>
             //{
@@ -40,7 +53,7 @@ namespace Anonwork.Infrastructure
             //    return client;
             //});
 
-            
+
 
             return services;
         }
