@@ -2,45 +2,45 @@ namespace Anonwork.Domain.Enums;
 
 public enum UserRole
 {
-    Student, Teacher, Moderator, Admin
+    student, teacher, moderator, admin
 }
 
 public enum PostStatus
 {
-    Active, Pending, Removed
+    active, pending, removed
 }
 
 public enum VoteType
 {
-    Up, Down
+    up, down
 }
 
 public enum VoteTargetType
 {
-    Post, Comment
+    post, comment
 }
 
 public enum NotificationType
 {
-    NewComment, Upvote, NewFollower, Mention, System, Ranking
+    newComment, upvote, newfollower, mention, system, ranking
 }
 
 public enum ReportTargetType
 {
-    Post, Comment
+    post, comment
 }
 
 public enum ReportStatus
 {
-    Pending, Resolved, Dismissed
+    pending, resolved, dismissed
 }
 
 public enum SubscriptionPlan
 {
-    Free, PremiumMonth, PremiumYear
+    free, premiummonth, premiumyear
 }
 
 public enum PaymentStatus
 {
-    Pending, Success, Failed, Refunded
+    pending, success, failed, refunded
 }

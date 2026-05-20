@@ -12,7 +12,7 @@ public class Post : AuditableEntity
     public string Content { get; set; } = string.Empty;
     public int Upvotes { get; set; } = 0;
     public int ViewCount { get; set; } = 0;
-    public PostStatus Status { get; set; } = PostStatus.Active;
+    public PostStatus Status { get; set; } = PostStatus.active;
 
     public User Author { get; set; } = null!;
     public Subject Subject { get; set; } = null!;

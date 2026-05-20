@@ -8,7 +8,7 @@ public class Vote : BaseEntity
     public Guid UserId { get; set; }
     public Guid TargetId { get; set; }
     public VoteTargetType TargetType { get; set; }
-    public VoteType VoteType { get; set; } = VoteType.Up;
+    public VoteType VoteType { get; set; } = VoteType.up;
     public User User { get; set; } = null!;
 }
 
@@ -17,7 +17,7 @@ public class Follow : BaseEntity
     public Guid FollowerId { get; set; }
     public Guid FollowingId { get; set; }
     public User Follower { get; set; } = null!;
-    public User FollowingUser { get; set; } = null!;
+    public User Following { get; set; } = null!;
 }
 
 public class Bookmark : BaseEntity

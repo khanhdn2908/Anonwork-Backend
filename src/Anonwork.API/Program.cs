@@ -2,7 +2,9 @@ using Anonwork.Application.Interfaces;
 using Anonwork.Application.Services;
 using Anonwork.Domain.Repositories;
 using Anonwork.Infrastructure;
+using Anonwork.Infrastructure.Persistence;
 using Anonwork.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using System.Reflection;
 
@@ -10,10 +12,7 @@ using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-DotNetEnv.Env.Load();
 builder.Configuration.AddEnvironmentVariables();
-
-var enableSwagger = Environment.GetEnvironmentVariable("EnableSwagger");
 
 builder.Services.AddCors(options =>
 {
@@ -38,6 +37,14 @@ builder.Services.AddSwaggerGen(options =>
         Title = "Anonwork API",
         Version = "v1"
     });
+});
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection")
+    )
+    .UseSnakeCaseNamingConvention();
 });
 
 // Add Infrastructure
@@ -67,7 +74,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Video Sharing Platform API V1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Anonwork API V1");
+        c.RoutePrefix = string.Empty;
     });
 }
 else
@@ -75,7 +83,7 @@ else
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Anonwork API V1");
         c.RoutePrefix = string.Empty;
     });
 }

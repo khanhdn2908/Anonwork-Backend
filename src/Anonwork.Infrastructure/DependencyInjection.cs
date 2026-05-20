@@ -1,7 +1,9 @@
 ﻿using Anonwork.Domain.Repositories;
+using Anonwork.Infrastructure.Persistence;
 using Anonwork.Infrastructure.Repositories;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Supabase;
 using System;
 using System.Collections.Generic;
@@ -17,24 +19,28 @@ namespace Anonwork.Infrastructure
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            services.AddSingleton<Supabase.Client>(provider =>
-            {
-                var url = configuration["Supabase:Url"];
-                var key = configuration["Supabase:Key"];
 
-                var options = new SupabaseOptions
-                {
-                    AutoConnectRealtime = false
-                };
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
-                var client = new Supabase.Client(url, key, options);
+            //services.AddSingleton<Supabase.Client>(provider =>
+            //{
+            //    var url = configuration["Supabase:Url"];
+            //    var key = configuration["Supabase:Key"];
 
-                client.InitializeAsync().Wait();
+            //    var options = new SupabaseOptions
+            //    {
+            //        AutoConnectRealtime = false
+            //    };
 
-                return client;
-            });
+            //    var client = new Supabase.Client(url, key, options);
 
-            services.AddScoped<IUserRepository, UserRepository>();
+            //    client.InitializeAsync().Wait();
+
+            //    return client;
+            //});
+
+            
 
             return services;
         }

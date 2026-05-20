@@ -1,5 +1,6 @@
 using Anonwork.Domain.Common;
 using Anonwork.Domain.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Anonwork.Domain.Entities;
 
@@ -20,6 +21,6 @@ public class Report : AuditableEntity
     public Guid TargetId { get; set; }
     public ReportTargetType TargetType { get; set; }
     public string Reason { get; set; } = string.Empty;
-    public ReportStatus Status { get; set; } = ReportStatus.Pending;
+    public ReportStatus Status { get; set; } = ReportStatus.pending;
     public User Reporter { get; set; } = null!;
 }
