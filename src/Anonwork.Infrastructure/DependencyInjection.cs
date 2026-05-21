@@ -1,10 +1,12 @@
-﻿using Anonwork.Domain.Repositories;
+﻿
+using Anonwork.Application.Interfaces;
 using Anonwork.Infrastructure.Persistence;
 using Anonwork.Infrastructure.Repositories;
+using Anonwork.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Supabase;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,25 +37,15 @@ namespace Anonwork.Infrastructure
                 options.InstanceName = "anonwork:";
             });
 
+            // Jwt options
+            services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 
-            //services.AddSingleton<Supabase.Client>(provider =>
-            //{
-            //    var url = configuration["Supabase:Url"];
-            //    var key = configuration["Supabase:Key"];
+            // Repositories
+            services.AddScoped<IUserRepository, UserRepository>();
 
-            //    var options = new SupabaseOptions
-            //    {
-            //        AutoConnectRealtime = false
-            //    };
-
-            //    var client = new Supabase.Client(url, key, options);
-
-            //    client.InitializeAsync().Wait();
-
-            //    return client;
-            //});
-
-
+            // Services
+            services.AddScoped<IJwtService, JwtService>();
+            services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
             return services;
         }

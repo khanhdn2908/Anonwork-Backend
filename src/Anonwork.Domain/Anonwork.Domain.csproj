@@ -14,7 +14,10 @@
 
   <ItemGroup>
     <Folder Include="Entities\" />
-    <Folder Include="Common\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="8.0.3" />
   </ItemGroup>
 
 </Project>

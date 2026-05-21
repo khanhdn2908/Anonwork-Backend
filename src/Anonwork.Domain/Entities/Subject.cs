@@ -1,13 +1,21 @@
-using Anonwork.Domain.Common;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Anonwork.Domain.Entities;
 
-public class Subject : BaseEntity
+public partial class Subject
 {
-    public string Name { get; set; } = string.Empty;
-    public string Slug { get; set; } = string.Empty;
-    public string? IconEmoji { get; set; }
-    public int PostCount { get; set; } = 0;
+    public Guid Id { get; set; }
 
-    public ICollection<Post> Posts { get; set; } = new List<Post>();
+    public string Name { get; set; } = null!;
+
+    public string Slug { get; set; } = null!;
+
+    public string? IconEmoji { get; set; }
+
+    public int PostCount { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
 }
