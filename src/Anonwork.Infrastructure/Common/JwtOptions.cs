@@ -4,7 +4,7 @@ namespace Anonwork.Infrastructure.Services;
 
 public class JwtOptions
 {
-    public const string Section = "Jwt";
+    public const string SectionName = "Jwt";
 
     public string Secret { get; set; } = default!;
     public string Issuer { get; set; } = default!;

@@ -19,13 +19,6 @@ namespace Anonwork.Infrastructure.Repositories
             _appDbContext = appDbContext;
         }
 
-        public async Task<List<User>> GetAllAsync()
-        {
-            var response = await _appDbContext.Users.ToListAsync();
-
-            return response;
-        }
-
         // ──────────────────────────────────────────
         // READ
         // ──────────────────────────────────────────

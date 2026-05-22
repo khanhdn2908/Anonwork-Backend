@@ -40,6 +40,8 @@ public partial class Post
 
     public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
 
+    public virtual ICollection<PostImage> PostImages { get; set; } = new List<PostImage>();
+
     public virtual ICollection<PostTag> PostTags { get; set; } = new List<PostTag>();
 
     public virtual Subject Subject { get; set; } = null!;

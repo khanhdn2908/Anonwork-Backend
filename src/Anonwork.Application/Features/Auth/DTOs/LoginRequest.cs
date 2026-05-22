@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Anonwork.Application.UseCases.Auth
+namespace Anonwork.Application.Features.Auth.DTOs
 {
     public record LoginRequest(
         string Email,

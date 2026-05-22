@@ -1,11 +1,10 @@
 ﻿using Anonwork.Application.Common.Exceptions;
+using Anonwork.Application.Common.Model;
 using Anonwork.Application.Interfaces;
 
-namespace Anonwork.Application.UseCases.Auth;
+namespace Anonwork.Application.Features.Auth;
 
-public class RefreshTokenUseCase(
-    IUserRepository userRepo,
-    IJwtService jwtService)
+public class RefreshTokenUseCase(IUserRepository userRepo, IJwtService jwtService)
 {
     public async Task<AuthResult> ExecuteAsync(string refreshToken, CancellationToken ct = default)
     {

@@ -1,14 +1,13 @@
 ﻿using Anonwork.Application.Common;
 using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Interfaces;
+using Anonwork.Application.Features.Auth.DTOs;
 using Anonwork.Domain.Entities;
+using Anonwork.Application.Common.Model;
 
-namespace Anonwork.Application.UseCases.Auth;
+namespace Anonwork.Application.Features.Auth;
 
-public class RegisterUseCase(
-    IUserRepository userRepo,
-    IJwtService jwtService,
-    IPasswordHasher passwordHasher)
+public class RegisterUseCase(IUserRepository userRepo, IJwtService jwtService, IPasswordHasher passwordHasher)
 {
     public async Task<AuthResult> ExecuteAsync(RegisterRequest req, CancellationToken ct = default)
     {

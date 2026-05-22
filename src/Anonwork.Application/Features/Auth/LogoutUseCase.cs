@@ -1,9 +1,8 @@
-﻿using Anonwork.Application.Interfaces;
+﻿using Anonwork.Application.Features.Auth.DTOs;
+using Anonwork.Application.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 
-namespace Anonwork.Application.UseCases.Auth;
-
-public record LogoutRequest(Guid UserId, string RefreshToken, string AccessToken);
+namespace Anonwork.Application.Features.Auth;
 
 public class LogoutUseCase(IJwtService jwtService)
 {

@@ -1,5 +1,6 @@
 ﻿
 using Anonwork.Application.Interfaces;
+using Anonwork.Infrastructure.Common;
 using Anonwork.Infrastructure.Persistence;
 using Anonwork.Infrastructure.Repositories;
 using Anonwork.Infrastructure.Services;
@@ -38,14 +39,19 @@ namespace Anonwork.Infrastructure
             });
 
             // Jwt options
-            services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
+            services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+
+            // Cloudinary options
+            services.Configure<CloudinaryOptions>(configuration.GetSection(CloudinaryOptions.SectionName));
 
             // Repositories
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IPostRepository, PostRepository>();
 
             // Services
             services.AddScoped<IJwtService, JwtService>();
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
 
             return services;
         }

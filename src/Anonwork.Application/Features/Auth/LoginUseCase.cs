@@ -1,7 +1,10 @@
 ﻿using Anonwork.Application.Common.Exceptions;
+using Anonwork.Application.Common.Model;
+using Anonwork.Application.Features.Auth.DTOs;
 using Anonwork.Application.Interfaces;
 
-namespace Anonwork.Application.UseCases.Auth;
+
+namespace Anonwork.Application.Features.Auth;
 
 public class LoginUseCase(
     IUserRepository userRepo,

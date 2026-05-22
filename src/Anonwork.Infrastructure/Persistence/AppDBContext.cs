@@ -29,6 +29,8 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Post> Posts { get; set; }
 
+    public virtual DbSet<PostImage> PostImages { get; set; }
+
     public virtual DbSet<PostTag> PostTags { get; set; }
 
     public virtual DbSet<Report> Reports { get; set; }
@@ -318,6 +320,32 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.SubjectId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("posts_subject_id_fkey");
+        });
+
+        modelBuilder.Entity<PostImage>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("post_images_pkey");
+
+            entity.ToTable("post_images");
+
+            entity.HasIndex(e => e.PostId, "idx_post_images_post");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+            entity.Property(e => e.PostId).HasColumnName("post_id");
+            entity.Property(e => e.ImageUrl).HasColumnName("image_url");
+            entity.Property(e => e.DisplayOrder)
+                .HasDefaultValue(0)
+                .HasColumnName("display_order");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("created_at");
+
+            entity.HasOne(d => d.Post).WithMany(p => p.PostImages)
+                .HasForeignKey(d => d.PostId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("post_images_post_id_fkey");
         });
 
         modelBuilder.Entity<PostTag>(entity =>
