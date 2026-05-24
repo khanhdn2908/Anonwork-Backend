@@ -3,13 +3,19 @@ using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Common.Model;
 using Anonwork.Application.Features.Auth;
 using Anonwork.Application.Features.Auth.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Anonwork.API.Controllers;
 
 [ApiController]
 [Route("api/v1/auth")]
-public class AuthController(RegisterUseCase registerUseCase,LoginUseCase loginUseCase, RefreshTokenUseCase refreshTokenUseCase, LogoutUseCase logoutUseCase) : ControllerBase
+public class AuthController(
+    RegisterUseCase registerUseCase,
+    LoginUseCase loginUseCase,
+    RefreshTokenUseCase refreshTokenUseCase,
+    LogoutUseCase logoutUseCase) : ControllerBase
 {
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto req, CancellationToken ct)
@@ -59,7 +65,7 @@ public class AuthController(RegisterUseCase registerUseCase,LoginUseCase loginUs
 
     private Guid? GetUserIdFromToken()
     {
-        var sub = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+        var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                ?? User.FindFirst("sub")?.Value;
 
         return Guid.TryParse(sub, out var id) ? id : null;

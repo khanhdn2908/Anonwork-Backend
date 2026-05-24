@@ -8,7 +8,7 @@ namespace Anonwork.Application.Features.Posts;
 /// <summary>
 /// Use case for deleting a post
 /// </summary>
-public class DeletePostUseCase(IPostRepository postRepo, ICloudinaryService cloudinaryService)
+public class DeletePostUseCase(IPostRepository postRepo, ICloudinaryService cloudinaryService, IUserRepository userRepo)
 {
     public async Task ExecuteAsync(Guid postId, Guid userId, CancellationToken ct = default)
     {
@@ -21,9 +21,19 @@ public class DeletePostUseCase(IPostRepository postRepo, ICloudinaryService clou
         if (post is null)
             throw new NotFoundException(nameof(Post), postId);
 
+        // ── Get user to check role ──────────────────
+        var user = await userRepo.GetByIdAsync(userId, ct);
+        if (user is null)
+            throw new UnauthorizedException("User not found.");
+
         // ── Authorization ──────────────────────────
-        if (post.AuthorId != userId)
-            throw new UnauthorizedException("You can only delete your own posts.");
+        // Allow if: author OR admin OR moderator
+        var isAuthor = post.AuthorId == userId;
+        var isAdmin = user.Role == "admin";
+        var isModerator = user.Role == "moderator";
+
+        if (!isAuthor && !isAdmin && !isModerator)
+            throw new UnauthorizedException("You can only delete your own posts. Only admins and moderators can delete other posts.");
 
         // ── Delete images from Cloudinary ──────────
         if (post.PostImages.Count > 0)
@@ -44,3 +54,4 @@ public class DeletePostUseCase(IPostRepository postRepo, ICloudinaryService clou
         await postRepo.DeleteAsync(postId, ct);
     }
 }
+

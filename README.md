@@ -152,6 +152,53 @@ dotnet run
 
 API sẽ chạy tại: `https://localhost:5001`
 
+### Quick Start - 5 Phút
+
+**1. Register tài khoản:**
+```bash
+POST /api/v1/auth/register
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "Password123!",
+  "anonAlias": "TestAlias"
+}
+```
+
+**2. Login:**
+```bash
+POST /api/v1/auth/login
+{
+  "email": "test@example.com",
+  "password": "Password123!"
+}
+# Lưu accessToken
+```
+
+**3. Tạo bài viết:**
+```bash
+POST /api/v1/posts
+Authorization: Bearer {accessToken}
+Content-Type: multipart/form-data
+
+{
+  "title": "My First Post",
+  "content": "This is my first post...",
+  "subjectId": "550e8400-e29b-41d4-a716-446655440000",
+  "isAnonymous": false
+}
+```
+
+**4. Lấy danh sách bài:**
+```bash
+GET /api/v1/posts?page=1&pageSize=10
+```
+
+**5. Xem chi tiết bài:**
+```bash
+GET /api/v1/posts/{postId}
+```
+
 ### Docker
 ```bash
 docker-compose up -d
@@ -218,7 +265,340 @@ Content-Type: application/json
 }
 ```
 
-## 🗄️ Database
+#### Create Admin Account (Admin Only)
+```http
+POST /api/v1/auth/admin
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{
+  "username": "admin2",
+  "email": "admin2@anonwork.com",
+  "password": "SecurePassword123!",
+  "anonAlias": "AdminAlias2"
+}
+```
+
+### Posts Endpoints
+
+#### Create Post
+```http
+POST /api/v1/posts
+Authorization: Bearer <access-token>
+Content-Type: multipart/form-data
+
+Form Data:
+- title: "Cách học C# hiệu quả" (required, 5-255 chars)
+- content: "Bài viết chi tiết..." (required, min 10 chars)
+- subjectId: "550e8400-e29b-41d4-a716-446655440000" (required, GUID)
+- tags: ["csharp", "learning"] (optional, max 5)
+- isAnonymous: false (optional, default: false)
+- images: [file1.jpg, file2.png] (optional, max 5 files, 5MB each)
+
+Response: 201 Created
+{
+  "id": "550e8400-e29b-41d4-a716-446655440001",
+  "title": "Cách học C# hiệu quả",
+  "content": "Bài viết chi tiết...",
+  "authorId": "550e8400-e29b-41d4-a716-446655440002",
+  "authorUsername": "john_doe",
+  "authorAnonAlias": "SilentWolf",
+  "isAnonymous": false,
+  "subjectId": "550e8400-e29b-41d4-a716-446655440000",
+  "subjectName": "C# Programming",
+  "imageUrls": ["https://res.cloudinary.com/..."],
+  "tags": ["csharp", "learning"],
+  "upvotes": 0,
+  "commentsCount": 0,
+  "viewCount": 0,
+  "status": "active",
+  "createdAt": "2026-05-22T10:30:00Z",
+  "updatedAt": "2026-05-22T10:30:00Z"
+}
+```
+
+#### Get Post by ID
+```http
+GET /api/v1/posts/{postId}
+
+Response: 200 OK
+{
+  "id": "550e8400-e29b-41d4-a716-446655440001",
+  "title": "Cách học C# hiệu quả",
+  "content": "Bài viết chi tiết...",
+  "authorId": "550e8400-e29b-41d4-a716-446655440002",
+  "authorUsername": "john_doe",
+  "authorAnonAlias": "SilentWolf",
+  "isAnonymous": false,
+  "subjectId": "550e8400-e29b-41d4-a716-446655440000",
+  "subjectName": "C# Programming",
+  "imageUrls": ["https://res.cloudinary.com/..."],
+  "tags": ["csharp", "learning"],
+  "upvotes": 0,
+  "commentsCount": 0,
+  "viewCount": 1,
+  "status": "active",
+  "createdAt": "2026-05-22T10:30:00Z",
+  "updatedAt": "2026-05-22T10:30:00Z"
+}
+```
+
+#### Get All Posts (Paginated)
+```http
+GET /api/v1/posts?page=1&pageSize=10
+
+Query Parameters:
+- page: int (default: 1)
+- pageSize: int (default: 10, max: 100)
+
+Response: 200 OK
+{
+  "posts": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440001",
+      "title": "Cách học C# hiệu quả",
+      ...
+    }
+  ],
+  "total": 50,
+  "page": 1,
+  "pageSize": 10,
+  "totalPages": 5
+}
+```
+
+#### Get Posts by Subject (Paginated)
+```http
+GET /api/v1/subjects/{subjectId}/posts?page=1&pageSize=10
+
+Path Parameters:
+- subjectId: GUID (required)
+
+Query Parameters:
+- page: int (default: 1)
+- pageSize: int (default: 10, max: 100)
+
+Response: 200 OK
+{
+  "posts": [...],
+  "total": 25,
+  "page": 1,
+  "pageSize": 10,
+  "totalPages": 3
+}
+```
+
+#### Update Post
+```http
+PUT /api/v1/posts/{postId}
+Authorization: Bearer <access-token>
+Content-Type: multipart/form-data
+
+Form Data (all optional):
+- title: "Tiêu đề mới" (5-255 chars)
+- content: "Nội dung mới..." (min 10 chars)
+- tags: ["tag1", "tag2"] (max 5)
+- newImages: [file.jpg] (max 5 files total)
+- removeImageUrls: ["https://..."] (URLs to remove)
+
+Response: 200 OK
+{
+  "id": "550e8400-e29b-41d4-a716-446655440001",
+  "title": "Tiêu đề mới",
+  ...
+}
+```
+
+#### Delete Post
+```http
+DELETE /api/v1/posts/{postId}
+Authorization: Bearer <access-token>
+
+Response: 204 No Content
+```
+
+**Note:** Only post author, admin, or moderator can delete posts.
+
+### HTTP Status Codes
+
+| Code | Meaning | Khi Nào |
+|------|---------|---------|
+| `200 OK` | Success | GET, PUT thành công |
+| `201 Created` | Created | POST thành công |
+| `204 No Content` | No Content | DELETE thành công |
+| `400 Bad Request` | Invalid data | Validation error, upload failed |
+| `401 Unauthorized` | Not authenticated | Missing/invalid token |
+| `403 Forbidden` | Not authorized | Not the resource owner |
+| `404 Not Found` | Not found | Resource không tồn tại |
+
+### Authorization & Roles
+
+| Role | Tạo Bài | Edit Bài | Delete Bài | Delete Bài Khác |
+|------|---------|----------|-----------|-----------------|
+| **Student** | ✅ | ✅ Own | ✅ Own | ❌ |
+| **Teacher** | ✅ | ✅ Own | ✅ Own | ❌ |
+| **Moderator** | ✅ | ✅ Own | ✅ Own | ✅ |
+| **Admin** | ✅ | ✅ Own | ✅ Own | ✅ |
+
+### Image Upload
+
+- **Supported formats:** jpg, jpeg, png, gif, webp, bmp, svg, ico
+- **Max file size:** 5MB per file
+- **Max files per post:** 5
+- **Storage:** Cloudinary
+
+### Validation Rules
+
+**Posts:**
+- `title`: Required, 5-255 characters
+- `content`: Required, min 10 characters
+- `subjectId`: Required, valid GUID
+- `tags`: Optional, max 5 tags
+- `isAnonymous`: Optional, default false
+- `images`: Optional, max 5 files, each max 5MB
+
+## 🧪 API Testing Examples
+
+### Test 1: Register & Login
+```bash
+# 1. Register
+curl -X POST https://localhost:5001/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "john_doe",
+    "email": "john@example.com",
+    "password": "SecurePassword123!",
+    "anonAlias": "SilentWolf"
+  }'
+
+# Response: 201 Created
+# Save accessToken and refreshToken
+
+# 2. Login
+curl -X POST https://localhost:5001/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "SecurePassword123!"
+  }'
+```
+
+### Test 2: Create Post with Images
+```bash
+curl -X POST https://localhost:5001/api/v1/posts \
+  -H "Authorization: Bearer {access_token}" \
+  -F "title=Cách học C# hiệu quả" \
+  -F "content=Bài viết chi tiết về cách học C#..." \
+  -F "subjectId=550e8400-e29b-41d4-a716-446655440000" \
+  -F "tags=csharp" \
+  -F "tags=learning" \
+  -F "isAnonymous=false" \
+  -F "images=@file1.jpg" \
+  -F "images=@file2.png"
+
+# Response: 201 Created
+# Save postId from response
+```
+
+### Test 3: Get Post by ID
+```bash
+curl -X GET https://localhost:5001/api/v1/posts/{postId}
+
+# Response: 200 OK
+# View count auto-incremented
+```
+
+### Test 4: Get All Posts
+```bash
+curl -X GET "https://localhost:5001/api/v1/posts?page=1&pageSize=10"
+
+# Response: 200 OK
+# Returns paginated list
+```
+
+### Test 5: Get Posts by Subject
+```bash
+curl -X GET "https://localhost:5001/api/v1/subjects/{subjectId}/posts?page=1&pageSize=10"
+
+# Response: 200 OK
+# Returns posts for specific subject
+```
+
+### Test 6: Update Post
+```bash
+curl -X PUT https://localhost:5001/api/v1/posts/{postId} \
+  -H "Authorization: Bearer {access_token}" \
+  -F "title=Tiêu đề mới" \
+  -F "tags=csharp" \
+  -F "tags=advanced" \
+  -F "newImages=@file3.jpg" \
+  -F "removeImageUrls=https://res.cloudinary.com/..."
+
+# Response: 200 OK
+```
+
+### Test 7: Delete Post
+```bash
+curl -X DELETE https://localhost:5001/api/v1/posts/{postId} \
+  -H "Authorization: Bearer {access_token}"
+
+# Response: 204 No Content
+```
+
+### Test 8: Create Admin Account
+```bash
+# 1. First, create a regular user and update role to admin in database
+UPDATE users SET role = 'admin' WHERE email = 'admin@anonwork.com';
+
+# 2. Login as admin
+curl -X POST https://localhost:5001/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@anonwork.com",
+    "password": "SecurePassword123!"
+  }'
+
+# 3. Create new admin
+curl -X POST https://localhost:5001/api/v1/auth/admin \
+  -H "Authorization: Bearer {admin_token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "admin2",
+    "email": "admin2@anonwork.com",
+    "password": "SecurePassword123!",
+    "anonAlias": "AdminAlias2"
+  }'
+
+# Response: 201 Created
+```
+
+### Test 9: Admin Delete Any Post
+```bash
+# Admin can delete any post
+curl -X DELETE https://localhost:5001/api/v1/posts/{any_post_id} \
+  -H "Authorization: Bearer {admin_token}"
+
+# Response: 204 No Content
+```
+
+## � Swagger Documentation
+
+Swagger UI: `https://localhost:5001/swagger`
+
+Tất cả API endpoints được document đầy đủ trên Swagger UI với:
+- ✅ Endpoint descriptions
+- ✅ Request/Response examples
+- ✅ Parameter descriptions
+- ✅ Authorization requirements
+- ✅ HTTP status codes
+
+**Cách sử dụng:**
+1. Chạy project: `dotnet run`
+2. Mở browser: `https://localhost:5001/swagger`
+3. Authorize với JWT token (nếu cần)
+4. Test endpoints trực tiếp trên UI
+
+## �🗄️ Database
 
 ### Schema Chính
 

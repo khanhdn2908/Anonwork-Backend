@@ -46,7 +46,7 @@ public class PostRepository(AppDbContext context) : IPostRepository
         var post = await context.Posts.FirstOrDefaultAsync(p => p.Id == id, ct);
         if (post is not null)
         {
-            post.Status = "deleted";
+            post.Status = "removed";  // ✅ Changed from "deleted" to "removed"
             post.DeletedAt = DateTime.UtcNow;
             context.Posts.Update(post);
             await context.SaveChangesAsync(ct);
