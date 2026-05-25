@@ -16,7 +16,6 @@ public class PostsController(
     GetPostByIdUseCase getPostByIdUseCase,
     GetPostsUseCase getPostsUseCase,
     GetPostsBySubjectUseCase getPostsBySubjectUseCase,
-    SearchPostsUseCase searchPostsUseCase,
     UpdatePostUseCase updatePostUseCase,
     DeletePostUseCase deletePostUseCase,
     ICloudinaryService cloudinaryService) : BaseApiController
@@ -118,66 +117,34 @@ public class PostsController(
     }
 
     /// <summary>
-    /// Get all posts with pagination
+    /// Get all posts with pagination and optional search
     /// </summary>
     /// <remarks>
     /// Retrieves a paginated list of all active posts, sorted by creation date (newest first).
+    /// If search query is provided, performs full-text search on title and content.
     /// 
     /// Sample request:
     /// 
     ///     GET /api/v1/posts?page=1&pageSize=10
+    ///     GET /api/v1/posts?page=1&pageSize=10&search=C%23
     /// </remarks>
     /// <param name="page">Page number (default: 1)</param>
     /// <param name="pageSize">Items per page (default: 10, max: 100)</param>
+    /// <param name="search">Optional search query for full-text search</param>
     /// <param name="ct">Cancellation token</param>
     /// <returns>Paginated list of posts</returns>
     /// <response code="200">Posts retrieved successfully</response>
     [HttpGet]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
-    {
-        var result = await getPostsUseCase.ExecuteAsync(page, pageSize, ct);
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// Search posts by query using full-text search
-    /// </summary>
-    /// <remarks>
-    /// Searches posts by title and content using PostgreSQL full-text search.
-    /// Results are ranked by relevance and sorted by creation date.
-    /// 
-    /// Sample request:
-    /// 
-    ///     GET /api/v1/posts/search?q=C%23&page=1&pageSize=10
-    /// </remarks>
-    /// <param name="q">Search query (minimum 2 characters)</param>
-    /// <param name="page">Page number (default: 1)</param>
-    /// <param name="pageSize">Items per page (default: 10, max: 100)</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>Paginated search results</returns>
-    /// <response code="200">Search results retrieved successfully</response>
-    /// <response code="400">Invalid search query</response>
-    [HttpGet("search")]
-    [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Search(
-        [FromQuery] string q,
+    public async Task<IActionResult> GetAll(
+        [FromQuery] string? search = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        try
-        {
-            var result = await searchPostsUseCase.ExecuteAsync(q, page, pageSize, ct);
-            return Ok(result);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var result = await getPostsUseCase.ExecuteAsync(page, pageSize, search, ct);
+        return Ok(result);
     }
 
     /// <summary>

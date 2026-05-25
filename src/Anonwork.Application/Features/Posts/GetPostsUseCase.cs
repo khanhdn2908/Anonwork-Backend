@@ -5,13 +5,14 @@ using Anonwork.Domain.Entities;
 namespace Anonwork.Application.Features.Posts;
 
 /// <summary>
-/// Use case for getting posts with pagination
+/// Use case for getting posts with pagination and search
 /// </summary>
 public class GetPostsUseCase(IPostRepository postRepo)
 {
     public async Task<PostListResponseDto> ExecuteAsync(
         int page = 1,
         int pageSize = 10,
+        string? searchQuery = null,
         CancellationToken ct = default)
     {
         // ── Validation ──────────────────────────────
@@ -20,7 +21,9 @@ public class GetPostsUseCase(IPostRepository postRepo)
         if (pageSize > 100) pageSize = 100; // Max 100 per page
 
         // ── Get posts ───────────────────────────────
-        var (posts, total) = await postRepo.GetAllAsync(page, pageSize, ct);
+        var (posts, total) = string.IsNullOrWhiteSpace(searchQuery)
+            ? await postRepo.GetAllAsync(page, pageSize, ct)
+            : await postRepo.SearchAsync(searchQuery, page, pageSize, ct);
 
         // ── Calculate pagination ────────────────────
         var totalPages = (int)Math.Ceiling((double)total / pageSize);

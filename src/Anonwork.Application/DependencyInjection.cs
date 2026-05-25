@@ -1,5 +1,6 @@
 ﻿using Anonwork.Application.Features.Auth;
 using Anonwork.Application.Features.Posts;
+using Anonwork.Application.Features.Subjects;
 using Anonwork.Application.Features.Users;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -25,9 +26,15 @@ namespace Anonwork.Application
             services.AddScoped<GetPostByIdUseCase>();
             services.AddScoped<GetPostsUseCase>();
             services.AddScoped<GetPostsBySubjectUseCase>();
-            services.AddScoped<SearchPostsUseCase>();
             services.AddScoped<UpdatePostUseCase>();
             services.AddScoped<DeletePostUseCase>();
+
+            // ── Subjects Use Cases ──────────────────
+            services.AddScoped<GetSubjectsUseCase>();
+            services.AddScoped<GetSubjectByIdUseCase>();
+            services.AddScoped<CreateSubjectUseCase>();
+            services.AddScoped<UpdateSubjectUseCase>();
+            services.AddScoped<DeleteSubjectUseCase>();
 
             // ── Users Use Cases ─────────────────────
             services.AddScoped<GetMeUseCase>();
