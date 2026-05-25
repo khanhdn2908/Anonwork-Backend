@@ -19,5 +19,7 @@ namespace Anonwork.Application.Interfaces
 
         Task<User> CreateAsync(User user, CancellationToken ct = default);
         Task UpdateAsync(User user, CancellationToken ct = default);
+        Task DeleteAsync(Guid id, CancellationToken ct = default);
+        Task<(List<User> Users, int Total)> GetAllAsync(int page = 1, int pageSize = 10, CancellationToken ct = default);
     }
 }

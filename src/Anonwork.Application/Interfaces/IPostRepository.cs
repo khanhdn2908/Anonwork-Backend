@@ -63,4 +63,13 @@ public interface IPostRepository
     /// Increment view count
     /// </summary>
     Task IncrementViewCountAsync(Guid postId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Search posts by query using full-text search
+    /// </summary>
+    Task<(List<Post> Posts, int Total)> SearchAsync(
+        string query,
+        int page = 1,
+        int pageSize = 10,
+        CancellationToken ct = default);
 }

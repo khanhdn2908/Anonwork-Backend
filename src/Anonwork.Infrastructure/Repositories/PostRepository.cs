@@ -129,4 +129,43 @@ public class PostRepository(AppDbContext context) : IPostRepository
                 s => s.SetProperty(p => p.ViewCount, p => p.ViewCount + 1),
                 ct);
     }
+
+    public async Task<(List<Post> Posts, int Total)> SearchAsync(
+        string query,
+        int page = 1,
+        int pageSize = 10,
+        CancellationToken ct = default)
+    {
+        // ── Validate query ──────────────────────────
+        if (string.IsNullOrWhiteSpace(query))
+            return (new List<Post>(), 0);
+
+        // ── Prepare search query ────────────────────
+        var searchQuery = query.Trim().ToLower();
+
+        // ── Build base query ────────────────────────
+        var baseQuery = context.Posts
+            .AsNoTracking()
+            .Where(p => p.Status == "active" && 
+                   (EF.Functions.ToTsVector("english", p.Title + " " + p.Content)
+                    .Matches(EF.Functions.PlainToTsQuery("english", searchQuery))))
+            .OrderByDescending(p => EF.Functions.ToTsVector("english", p.Title + " " + p.Content)
+                .Rank(EF.Functions.PlainToTsQuery("english", searchQuery)))
+            .ThenByDescending(p => p.CreatedAt);
+
+        // ── Get total count ─────────────────────────
+        var total = await baseQuery.CountAsync(ct);
+
+        // ── Get paginated results ───────────────────
+        var posts = await baseQuery
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Include(p => p.Author)
+            .Include(p => p.Subject)
+            .Include(p => p.PostImages.OrderBy(pi => pi.DisplayOrder))
+            .Include(p => p.PostTags)
+            .ToListAsync(ct);
+
+        return (posts, total);
+    }
 }

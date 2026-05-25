@@ -70,5 +70,34 @@ namespace Anonwork.Infrastructure.Repositories
             _appDbContext.Users.Update(user);
             await _appDbContext.SaveChangesAsync(ct);
         }
+
+        public async Task DeleteAsync(Guid id, CancellationToken ct = default)
+        {
+            var user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
+            if (user is not null)
+            {
+                _appDbContext.Users.Remove(user);
+                await _appDbContext.SaveChangesAsync(ct);
+            }
+        }
+
+        public async Task<(List<User> Users, int Total)> GetAllAsync(
+            int page = 1,
+            int pageSize = 10,
+            CancellationToken ct = default)
+        {
+            var query = _appDbContext.Users
+                .AsNoTracking()
+                .OrderByDescending(u => u.CreatedAt);
+
+            var total = await query.CountAsync(ct);
+
+            var users = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+
+            return (users, total);
+        }
     }
 }

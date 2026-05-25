@@ -7,6 +7,7 @@ namespace Anonwork.API.Controllers;
 
 [ApiController]
 [Route("api/v1/subjects")]
+[Authorize]
 public class SubjectsController(GetPostsBySubjectUseCase getPostsBySubjectUseCase) : ControllerBase
 {
     /// <summary>

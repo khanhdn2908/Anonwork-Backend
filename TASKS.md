@@ -42,7 +42,7 @@ Tài liệu này liệt kê tất cả các task cần hoàn thành để phát 
 ### 📝 Phase 1.2: Posts Management (IN PROGRESS)
 
 #### 1.2.1 - Create Post Feature
-- [ ] **Task**: Implement CreatePostUseCase
+- [x] **Task**: Implement CreatePostUseCase
   - Input: title, content, subject_id, is_anonymous
   - Validate input (title length, content length)
   - Create post entity
@@ -52,7 +52,7 @@ Tài liệu này liệt kê tất cả các task cần hoàn thành để phát 
   - **Priority**: HIGH
   - **Estimated Time**: 2 hours
 
-- [ ] **Task**: Implement PostsController.CreatePost endpoint
+- [x] **Task**: Implement PostsController.CreatePost endpoint
   - Route: `POST /api/v1/posts`
   - Require authentication
   - Validate request DTO
@@ -62,7 +62,7 @@ Tài liệu này liệt kê tất cả các task cần hoàn thành để phát 
   - **Priority**: HIGH
   - **Estimated Time**: 1 hour
 
-- [ ] **Task**: Create PostCreateRequestDto
+- [x] **Task**: Create PostCreateRequestDto
   - Properties: title, content, subject_id, is_anonymous
   - Validation attributes
   - **File**: `src/Anonwork.Application/Features/Posts/DTOs/PostCreateRequestDto.cs`
@@ -70,7 +70,7 @@ Tài liệu này liệt kê tất cả các task cần hoàn thành để phát 
   - **Estimated Time**: 30 minutes
 
 #### 1.2.2 - Read Posts Feature
-- [ ] **Task**: Implement GetPostByIdUseCase
+- [x] **Task**: Implement GetPostByIdUseCase
   - Input: post_id
   - Fetch post from database
   - Increment view_count
@@ -79,7 +79,7 @@ Tài liệu này liệt kê tất cả các task cần hoàn thành để phát 
   - **Priority**: HIGH
   - **Estimated Time**: 1.5 hours
 
-- [ ] **Task**: Implement GetPostsUseCase (with pagination & filtering)
+- [x] **Task**: Implement GetPostsUseCase (with pagination & filtering)
   - Input: page, pageSize, subject_id, sort_by
   - Support sorting: newest, trending, most_commented
   - Pagination support
@@ -88,7 +88,7 @@ Tài liệu này liệt kê tất cả các task cần hoàn thành để phát 
   - **Priority**: HIGH
   - **Estimated Time**: 2 hours
 
-- [ ] **Task**: Implement SearchPostsUseCase
+- [x] **Task**: Implement SearchPostsUseCase
   - Input: query, page, pageSize
   - Use PostgreSQL full-text search
   - Return matching posts
@@ -96,14 +96,14 @@ Tài liệu này liệt kê tất cả các task cần hoàn thành để phát 
   - **Priority**: MEDIUM
   - **Estimated Time**: 1.5 hours
 
-- [ ] **Task**: Implement PostsController.GetPost endpoint
+- [x] **Task**: Implement PostsController.GetPost endpoint
   - Route: `GET /api/v1/posts/{id}`
   - Return post details
   - **File**: `src/Anonwork.API/Controllers/PostsController.cs`
   - **Priority**: HIGH
   - **Estimated Time**: 30 minutes
 
-- [ ] **Task**: Implement PostsController.GetPosts endpoint
+- [x] **Task**: Implement PostsController.GetPosts endpoint
   - Route: `GET /api/v1/posts`
   - Query params: page, pageSize, subject_id, sort_by
   - Return paginated posts
@@ -111,7 +111,7 @@ Tài liệu này liệt kê tất cả các task cần hoàn thành để phát 
   - **Priority**: HIGH
   - **Estimated Time**: 1 hour
 
-- [ ] **Task**: Implement PostsController.SearchPosts endpoint
+- [x] **Task**: Implement PostsController.SearchPosts endpoint
   - Route: `GET /api/v1/posts/search`
   - Query params: q, page, pageSize
   - Return search results
@@ -120,7 +120,7 @@ Tài liệu này liệt kê tất cả các task cần hoàn thành để phát 
   - **Estimated Time**: 30 minutes
 
 #### 1.2.3 - Update Post Feature
-- [ ] **Task**: Implement UpdatePostUseCase
+- [x] **Task**: Implement UpdatePostUseCase
   - Input: post_id, title, content
   - Validate ownership (only author can update)
   - Update post
@@ -130,7 +130,7 @@ Tài liệu này liệt kê tất cả các task cần hoàn thành để phát 
   - **Priority**: MEDIUM
   - **Estimated Time**: 1.5 hours
 
-- [ ] **Task**: Implement PostsController.UpdatePost endpoint
+- [x] **Task**: Implement PostsController.UpdatePost endpoint
   - Route: `PUT /api/v1/posts/{id}`
   - Require authentication
   - Call UpdatePostUseCase
@@ -140,7 +140,7 @@ Tài liệu này liệt kê tất cả các task cần hoàn thành để phát 
   - **Estimated Time**: 1 hour
 
 #### 1.2.4 - Delete Post Feature
-- [ ] **Task**: Implement DeletePostUseCase
+- [x] **Task**: Implement DeletePostUseCase
   - Input: post_id
   - Validate ownership
   - Soft delete (set deleted_at)
@@ -149,7 +149,7 @@ Tài liệu này liệt kê tất cả các task cần hoàn thành để phát 
   - **Priority**: MEDIUM
   - **Estimated Time**: 1 hour
 
-- [ ] **Task**: Implement PostsController.DeletePost endpoint
+- [x] **Task**: Implement PostsController.DeletePost endpoint
   - Route: `DELETE /api/v1/posts/{id}`
   - Require authentication
   - Call DeletePostUseCase
@@ -159,7 +159,7 @@ Tài liệu này liệt kê tất cả các task cần hoàn thành để phát 
   - **Estimated Time**: 30 minutes
 
 #### 1.2.5 - Post Images Feature
-- [ ] **Task**: Implement UploadPostImagesUseCase
+- [x] **Task**: Implement UploadPostImagesUseCase
   - Input: post_id, images (file array)
   - Validate file types (jpg, png, gif)
   - Validate file size (max 5MB each)
@@ -170,7 +170,7 @@ Tài liệu này liệt kê tất cả các task cần hoàn thành để phát 
   - **Priority**: MEDIUM
   - **Estimated Time**: 2 hours
 
-- [ ] **Task**: Implement PostsController.UploadImages endpoint
+- [x] **Task**: Implement PostsController.UploadImages endpoint
   - Route: `POST /api/v1/posts/{id}/images`
   - Accept multipart/form-data
   - Call UploadPostImagesUseCase

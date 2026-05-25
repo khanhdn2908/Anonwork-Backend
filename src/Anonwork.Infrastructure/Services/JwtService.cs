@@ -29,7 +29,7 @@ public class JwtService(
             new Claim(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim("username",  user.Username),
-            new Claim("role",      user.Role),
+            new Claim(ClaimTypes.Role, user.Role),
             new Claim("anonAlias", user.AnonAlias)
         };
 

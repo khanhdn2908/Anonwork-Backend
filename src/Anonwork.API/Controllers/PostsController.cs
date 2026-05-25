@@ -5,20 +5,21 @@ using Anonwork.Application.Features.Posts.DTOs;
 using Anonwork.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Anonwork.API.Controllers;
 
 [ApiController]
 [Route("api/v1/posts")]
+[Authorize]
 public class PostsController(
     CreatePostUseCase createPostUseCase,
     GetPostByIdUseCase getPostByIdUseCase,
     GetPostsUseCase getPostsUseCase,
     GetPostsBySubjectUseCase getPostsBySubjectUseCase,
+    SearchPostsUseCase searchPostsUseCase,
     UpdatePostUseCase updatePostUseCase,
     DeletePostUseCase deletePostUseCase,
-    ICloudinaryService cloudinaryService) : ControllerBase
+    ICloudinaryService cloudinaryService) : BaseApiController
 {
     /// <summary>
     /// Create a new post with optional images
@@ -45,7 +46,6 @@ public class PostsController(
     /// <response code="400">Invalid request data</response>
     /// <response code="401">Unauthorized</response>
     [HttpPost]
-    [Authorize]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -142,6 +142,45 @@ public class PostsController(
     }
 
     /// <summary>
+    /// Search posts by query using full-text search
+    /// </summary>
+    /// <remarks>
+    /// Searches posts by title and content using PostgreSQL full-text search.
+    /// Results are ranked by relevance and sorted by creation date.
+    /// 
+    /// Sample request:
+    /// 
+    ///     GET /api/v1/posts/search?q=C%23&page=1&pageSize=10
+    /// </remarks>
+    /// <param name="q">Search query (minimum 2 characters)</param>
+    /// <param name="page">Page number (default: 1)</param>
+    /// <param name="pageSize">Items per page (default: 10, max: 100)</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Paginated search results</returns>
+    /// <response code="200">Search results retrieved successfully</response>
+    /// <response code="400">Invalid search query</response>
+    [HttpGet("search")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Search(
+        [FromQuery] string q,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var result = await searchPostsUseCase.ExecuteAsync(q, page, pageSize, ct);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Update a post
     /// </summary>
     /// <remarks>
@@ -168,7 +207,6 @@ public class PostsController(
     /// <response code="403">Forbidden - not the post author</response>
     /// <response code="404">Post not found</response>
     [HttpPut("{id:guid}")]
-    [Authorize]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -239,7 +277,6 @@ public class PostsController(
     /// <response code="403">Forbidden - not the post author</response>
     /// <response code="404">Post not found</response>
     [HttpDelete("{id:guid}")]
-    [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -266,13 +303,5 @@ public class PostsController(
     }
 
     // ── Helpers ─────────────────────────────────────────
-
-    private Guid? GetUserIdFromToken()
-    {
-        var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-               ?? User.FindFirst("sub")?.Value;
-
-        return Guid.TryParse(sub, out var id) ? id : null;
-    }
 }
 

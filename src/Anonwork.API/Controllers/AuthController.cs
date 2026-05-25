@@ -5,19 +5,20 @@ using Anonwork.Application.Features.Auth;
 using Anonwork.Application.Features.Auth.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Anonwork.API.Controllers;
 
 [ApiController]
 [Route("api/v1/auth")]
+[Authorize]
 public class AuthController(
     RegisterUseCase registerUseCase,
     LoginUseCase loginUseCase,
     RefreshTokenUseCase refreshTokenUseCase,
-    LogoutUseCase logoutUseCase) : ControllerBase
+    LogoutUseCase logoutUseCase) : BaseApiController
 {
     [HttpPost("register")]
+    [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto req, CancellationToken ct)
     {
         var result = await registerUseCase.ExecuteAsync(
@@ -27,6 +28,7 @@ public class AuthController(
     }
 
     [HttpPost("login")]
+    [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto req,CancellationToken ct)
     {
         var result = await loginUseCase.ExecuteAsync(new LoginRequest(req.Email, req.Password), ct);
@@ -35,6 +37,7 @@ public class AuthController(
     }
 
     [HttpPost("refresh")]
+    [AllowAnonymous]
     public async Task<IActionResult> Refresh([FromBody] RefreshRequestDto req, CancellationToken ct)
     {
         var result = await refreshTokenUseCase.ExecuteAsync(req.RefreshToken, ct);
@@ -62,12 +65,4 @@ public class AuthController(
             result.AnonAlias,
             result.Role
         );
-
-    private Guid? GetUserIdFromToken()
-    {
-        var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-               ?? User.FindFirst("sub")?.Value;
-
-        return Guid.TryParse(sub, out var id) ? id : null;
-    }
 }
