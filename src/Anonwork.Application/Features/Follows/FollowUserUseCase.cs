@@ -1,0 +1,81 @@
+
+using Anonwork.Application.Features.Follows.DTOs;
+using Anonwork.Application.Interfaces;
+using Anonwork.Domain.Entities;
+
+namespace Anonwork.Application.Features.Follows;
+
+/// <summary>
+/// Use case for following a user
+/// </summary>
+public class FollowUserUseCase(IFollowRepository followRepository, IUserRepository userRepository)
+{
+    public async Task<FollowResponseDto> ExecuteAsync(Guid currentUserId, FollowUserRequest request, CancellationToken ct = default)
+    {
+        // ── Validate input ──────────────────────────
+        if (currentUserId == Guid.Empty)
+            throw new ArgumentException("Current user ID is required.");
+
+        if (request.FollowingId == Guid.Empty)
+            throw new ArgumentException("Following user ID is required.");
+
+        // ── Prevent self-follow ─────────────────────
+        if (currentUserId == request.FollowingId)
+            throw new InvalidOperationException("You cannot follow yourself.");
+
+        // ── Check if following user exists ──────────
+        var followingUserExists = await userRepository.ExistsByIdAsync(request.FollowingId, ct);
+        if (!followingUserExists)
+            throw new KeyNotFoundException("User to follow not found.");
+
+        // ── Check if already following ──────────────
+        var alreadyFollowing = await followRepository.ExistsByFollowerAndFollowingAsync(currentUserId, request.FollowingId, ct);
+        if (alreadyFollowing)
+            throw new InvalidOperationException("You are already following this user.");
+
+        // ── Create follow relationship ──────────────
+        var follow = new Follow
+        {
+            Id = Guid.NewGuid(),
+            FollowerId = currentUserId,
+            FollowingId = request.FollowingId,
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        var createdFollow = await followRepository.CreateAsync(follow, ct);
+
+        // ── Load follow relationship with user data ─
+        var followWithUsers = await followRepository.GetByIdAsync(createdFollow.Id, ct);
+        if (followWithUsers == null)
+            throw new InvalidOperationException("Failed to retrieve created follow relationship.");
+
+        // ── Map to DTO ──────────────────────────────
+        return MapToResponse(followWithUsers);
+    }
+
+    private static FollowResponseDto MapToResponse(Follow follow)
+    {
+        return new FollowResponseDto
+        {
+            Id = follow.Id,
+            FollowerId = follow.FollowerId,
+            FollowingId = follow.FollowingId,
+            CreatedAt = follow.CreatedAt,
+            Follower = follow.Follower != null ? new UserBasicDto
+            {
+                Id = follow.Follower.Id,
+                Username = follow.Follower.Username,
+                Email = follow.Follower.Email,
+                AvatarUrl = follow.Follower.AvatarUrl
+            } : null,
+            Following = follow.Following != null ? new UserBasicDto
+            {
+                Id = follow.Following.Id,
+                Username = follow.Following.Username,
+                Email = follow.Following.Email,
+                AvatarUrl = follow.Following.AvatarUrl
+            } : null
+        };
+    }
+}
+

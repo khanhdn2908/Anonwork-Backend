@@ -42,6 +42,10 @@ namespace Anonwork.Infrastructure.Repositories
         // EXISTS (dùng cho validation, chỉ SELECT 1)
         // ──────────────────────────────────────────
 
+        public async Task<bool> ExistsByIdAsync(Guid id, CancellationToken ct = default)
+            => await _appDbContext.Users
+                .AnyAsync(u => u.Id == id, ct);
+
         public async Task<bool> ExistsByEmailAsync(string email, CancellationToken ct = default)
             => await _appDbContext.Users
                 .AnyAsync(u => u.Email == email.ToLower().Trim(), ct);

@@ -1,4 +1,5 @@
 ﻿using Anonwork.Application.Features.Auth;
+using Anonwork.Application.Features.Follows;
 using Anonwork.Application.Features.Posts;
 using Anonwork.Application.Features.Subjects;
 using Anonwork.Application.Features.Users;
@@ -35,6 +36,15 @@ namespace Anonwork.Application
             services.AddScoped<CreateSubjectUseCase>();
             services.AddScoped<UpdateSubjectUseCase>();
             services.AddScoped<DeleteSubjectUseCase>();
+
+            // ── Follows Use Cases ──────────────────
+            services.AddScoped<FollowUserUseCase>();
+            services.AddScoped<GetFollowByIdUseCase>();
+            services.AddScoped<GetFollowersUseCase>();
+            services.AddScoped<GetFollowingUseCase>();
+            services.AddScoped<GetFollowStatsUseCase>();
+            services.AddScoped<IsFollowingUseCase>();
+            services.AddScoped<UnfollowUserUseCase>();
 
             // ── Users Use Cases ─────────────────────
             services.AddScoped<GetMeUseCase>();

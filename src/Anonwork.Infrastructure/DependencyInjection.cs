@@ -48,6 +48,7 @@ namespace Anonwork.Infrastructure
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IPostRepository, PostRepository>();
             services.AddScoped<ISubjectRepository, SubjectRepository>();
+            services.AddScoped<IFollowRepository, FollowRepository>();
 
             // Services
             services.AddScoped<IJwtService, JwtService>();
