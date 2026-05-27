@@ -121,15 +121,14 @@ public class HandleSepayWebhookUseCase
         if (string.IsNullOrWhiteSpace(content))
             return null;
 
-        var tokens = content.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        const string prefix = "ANON";
 
-        var match = tokens.FirstOrDefault(t =>       // ✅ gán vào biến
-            t.StartsWith("ANON", StringComparison.OrdinalIgnoreCase));
-
-        if (match is null)
+        var index = content.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
+        if (index == -1)
             return null;
 
-        return match["ANON".Length..];               // ✅ slice trên string, bỏ prefix "ANON"
+        // Bỏ prefix "ANON", lấy phần còn lại
+        return content[(index + prefix.Length)..];
     }
 
     private async Task ActivateSubscriptionAsync(Order order, SepayWebhookRequest request, CancellationToken ct)
