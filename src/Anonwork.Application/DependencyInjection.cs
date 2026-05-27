@@ -4,6 +4,7 @@ using Anonwork.Application.Features.Payments;
 using Anonwork.Application.Features.Posts;
 using Anonwork.Application.Features.Subjects;
 using Anonwork.Application.Features.SubscriptionPlans;
+using Anonwork.Application.Features.UserSubscriptions;
 using Anonwork.Application.Features.Users;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -67,6 +68,13 @@ namespace Anonwork.Application
             services.AddScoped<CreateSubscriptionPlanUseCase>();
             services.AddScoped<UpdateSubscriptionPlanUseCase>();
             services.AddScoped<DeleteSubscriptionPlanUseCase>();
+
+            // ── UserSubscriptions Use Cases ─────────
+            services.AddScoped<CreateUserSubscriptionUseCase>();
+            services.AddScoped<GetUserSubscriptionByIdUseCase>();
+            services.AddScoped<GetUserSubscriptionsByUserIdUseCase>();
+            services.AddScoped<UpdateUserSubscriptionUseCase>();
+            services.AddScoped<DeleteUserSubscriptionUseCase>();
 
             return services;
         }
