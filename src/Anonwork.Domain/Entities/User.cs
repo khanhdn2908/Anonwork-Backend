@@ -49,6 +49,10 @@ public partial class User
 
     public virtual ICollection<Vote> Votes { get; set; } = new List<Vote>();
 
+    public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+
+    public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
+
 
     private User() { }
 

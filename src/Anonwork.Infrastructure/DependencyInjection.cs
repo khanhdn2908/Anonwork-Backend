@@ -44,16 +44,26 @@ namespace Anonwork.Infrastructure
             // Cloudinary options
             services.Configure<CloudinaryOptions>(configuration.GetSection(CloudinaryOptions.SectionName));
 
+            // Sepay options
+            services.Configure<SepayOptions>(configuration.GetSection(SepayOptions.SectionName));
+
             // Repositories
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IPostRepository, PostRepository>();
             services.AddScoped<ISubjectRepository, SubjectRepository>();
             services.AddScoped<IFollowRepository, FollowRepository>();
+            services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
+            services.AddScoped<IUserSubscriptionRepository, UserSubscriptionRepository>();
 
             // Services
             services.AddScoped<IJwtService, JwtService>();
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
             services.AddScoped<ICloudinaryService, CloudinaryService>();
+            services.AddScoped<ISepayService, SepayService>();
+
+            // Background Services
+            services.AddHostedService<SubscriptionRenewalService>();
 
             return services;
         }

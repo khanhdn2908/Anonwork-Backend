@@ -452,6 +452,64 @@ EXECUTE FUNCTION set_updated_at();
 
 
 -- ============================================================
+-- PAYMENT
+-- ============================================================
+
+CREATE TABLE subscription_plans (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name          VARCHAR(100) NOT NULL,
+  slug          VARCHAR(50)  NOT NULL UNIQUE,
+  price         BIGINT       NOT NULL,
+  duration_days INT          NOT NULL,
+  features      JSONB,
+  is_active     BOOLEAN      NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE orders (
+  id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id              UUID         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  plan_id              UUID         REFERENCES subscription_plans(id),
+  order_code           VARCHAR(50)  NOT NULL UNIQUE,
+  amount               BIGINT       NOT NULL,
+  currency             VARCHAR(10)  NOT NULL DEFAULT 'VND',
+  status               VARCHAR(20)  NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending','paid','failed','refunded','expired')),
+  payment_method       VARCHAR(30)  DEFAULT 'bank_transfer',
+  sepay_transaction_id VARCHAR(100),
+  metadata             JSONB,
+  expires_at           TIMESTAMPTZ,
+  paid_at              TIMESTAMPTZ,
+  created_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE user_subscriptions (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  plan_id    UUID        NOT NULL REFERENCES subscription_plans(id),
+  order_id   UUID        NOT NULL REFERENCES orders(id),
+  status     VARCHAR(20) NOT NULL DEFAULT 'active'
+    CHECK (status IN ('active','expired','cancelled')),
+  started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_orders_order_code      ON orders(order_code);
+CREATE INDEX idx_orders_user_status     ON orders(user_id, status);
+CREATE INDEX idx_orders_expires_pending ON orders(expires_at)
+  WHERE status = 'pending';
+
+CREATE INDEX idx_subscriptions_user     ON user_subscriptions(user_id, status, expires_at);
+CREATE UNIQUE INDEX idx_one_active_sub  ON user_subscriptions(user_id, plan_id)
+  WHERE status = 'active';
+
+CREATE TRIGGER trg_orders_updated_at
+BEFORE UPDATE ON orders
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ============================================================
 -- SAMPLE DATA
 -- ============================================================
 

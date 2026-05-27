@@ -41,6 +41,12 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Vote> Votes { get; set; }
 
+    public virtual DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
+
+    public virtual DbSet<Order> Orders { get; set; }
+
+    public virtual DbSet<UserSubscription> UserSubscriptions { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("pgcrypto");
@@ -386,7 +392,6 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.ReporterId).HasColumnName("reporter_id");
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
-                .HasDefaultValueSql("'pending'::character varying")
                 .HasColumnName("status");
             entity.Property(e => e.TargetId).HasColumnName("target_id");
             entity.Property(e => e.TargetType)
@@ -502,6 +507,133 @@ public partial class AppDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.Votes)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("votes_user_id_fkey");
+        });
+
+        modelBuilder.Entity<SubscriptionPlan>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("subscription_plans_pkey");
+
+            entity.ToTable("subscription_plans");
+
+            entity.HasIndex(e => e.Slug, "subscription_plans_slug_key").IsUnique();
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .HasColumnName("name");
+            entity.Property(e => e.Slug)
+                .HasMaxLength(50)
+                .HasColumnName("slug");
+            entity.Property(e => e.Price).HasColumnName("price");
+            entity.Property(e => e.DurationDays).HasColumnName("duration_days");
+            entity.Property(e => e.Features)
+                .HasColumnType("jsonb")
+                .HasColumnName("features");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("created_at");
+        });
+
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("orders_pkey");
+
+            entity.ToTable("orders");
+
+            entity.HasIndex(e => e.OrderCode, "idx_orders_order_code");
+
+            entity.HasIndex(e => new { e.UserId, e.Status }, "idx_orders_user_status");
+
+            entity.HasIndex(e => e.ExpiresAt, "idx_orders_expires_pending")
+                .HasFilter("status = 0"); ;
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.PlanId).HasColumnName("plan_id");
+            entity.Property(e => e.OrderCode)
+                .HasMaxLength(50)
+                .HasColumnName("order_code");
+            entity.Property(e => e.Amount).HasColumnName("amount");
+            entity.Property(e => e.Currency)
+                .HasMaxLength(10)
+                .HasDefaultValueSql("'VND'::character varying")
+                .HasColumnName("currency");
+            entity.Property(e => e.Status)
+                .HasColumnName("status");
+            entity.Property(e => e.PaymentMethod)
+                .HasColumnName("payment_method");
+            entity.Property(e => e.ProviderTransactionId)
+                .HasMaxLength(100)
+                .HasColumnName("sepay_transaction_id");
+            entity.Property(e => e.Metadata)
+                .HasColumnType("jsonb")
+                .HasColumnName("metadata");
+            entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
+            entity.Property(e => e.PaidAt).HasColumnName("paid_at");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.User).WithMany(p => p.Orders)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("orders_user_id_fkey");
+
+            entity.HasOne(d => d.Plan).WithMany(p => p.Orders)
+                .HasForeignKey(d => d.PlanId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("orders_plan_id_fkey");
+        });
+
+        modelBuilder.Entity<UserSubscription>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("user_subscriptions_pkey");
+
+            entity.ToTable("user_subscriptions");
+
+            entity.HasIndex(e => new { e.UserId, e.Status, e.ExpiresAt }, "idx_subscriptions_user");
+
+            entity.HasIndex(e => new { e.UserId, e.PlanId }, "idx_one_active_sub")
+                .IsUnique()
+                .HasFilter("status = 0");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.PlanId).HasColumnName("plan_id");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasColumnName("status");
+            entity.Property(e => e.StartedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("started_at");
+            entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("created_at");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserSubscriptions)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("user_subscriptions_user_id_fkey");
+
+            entity.HasOne(d => d.Plan).WithMany(p => p.UserSubscriptions)
+                .HasForeignKey(d => d.PlanId)
+                .HasConstraintName("user_subscriptions_plan_id_fkey");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.UserSubscriptions)
+                .HasForeignKey(d => d.OrderId)
+                .HasConstraintName("user_subscriptions_order_id_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);

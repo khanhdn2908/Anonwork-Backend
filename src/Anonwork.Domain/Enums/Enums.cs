@@ -44,3 +44,27 @@ public enum PaymentStatus
 {
     pending, success, failed, refunded
 }
+
+public enum OrderStatus
+{
+    Pending,
+    Paid,
+    Failed,
+    Refunded,
+    Expired
+}
+
+public enum PaymentMethod
+{
+    BankTransfer,
+    Momo,
+    VNPay,
+    Stripe
+}
+
+public enum SubscriptionStatus
+{
+    Active,
+    Expired,
+    Cancelled
+}

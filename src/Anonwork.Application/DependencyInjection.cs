@@ -1,5 +1,6 @@
 ﻿using Anonwork.Application.Features.Auth;
 using Anonwork.Application.Features.Follows;
+using Anonwork.Application.Features.Payments;
 using Anonwork.Application.Features.Posts;
 using Anonwork.Application.Features.Subjects;
 using Anonwork.Application.Features.Users;
@@ -51,6 +52,12 @@ namespace Anonwork.Application
             services.AddScoped<UpdateUserUseCase>();
             services.AddScoped<DeleteUserUseCase>();
             services.AddScoped<GetAllUsersUseCase>();
+
+            // ── Payments Use Cases ──────────────────
+            services.AddScoped<CreateOrderUseCase>();
+            services.AddScoped<GetOrderStatusUseCase>();
+            services.AddScoped<HandleSepayWebhookUseCase>();
+            services.AddScoped<RenewSubscriptionUseCase>();
 
             return services;
         }
