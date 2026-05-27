@@ -121,10 +121,15 @@ public class HandleSepayWebhookUseCase
         if (string.IsNullOrWhiteSpace(content))
             return null;
 
-        // Tìm token bắt đầu bằng "ORD" trong chuỗi content
         var tokens = content.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return tokens.FirstOrDefault(t =>
-            t.StartsWith("ORD", StringComparison.OrdinalIgnoreCase));
+
+        var match = tokens.FirstOrDefault(t =>       // ✅ gán vào biến
+            t.StartsWith("ANON", StringComparison.OrdinalIgnoreCase));
+
+        if (match is null)
+            return null;
+
+        return match["ANON".Length..];               // ✅ slice trên string, bỏ prefix "ANON"
     }
 
     private async Task ActivateSubscriptionAsync(Order order, SepayWebhookRequest request, CancellationToken ct)
