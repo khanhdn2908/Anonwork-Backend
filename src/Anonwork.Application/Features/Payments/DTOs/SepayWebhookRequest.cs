@@ -1,3 +1,7 @@
+using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace Anonwork.Application.Features.Payments.DTOs;
 
 public class SepayWebhookRequest
@@ -6,6 +10,8 @@ public class SepayWebhookRequest
 
     public string Gateway { get; set; } = default!;
 
+    [JsonPropertyName("transactionDate")]
+    [JsonConverter(typeof(SepayDateTimeConverter))]
     public DateTime TransactionDate { get; set; }
 
     public string AccountNumber { get; set; } = default!;
@@ -25,4 +31,18 @@ public class SepayWebhookRequest
     public long Accumulated { get; set; }
 
     public string ReferenceCode { get; set; } = default!;
+
+    public class SepayDateTimeConverter : JsonConverter<DateTime>
+    {
+        private const string Format = "yyyy-MM-dd HH:mm:ss";
+
+        public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var str = reader.GetString();
+            return DateTime.ParseExact(str!, Format, CultureInfo.InvariantCulture);
+        }
+
+        public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+            => writer.WriteStringValue(value.ToString(Format));
+    }
 }

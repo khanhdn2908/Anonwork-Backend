@@ -51,10 +51,10 @@ public class PaymentController(
     [HttpPost("webhook")]
     [AllowAnonymous]
     public async Task<IActionResult> HandleWebhook(
-        [FromBody] SepayWebhookRequest req,
+        [FromBody] SepayWebhookRequest request,
         CancellationToken ct)
     {
-        await handleSepayWebhookUseCase.ExecuteAsync(req, ct);
+        await handleSepayWebhookUseCase.ExecuteAsync(request, ct);
         return Ok(new { success = true });
     }
 
