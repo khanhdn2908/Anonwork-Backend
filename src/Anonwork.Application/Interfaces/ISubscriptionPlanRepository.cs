@@ -9,9 +9,17 @@ public interface ISubscriptionPlanRepository
     Task<SubscriptionPlan?> GetBySlugAsync(string slug, CancellationToken ct = default);
     Task<List<SubscriptionPlan>> GetAllActiveAsync(CancellationToken ct = default);
     Task<List<SubscriptionPlan>> GetAllAsync(CancellationToken ct = default);
+    Task<(List<SubscriptionPlan> plans, int total)> GetAllAsync(
+        string? searchTerm = null,
+        bool? isActive = null,
+        int page = 1,
+        int pageSize = 10,
+        CancellationToken ct = default);
 
     // ── EXISTS ────────────────────────────────────
     Task<bool> ExistsByIdAsync(Guid id, CancellationToken ct = default);
+    Task<bool> ExistsBySlugAsync(string slug, CancellationToken ct = default);
+    Task<bool> ExistsBySlugAsync(string slug, Guid excludeId, CancellationToken ct = default);
 
     // ── WRITE ─────────────────────────────────────
     Task<SubscriptionPlan> CreateAsync(SubscriptionPlan plan, CancellationToken ct = default);

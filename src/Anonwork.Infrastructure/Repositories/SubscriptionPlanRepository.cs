@@ -38,10 +38,54 @@ public class SubscriptionPlanRepository : ISubscriptionPlanRepository
             .OrderBy(p => p.Price)
             .ToListAsync(ct);
 
+    public async Task<(List<SubscriptionPlan> plans, int total)> GetAllAsync(
+        string? searchTerm = null,
+        bool? isActive = null,
+        int page = 1,
+        int pageSize = 10,
+        CancellationToken ct = default)
+    {
+        var query = _context.SubscriptionPlans.AsNoTracking();
+
+        // Apply search filter
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            query = query.Where(p => 
+                p.Name.Contains(searchTerm) || 
+                p.Slug.Contains(searchTerm));
+        }
+
+        // Apply active filter
+        if (isActive.HasValue)
+        {
+            query = query.Where(p => p.IsActive == isActive.Value);
+        }
+
+        // Get total count before pagination
+        var total = await query.CountAsync(ct);
+
+        // Apply pagination and ordering
+        var plans = await query
+            .OrderBy(p => p.Price)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return (plans, total);
+    }
+
     // ── EXISTS ────────────────────────────────────
     public async Task<bool> ExistsByIdAsync(Guid id, CancellationToken ct = default)
         => await _context.SubscriptionPlans
             .AnyAsync(p => p.Id == id, ct);
+
+    public async Task<bool> ExistsBySlugAsync(string slug, CancellationToken ct = default)
+        => await _context.SubscriptionPlans
+            .AnyAsync(p => p.Slug == slug, ct);
+
+    public async Task<bool> ExistsBySlugAsync(string slug, Guid excludeId, CancellationToken ct = default)
+        => await _context.SubscriptionPlans
+            .AnyAsync(p => p.Slug == slug && p.Id != excludeId, ct);
 
     // ── WRITE ─────────────────────────────────────
     public async Task<SubscriptionPlan> CreateAsync(SubscriptionPlan plan, CancellationToken ct = default)

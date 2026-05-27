@@ -3,6 +3,7 @@ using Anonwork.Application.Features.Follows;
 using Anonwork.Application.Features.Payments;
 using Anonwork.Application.Features.Posts;
 using Anonwork.Application.Features.Subjects;
+using Anonwork.Application.Features.SubscriptionPlans;
 using Anonwork.Application.Features.Users;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -58,6 +59,14 @@ namespace Anonwork.Application
             services.AddScoped<GetOrderStatusUseCase>();
             services.AddScoped<HandleSepayWebhookUseCase>();
             services.AddScoped<RenewSubscriptionUseCase>();
+
+            // ── SubscriptionPlans Use Cases ─────────
+            services.AddScoped<GetAllSubscriptionPlansUseCase>();
+            services.AddScoped<GetSubscriptionPlanByIdUseCase>();
+            services.AddScoped<GetSubscriptionPlanBySlugUseCase>();
+            services.AddScoped<CreateSubscriptionPlanUseCase>();
+            services.AddScoped<UpdateSubscriptionPlanUseCase>();
+            services.AddScoped<DeleteSubscriptionPlanUseCase>();
 
             return services;
         }
