@@ -8,14 +8,15 @@ namespace Anonwork.Application.Features.Subjects;
 /// <summary>
 /// Use case for updating an existing subject
 /// </summary>
-public class UpdateSubjectUseCase(ISubjectRepository subjectRepo)
+public class UpdateSubjectUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<Subject> _subjectRepo = unitOfWork.GetRepository<Subject>();
+
     public async Task<SubjectResponseDto> ExecuteAsync(
         Guid subjectId,
         UpdateSubjectRequestDto request,
         CancellationToken ct = default)
     {
-        // ── Validation ──────────────────────────────
         if (subjectId == Guid.Empty)
             throw new ArgumentException("Subject id is required.");
 
@@ -25,30 +26,24 @@ public class UpdateSubjectUseCase(ISubjectRepository subjectRepo)
         if (string.IsNullOrWhiteSpace(request.Slug))
             throw new ArgumentException("Subject slug is required.");
 
-        // ── Get existing subject ────────────────────
-        var subject = await subjectRepo.GetByIdAsync(subjectId, ct);
+        var subject = await _subjectRepo.GetByIdAsync(subjectId, ct)
+            ?? throw new NotFoundException(nameof(Subject), subjectId);
 
-        if (subject is null)
-            throw new NotFoundException(nameof(Subject), subjectId);
-
-        // ── Check if new slug already exists ────────
         var normalizedNewSlug = request.Slug.Trim().ToLower();
         if (subject.Slug != normalizedNewSlug)
         {
-            var slugExists = await subjectRepo.ExistsBySlugAsync(normalizedNewSlug, ct);
-            if (slugExists)
+            var slugExists = await _subjectRepo.FindSingleAsync(s => s.Slug == normalizedNewSlug, ct);
+            if (slugExists is not null)
                 throw new InvalidOperationException($"Subject with slug '{normalizedNewSlug}' already exists.");
         }
 
-        // ── Update subject ──────────────────────────
         subject.Name = request.Name.Trim();
         subject.Slug = normalizedNewSlug;
         subject.IconEmoji = request.IconEmoji?.Trim();
 
-        // ── Save to repository ──────────────────────
-        await subjectRepo.UpdateAsync(subject, ct);
+        await _subjectRepo.UpdateAsync(subject, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        // ── Return response ─────────────────────────
         return MapToResponse(subject);
     }
 

@@ -7,15 +7,17 @@ using Anonwork.Application.Common.Model;
 
 namespace Anonwork.Application.Features.Auth;
 
-public class RegisterUseCase(IUserRepository userRepo, IJwtService jwtService, IPasswordHasher passwordHasher)
+public class RegisterUseCase(IUnitOfWork unitOfWork, IJwtService jwtService, IPasswordHasher passwordHasher)
 {
+    private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
+
     public async Task<AuthResult> ExecuteAsync(RegisterRequest req, CancellationToken ct = default)
     {
         // ── Validation ──────────────────────────────
-        if (await userRepo.ExistsByEmailAsync(req.Email, ct))
+        if (await _userRepo.ExistsAsync(u => u.Email == req.Email.ToLower().Trim()))
             throw new ConflictException("Email already in use.");
 
-        if (await userRepo.ExistsByUsernameAsync(req.Username, ct))
+        if (await _userRepo.ExistsAsync(u => u.Username == req.Username.ToLower().Trim()))
             throw new ConflictException("Username already taken.");
 
         // ── Anon alias ──────────────────────────────
@@ -28,7 +30,8 @@ public class RegisterUseCase(IUserRepository userRepo, IJwtService jwtService, I
             passwordHasher.Hash(req.Password),
             alias);
 
-        await userRepo.CreateAsync(user, ct);
+        await  _userRepo.AddAsync(user, ct);
+        await unitOfWork.SaveChangesAsync();
 
         // ── Issue tokens ────────────────────────────
         var accessToken = jwtService.GenerateAccessToken(user);
@@ -41,7 +44,7 @@ public class RegisterUseCase(IUserRepository userRepo, IJwtService jwtService, I
     {
         if (requested is not null)
         {
-            if (await userRepo.ExistsByAnonAliasAsync(requested, ct))
+            if (await _userRepo.ExistsAsync(u => u.AnonAlias == requested, ct))
                 throw new ConflictException("Anon alias already taken.");
             return requested;
         }
@@ -50,7 +53,7 @@ public class RegisterUseCase(IUserRepository userRepo, IJwtService jwtService, I
         for (var i = 0; i < 5; i++)
         {
             var alias = AnonAliasGenerator.Generate();
-            if (!await userRepo.ExistsByAnonAliasAsync(alias, ct))
+            if (!await _userRepo.ExistsAsync(u => u.AnonAlias == alias, ct))
                 return alias;
         }
 

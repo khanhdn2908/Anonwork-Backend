@@ -26,6 +26,7 @@ namespace Anonwork.Infrastructure
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"))
                        .UseSnakeCaseNamingConvention());
+            services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
             var redisUrl = configuration["REDIS_URL"]
                 ?? throw new InvalidOperationException("REDIS_URL is not configured.");
@@ -47,23 +48,15 @@ namespace Anonwork.Infrastructure
             // Sepay options
             services.Configure<SepayOptions>(configuration.GetSection(SepayOptions.SectionName));
 
-            // Repositories
-            services.AddScoped<IUserRepository, UserRepository>();
-            services.AddScoped<IPostRepository, PostRepository>();
-            services.AddScoped<ISubjectRepository, SubjectRepository>();
-            services.AddScoped<IFollowRepository, FollowRepository>();
-            services.AddScoped<IOrderRepository, OrderRepository>();
-            services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
-            services.AddScoped<IUserSubscriptionRepository, UserSubscriptionRepository>();
+            // Unit of Work & Generic Repository
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
             // Services
             services.AddScoped<IJwtService, JwtService>();
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
             services.AddScoped<ICloudinaryService, CloudinaryService>();
             services.AddScoped<ISepayService, SepayService>();
-
-            // Background Services
-            services.AddHostedService<SubscriptionRenewalService>();
 
             return services;
         }

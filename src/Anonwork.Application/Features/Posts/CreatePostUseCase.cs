@@ -9,8 +9,10 @@ namespace Anonwork.Application.Features.Posts;
 /// <summary>
 /// Use case for creating a new post
 /// </summary>
-public class CreatePostUseCase(IPostRepository postRepo)
+public class CreatePostUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
+
     public async Task<PostResponseDto> ExecuteAsync(CreatePostRequest req, CancellationToken ct = default)
     {
         // ── Validation ──────────────────────────────
@@ -67,7 +69,8 @@ public class CreatePostUseCase(IPostRepository postRepo)
         }
 
         // ── Save to database ────────────────────────
-        await postRepo.CreateAsync(post, ct);
+        await _postRepo.AddAsync(post, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         // ── Return response ─────────────────────────
         return MapToResponse(post);

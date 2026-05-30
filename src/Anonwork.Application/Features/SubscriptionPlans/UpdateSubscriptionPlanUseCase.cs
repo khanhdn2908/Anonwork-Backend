@@ -3,18 +3,21 @@ using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Features.SubscriptionPlans.DTOs;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Common.Exceptions;
+using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.SubscriptionPlans;
 
-public class UpdateSubscriptionPlanUseCase(ISubscriptionPlanRepository subscriptionPlanRepo)
+public class UpdateSubscriptionPlanUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<SubscriptionPlan> _subscriptionPlanRepo = unitOfWork.GetRepository<SubscriptionPlan>();
+
     public async Task<SubscriptionPlanResponseDto> ExecuteAsync(
         Guid id,
         UpdateSubscriptionPlanRequestDto request,
         CancellationToken ct = default)
     {
         // Get existing plan
-        var existingPlan = await subscriptionPlanRepo.GetByIdAsync(id, ct)
+        var existingPlan = await _subscriptionPlanRepo.GetByIdAsync(id, ct)
             ?? throw new NotFoundException($"Subscription plan with ID {id} not found.");
 
         // Generate slug if not provided
@@ -29,7 +32,7 @@ public class UpdateSubscriptionPlanUseCase(ISubscriptionPlanRepository subscript
         }
 
         // Check if slug already exists (excluding current plan)
-        if (await subscriptionPlanRepo.ExistsBySlugAsync(slug, id, ct))
+        if (await _subscriptionPlanRepo.ExistsAsync(s => s.Slug == slug && s.Id != id, ct))
         {
             throw new ConflictException($"Subscription plan with slug '{slug}' already exists.");
         }
@@ -42,7 +45,8 @@ public class UpdateSubscriptionPlanUseCase(ISubscriptionPlanRepository subscript
         existingPlan.Features = request.Features?.Trim();
         existingPlan.IsActive = request.IsActive;
 
-        await subscriptionPlanRepo.UpdateAsync(existingPlan, ct);
+        await _subscriptionPlanRepo.UpdateAsync(existingPlan, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         return new SubscriptionPlanResponseDto(
             existingPlan.Id,

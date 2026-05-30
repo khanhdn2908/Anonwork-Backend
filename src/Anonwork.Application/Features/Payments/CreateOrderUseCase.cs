@@ -7,17 +7,17 @@ using Anonwork.Domain.Enums;
 
 namespace Anonwork.Application.Features.Payments;
 
-public class CreateOrderUseCase(
-    IOrderRepository orderRepo,
-    ISubscriptionPlanRepository planRepo,
-    ISepayService sepayService)
+public class CreateOrderUseCase(IUnitOfWork unitOfWork, ISepayService sepayService)
 {
+    private readonly IGenericRepository<Order> _orderRepo = unitOfWork.GetRepository<Order>();
+    private readonly IGenericRepository<SubscriptionPlan> _planRepo = unitOfWork.GetRepository<SubscriptionPlan>();
+
     public async Task<OrderResponse> ExecuteAsync(
     Guid userId,
     CreateOrderRequest req,
     CancellationToken ct = default)
     {
-        var plan = await planRepo.GetByIdAsync(req.PlanId, ct)
+        var plan = await _planRepo.GetByIdAsync(req.PlanId, ct)
             ?? throw new NotFoundException("Subscription plan not found.");
 
         if (!plan.IsActive)
@@ -51,7 +51,8 @@ public class CreateOrderUseCase(
             UpdatedAt = now
         };
 
-        await orderRepo.CreateAsync(order, ct);
+        await _orderRepo.AddAsync(order, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         return new OrderResponse(
             order.Id,

@@ -7,25 +7,24 @@ namespace Anonwork.Application.Features.Subjects;
 /// <summary>
 /// Use case for creating a new subject
 /// </summary>
-public class CreateSubjectUseCase(ISubjectRepository subjectRepo)
+public class CreateSubjectUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<Subject> _subjectRepo = unitOfWork.GetRepository<Subject>();
+
     public async Task<SubjectResponseDto> ExecuteAsync(
         CreateSubjectRequestDto request,
         CancellationToken ct = default)
     {
-        // ── Validation ──────────────────────────────
         if (string.IsNullOrWhiteSpace(request.Name))
             throw new ArgumentException("Subject name is required.");
 
         if (string.IsNullOrWhiteSpace(request.Slug))
             throw new ArgumentException("Subject slug is required.");
 
-        // ── Check if slug already exists ─────────────
-        var slugExists = await subjectRepo.ExistsBySlugAsync(request.Slug, ct);
-        if (slugExists)
+        var existing = await _subjectRepo.FindSingleAsync(s => s.Slug == request.Slug.Trim().ToLower(), ct);
+        if (existing is not null)
             throw new InvalidOperationException($"Subject with slug '{request.Slug}' already exists.");
 
-        // ── Create subject ──────────────────────────
         var subject = new Subject
         {
             Id = Guid.NewGuid(),
@@ -36,11 +35,10 @@ public class CreateSubjectUseCase(ISubjectRepository subjectRepo)
             CreatedAt = DateTime.UtcNow
         };
 
-        // ── Save to repository ──────────────────────
-        var createdSubject = await subjectRepo.CreateAsync(subject, ct);
+        var created = await _subjectRepo.AddAsync(subject, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        // ── Return response ─────────────────────────
-        return MapToResponse(createdSubject);
+        return MapToResponse(created);
     }
 
     private static SubjectResponseDto MapToResponse(Subject subject)

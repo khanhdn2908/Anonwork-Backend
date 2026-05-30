@@ -8,24 +8,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Anonwork.Application.Features.Payments;
 
-public class HandleSepayWebhookUseCase
+public class HandleSepayWebhookUseCase(IUnitOfWork unitOfWork, ILogger<HandleSepayWebhookUseCase> logger)
 {
-    private readonly IOrderRepository _orderRepository;
-    private readonly IUserSubscriptionRepository _userSubscriptionRepository;
-    private readonly ISubscriptionPlanRepository _subscriptionPlanRepository;
-    private readonly ILogger<HandleSepayWebhookUseCase> _logger;
-
-    public HandleSepayWebhookUseCase(
-        IOrderRepository orderRepository,
-        IUserSubscriptionRepository userSubscriptionRepository,
-        ISubscriptionPlanRepository subscriptionPlanRepository,
-        ILogger<HandleSepayWebhookUseCase> logger)
-    {
-        _orderRepository = orderRepository;
-        _userSubscriptionRepository = userSubscriptionRepository;
-        _subscriptionPlanRepository = subscriptionPlanRepository;
-        _logger = logger;
-    }
+    private readonly IGenericRepository<Order> _orderRepository = unitOfWork.GetRepository<Order>();
+    private readonly IGenericRepository<UserSubscription> _userSubscriptionRepository = unitOfWork.GetRepository<UserSubscription>();
+    private readonly IGenericRepository<SubscriptionPlan> _subscriptionPlanRepository = unitOfWork.GetRepository<SubscriptionPlan>();
+    private readonly ILogger<HandleSepayWebhookUseCase> _logger = logger;
 
     public async Task<WebhookResult> ExecuteAsync(SepayWebhookRequest request, CancellationToken ct = default)
     {
@@ -33,10 +21,6 @@ public class HandleSepayWebhookUseCase
             "Received Sepay webhook. TransactionId={Id}, ReferenceCode={ReferenceCode}, Content={Content}",
             request.Id, request.ReferenceCode, request.Content);
 
-        // 1. Trích xuất OrderCode từ Content (nội dung chuyển khoản)
-        //    Sepay gửi nội dung chuyển khoản nguyên văn, cần parse ra order code.
-        //    OrderCode của mình được nhúng vào trong Content, ví dụ:
-        //    "Thanh toan ORD-20240527-ABC123 goi Premium"
         var orderCode = ExtractOrderCode(request.Content);
         if (orderCode is null)
         {
@@ -49,7 +33,7 @@ public class HandleSepayWebhookUseCase
         }
 
         // 2. Tìm order theo OrderCode
-        var order = await _orderRepository.GetByOrderCodeAsync(orderCode, ct);
+        var order = await _orderRepository.FindSingleAsync(o => o.OrderCode == orderCode);
         if (order is null)
         {
             _logger.LogWarning(
@@ -79,6 +63,7 @@ public class HandleSepayWebhookUseCase
             order.Status = OrderStatus.Expired;
             order.UpdatedAt = DateTime.UtcNow;
             await _orderRepository.UpdateAsync(order, ct);
+            await unitOfWork.SaveChangesAsync(ct);
 
             return WebhookResult.Ok("Order expired");
         }
@@ -155,7 +140,8 @@ public class HandleSepayWebhookUseCase
         await _orderRepository.UpdateAsync(order, ct);
 
         // Tạo hoặc gia hạn UserSubscription
-        var existing = await _userSubscriptionRepository.GetActiveByUserIdAsync(order.UserId, ct);
+        var existing = await _userSubscriptionRepository.FindSingleAsync(s => s.UserId == order.UserId && 
+                                                                        s.Status == SubscriptionStatus.Active);
 
         if (existing is not null)
         {
@@ -167,6 +153,7 @@ public class HandleSepayWebhookUseCase
             existing.ExpiresAt = baseDate.AddDays(plan.DurationDays);
             //existing.UpdatedAt = DateTime.UtcNow;
             await _userSubscriptionRepository.UpdateAsync(existing, ct);
+            await unitOfWork.SaveChangesAsync(ct);
 
             _logger.LogInformation(
                 "Subscription renewed. UserId={UserId}, NewExpiry={NewExpiry}",
@@ -187,7 +174,8 @@ public class HandleSepayWebhookUseCase
                 //UpdatedAt = DateTime.UtcNow,
             };
 
-            await _userSubscriptionRepository.CreateAsync(subscription, ct);
+            await _userSubscriptionRepository.AddAsync(subscription, ct);
+            await unitOfWork.SaveChangesAsync(ct);
 
             _logger.LogInformation(
                 "Subscription created. UserId={UserId}, PlanId={PlanId}, ExpiresAt={ExpiresAt}",

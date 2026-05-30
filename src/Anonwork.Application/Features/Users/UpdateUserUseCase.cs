@@ -2,24 +2,26 @@ using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Features.Users.DTOs;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Common.Exceptions;
+using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.Users;
 
-public class UpdateUserUseCase(IUserRepository userRepo)
+public class UpdateUserUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
+
     public async Task<GetMeResponseDto> ExecuteAsync(
         Guid userId,
         UpdateUserRequestDto req,
         CancellationToken ct = default)
     {
-        var user = await userRepo.GetByIdAsync(userId, ct)
+        var user = await _userRepo.GetByIdAsync(userId, ct)
             ?? throw new NotFoundException("User not found.");
 
-        // Update fields if provided
         if (!string.IsNullOrWhiteSpace(req.Username))
         {
-            // Check if username already exists (and it's not the same user)
-            var existingUser = await userRepo.GetByUsernameAsync(req.Username, ct);
+            var existingUsers = await _userRepo.FindAsync(u => u.Username == req.Username.ToLower().Trim(), ct);
+            var existingUser = existingUsers.FirstOrDefault();
             if (existingUser is not null && existingUser.Id != userId)
                 throw new BadRequestException("Username already taken.");
 
@@ -37,7 +39,8 @@ public class UpdateUserUseCase(IUserRepository userRepo)
 
         user.UpdatedAt = DateTime.UtcNow;
 
-        await userRepo.UpdateAsync(user, ct);
+        await _userRepo.UpdateAsync(user, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         return new GetMeResponseDto(
             user.Id,

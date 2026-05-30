@@ -1,12 +1,15 @@
 using Anonwork.Application.Interfaces;
+using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.Follows;
 
 /// <summary>
 /// Use case for unfollowing a user
 /// </summary>
-public class UnfollowUserUseCase(IFollowRepository followRepository)
+public class UnfollowUserUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<Follow> _followRepository = unitOfWork.GetRepository<Follow>();
+
     public async Task ExecuteAsync(Guid currentUserId, Guid followingId, CancellationToken ct = default)
     {
         // ── Validate input ──────────────────────────
@@ -17,11 +20,12 @@ public class UnfollowUserUseCase(IFollowRepository followRepository)
             throw new ArgumentException("Following user ID is required.");
 
         // ── Check if follow relationship exists ─────
-        var followExists = await followRepository.ExistsByFollowerAndFollowingAsync(currentUserId, followingId, ct);
-        if (!followExists)
+        var follow = await _followRepository.FindSingleAsync(f => f.FollowerId == currentUserId && f.FollowingId == followingId, ct);
+        if (follow == null)
             throw new KeyNotFoundException("Follow relationship not found.");
 
         // ── Delete follow relationship ──────────────
-        await followRepository.DeleteByFollowerAndFollowingAsync(currentUserId, followingId, ct);
+        await _followRepository.DeleteAsync(follow.Id, ct);
+        await unitOfWork.SaveChangesAsync(ct);
     }
 }

@@ -1,14 +1,17 @@
 using Anonwork.Application.Features.Posts.DTOs;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Anonwork.Application.Features.Posts;
 
 /// <summary>
 /// Use case for getting posts with pagination and search
 /// </summary>
-public class GetPostsUseCase(IPostRepository postRepo)
+public class GetPostsUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
+
     public async Task<PostListResponseDto> ExecuteAsync(
         int page = 1,
         int pageSize = 10,
@@ -21,9 +24,22 @@ public class GetPostsUseCase(IPostRepository postRepo)
         if (pageSize > 100) pageSize = 100; // Max 100 per page
 
         // ── Get posts ───────────────────────────────
-        var (posts, total) = string.IsNullOrWhiteSpace(searchQuery)
-            ? await postRepo.GetAllAsync(page, pageSize, ct)
-            : await postRepo.SearchAsync(searchQuery, page, pageSize, ct);
+        var query = _postRepo.GetQueryableNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            var keyword = searchQuery.Trim();
+            query = query.Where(p =>
+                p.Title.Contains(keyword) ||
+                p.Content.Contains(keyword));
+        }
+
+        var total = await _postRepo.CountAsync(ct);
+        var posts = await query
+            .OrderByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
 
         // ── Calculate pagination ────────────────────
         var totalPages = (int)Math.Ceiling((double)total / pageSize);

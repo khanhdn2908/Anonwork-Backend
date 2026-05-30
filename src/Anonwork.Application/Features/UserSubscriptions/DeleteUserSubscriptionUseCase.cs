@@ -3,14 +3,9 @@ using Anonwork.Domain.Enums;
 
 namespace Anonwork.Application.Features.UserSubscriptions;
 
-public class DeleteUserSubscriptionUseCase
+public class DeleteUserSubscriptionUseCase(IUnitOfWork unitOfWork)
 {
-    private readonly IUserSubscriptionRepository _userSubscriptionRepository;
-
-    public DeleteUserSubscriptionUseCase(IUserSubscriptionRepository userSubscriptionRepository)
-    {
-        _userSubscriptionRepository = userSubscriptionRepository;
-    }
+    private readonly IGenericRepository<Anonwork.Domain.Entities.UserSubscription> _userSubscriptionRepository = unitOfWork.GetRepository<Anonwork.Domain.Entities.UserSubscription>();
 
     public async Task<bool> ExecuteAsync(Guid id, CancellationToken ct = default)
     {
@@ -29,6 +24,7 @@ public class DeleteUserSubscriptionUseCase
 
         // Delete the subscription
         await _userSubscriptionRepository.DeleteAsync(id, ct);
+        await unitOfWork.SaveChangesAsync(ct);
         return true;
     }
 }

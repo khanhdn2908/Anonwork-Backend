@@ -1,40 +1,48 @@
 using Anonwork.Application.Features.Subjects.DTOs;
 using Anonwork.Application.Interfaces;
+using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.Subjects;
 
 /// <summary>
 /// Use case for getting subjects with search and pagination
 /// </summary>
-public class GetSubjectsUseCase(ISubjectRepository subjectRepo)
+public class GetSubjectsUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<Subject> _subjectRepo = unitOfWork.GetRepository<Subject>();
+
     public async Task<SubjectListResponseDto> ExecuteAsync(
         string? searchQuery = null,
         int page = 1,
         int pageSize = 10,
         CancellationToken ct = default)
     {
-        // ── Validation ──────────────────────────────
         if (page < 1)
             page = 1;
 
         if (pageSize < 1 || pageSize > 100)
             pageSize = 10;
 
-        // ── Get subjects ────────────────────────────
-        var (subjects, total) = await subjectRepo.GetAllAsync(
-            searchQuery,
-            page,
-            pageSize,
-            ct);
+        var allSubjects = await _subjectRepo.GetAllAsync(ct);
 
-        // ── Calculate total pages ───────────────────
-        var totalPages = (int)Math.Ceiling(total / (double)pageSize);
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            var searchTerm = searchQuery.Trim().ToLower();
+            allSubjects = allSubjects.Where(s =>
+                s.Name.ToLower().Contains(searchTerm) ||
+                s.Slug.ToLower().Contains(searchTerm));
+        }
 
-        // ── Map to response ─────────────────────────
-        var subjectDtos = subjects
-            .Select(MapToResponse)
+        var total = allSubjects.Count();
+        var pagedSubjects = allSubjects
+            .OrderByDescending(s => s.PostCount)
+            .ThenByDescending(s => s.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToList();
+
+        var totalPages = (int)Math.Ceiling(total / (double)pageSize);
+        var subjectDtos = pagedSubjects.Select(MapToResponse).ToList();
 
         return new SubjectListResponseDto(
             Subjects: subjectDtos,
@@ -45,7 +53,7 @@ public class GetSubjectsUseCase(ISubjectRepository subjectRepo)
         );
     }
 
-    private static SubjectResponseDto MapToResponse(Anonwork.Domain.Entities.Subject subject)
+    private static SubjectResponseDto MapToResponse(Subject subject)
     {
         return new SubjectResponseDto(
             Id: subject.Id,

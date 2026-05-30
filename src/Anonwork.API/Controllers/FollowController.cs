@@ -16,18 +16,7 @@ public class FollowController(
     GetFollowStatsUseCase getFollowStatsUseCase,
     IsFollowingUseCase isFollowingUseCase) : BaseApiController
 {
-    /// <summary>
-    /// Follow a user
-    /// </summary>
-    /// <remarks>
-    /// Requires authentication. Creates a follow relationship between the current user and the target user.
-    /// 
-    /// Sample request:
-    /// 
-    ///     POST /api/v1/follows
-    ///     {
-    ///       "followingId": "550e8400-e29b-41d4-a716-446655440000"
-    ///     }
+
     /// </remarks>
     /// <param name="request">Follow request containing the user ID to follow</param>
     /// <param name="ct">Cancellation token</param>

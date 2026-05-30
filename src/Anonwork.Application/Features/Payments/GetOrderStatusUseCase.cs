@@ -7,14 +7,15 @@ using Anonwork.Domain.Enums;
 
 namespace Anonwork.Application.Features.Payments;
 
-public class GetOrderStatusUseCase(IOrderRepository orderRepo, ISepayService sepayService)
+public class GetOrderStatusUseCase(IUnitOfWork unitOfWork, ISepayService sepayService)
 {
+    private readonly IGenericRepository<Order> _orderRepository = unitOfWork.GetRepository<Order>();
     public async Task<OrderResponse> ExecuteAsync(
         Guid userId,
         Guid orderId,
         CancellationToken ct = default)
     {
-        var order = await orderRepo.GetByIdAsync(orderId, ct)
+        var order = await _orderRepository.GetByIdAsync(orderId, ct)
             ?? throw new NotFoundException("Order not found.");
 
         if (order.UserId != userId) throw new UnauthorizedException("Order does not belong to you");
@@ -25,7 +26,8 @@ public class GetOrderStatusUseCase(IOrderRepository orderRepo, ISepayService sep
         {
             order.Status = OrderStatus.Expired;
 
-            await orderRepo.UpdateAsync(order, ct);
+            await _orderRepository.UpdateAsync(order);
+            await unitOfWork.SaveChangesAsync();
         }
 
         var qrUrl = sepayService.GenerateQrUrl(

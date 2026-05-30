@@ -35,7 +35,7 @@ public enum ReportStatus
     pending, resolved, dismissed
 }
 
-public enum SubscriptionPlan
+public enum Plan
 {
     free, premiummonth, premiumyear
 }

@@ -1,20 +1,22 @@
 using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Common.Exceptions;
+using Anonwork.Domain.Entities;
 using Anonwork.Domain.Enums;
 
 namespace Anonwork.Application.Features.Payments;
 
-public class RenewSubscriptionUseCase(
-    IUserSubscriptionRepository subscriptionRepo,
-    ISubscriptionPlanRepository planRepo)
+public class RenewSubscriptionUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<UserSubscription> _subscriptionRepo = unitOfWork.GetRepository<UserSubscription>();
+    private readonly IGenericRepository<SubscriptionPlan> _planRepo = unitOfWork.GetRepository<SubscriptionPlan>();
+
     public async Task ExecuteAsync(
         Guid subscriptionId,
         CancellationToken ct = default)
     {
         // ── Get subscription ────────────────────────
-        var subscription = await subscriptionRepo.GetByIdAsync(subscriptionId, ct)
+        var subscription = await _subscriptionRepo.GetByIdAsync(subscriptionId, ct)
             ?? throw new NotFoundException("Subscription not found.");
 
         // ── Guard: không gia hạn subscription đã cancel
@@ -22,7 +24,7 @@ public class RenewSubscriptionUseCase(
             throw new InvalidOperationException("Cannot renew a cancelled subscription.");
 
         // ── Get plan ────────────────────────────────
-        var plan = await planRepo.GetByIdAsync(subscription.PlanId, ct)
+        var plan = await _planRepo.GetByIdAsync(subscription.PlanId, ct)
             ?? throw new NotFoundException("Subscription plan not found.");
 
         // ── Guard: plan bị deactivate thì không gia hạn
@@ -39,6 +41,7 @@ public class RenewSubscriptionUseCase(
         subscription.ExpiresAt = baseDate.AddDays(plan.DurationDays);
         //subscription.UpdatedAt = DateTime.UtcNow;
 
-        await subscriptionRepo.UpdateAsync(subscription, ct);
+        await _subscriptionRepo.UpdateAsync(subscription, ct);
+        await unitOfWork.SaveChangesAsync(ct);
     }
 }

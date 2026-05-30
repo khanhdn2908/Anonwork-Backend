@@ -1,6 +1,7 @@
 using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Common.Exceptions;
+using Anonwork.Domain.Entities;
 using Post = Anonwork.Domain.Entities.Post;
 
 namespace Anonwork.Application.Features.Posts;
@@ -8,8 +9,11 @@ namespace Anonwork.Application.Features.Posts;
 /// <summary>
 /// Use case for deleting a post
 /// </summary>
-public class DeletePostUseCase(IPostRepository postRepo, ICloudinaryService cloudinaryService, IUserRepository userRepo)
+public class DeletePostUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudinaryService)
 {
+    private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
+    private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
+
     public async Task ExecuteAsync(Guid postId, Guid userId, CancellationToken ct = default)
     {
         // ── Validation ──────────────────────────────
@@ -17,12 +21,12 @@ public class DeletePostUseCase(IPostRepository postRepo, ICloudinaryService clou
             throw new ArgumentException("Post id is required.");
 
         // ── Get post ────────────────────────────────
-        var post = await postRepo.GetByIdWithDetailsAsync(postId, ct);
+        var post = await _postRepo.FindSingleWithTrackingAsync(p => p.Id == postId, ct);
         if (post is null)
             throw new NotFoundException(nameof(Post), postId);
 
         // ── Get user to check role ──────────────────
-        var user = await userRepo.GetByIdAsync(userId, ct);
+        var user = await _userRepo.GetByIdAsync(userId, ct);
         if (user is null)
             throw new UnauthorizedException("User not found.");
 
@@ -51,7 +55,8 @@ public class DeletePostUseCase(IPostRepository postRepo, ICloudinaryService clou
         }
 
         // ── Soft delete post ────────────────────────
-        await postRepo.DeleteAsync(postId, ct);
+        await _postRepo.DeleteAsync(postId, ct);
+        await unitOfWork.SaveChangesAsync(ct);
     }
 }
 

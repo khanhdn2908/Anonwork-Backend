@@ -1,6 +1,7 @@
 using Anonwork.Application.Features.Posts.DTOs;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Common.Exceptions;
+using Microsoft.EntityFrameworkCore;
 using Post = Anonwork.Domain.Entities.Post;
 
 namespace Anonwork.Application.Features.Posts;
@@ -8,8 +9,10 @@ namespace Anonwork.Application.Features.Posts;
 /// <summary>
 /// Use case for getting a post by id
 /// </summary>
-public class GetPostByIdUseCase(IPostRepository postRepo)
+public class GetPostByIdUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
+
     public async Task<PostResponseDto> ExecuteAsync(Guid postId, CancellationToken ct = default)
     {
         // ── Validation ──────────────────────────────
@@ -17,13 +20,21 @@ public class GetPostByIdUseCase(IPostRepository postRepo)
             throw new ArgumentException("Post id is required.");
 
         // ── Get post ────────────────────────────────
-        var post = await postRepo.GetByIdWithDetailsAsync(postId, ct);
+        var post = await _postRepo.GetQueryableNoTracking()
+            .Include(p => p.Author)
+            .Include(p => p.Subject)
+            .Include(p => p.PostImages)
+            .Include(p => p.PostTags)
+            .FirstOrDefaultAsync(p => p.Id == postId, ct);
 
         if (post is null)
             throw new NotFoundException(nameof(Post), postId);
 
         // ── Increment view count ────────────────────
-        await postRepo.IncrementViewCountAsync(postId, ct);
+        post.ViewCount += 1;
+        post.UpdatedAt = DateTime.UtcNow;
+        await _postRepo.UpdateAsync(post, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         // ── Return response ─────────────────────────
         return MapToResponse(post);

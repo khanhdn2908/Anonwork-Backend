@@ -1,23 +1,14 @@
 using Anonwork.Application.Features.UserSubscriptions.DTOs;
 using Anonwork.Application.Interfaces;
+using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.UserSubscriptions;
 
-public class GetUserSubscriptionByIdUseCase
+public class GetUserSubscriptionByIdUseCase(IUnitOfWork unitOfWork)
 {
-    private readonly IUserSubscriptionRepository _userSubscriptionRepository;
-    private readonly IUserRepository _userRepository;
-    private readonly ISubscriptionPlanRepository _subscriptionPlanRepository;
-
-    public GetUserSubscriptionByIdUseCase(
-        IUserSubscriptionRepository userSubscriptionRepository,
-        IUserRepository userRepository,
-        ISubscriptionPlanRepository subscriptionPlanRepository)
-    {
-        _userSubscriptionRepository = userSubscriptionRepository;
-        _userRepository = userRepository;
-        _subscriptionPlanRepository = subscriptionPlanRepository;
-    }
+    private readonly IGenericRepository<UserSubscription> _userSubscriptionRepository = unitOfWork.GetRepository<UserSubscription>();
+    private readonly IGenericRepository<User> _userRepository = unitOfWork.GetRepository<User>();
+    private readonly IGenericRepository<SubscriptionPlan> _subscriptionPlanRepository = unitOfWork.GetRepository<SubscriptionPlan>();
 
     public async Task<UserSubscriptionResponseDto?> ExecuteAsync(
         Guid id, 

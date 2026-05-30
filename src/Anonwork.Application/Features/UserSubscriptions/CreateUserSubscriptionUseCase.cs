@@ -5,21 +5,11 @@ using Anonwork.Domain.Enums;
 
 namespace Anonwork.Application.Features.UserSubscriptions;
 
-public class CreateUserSubscriptionUseCase
+public class CreateUserSubscriptionUseCase(IUnitOfWork unitOfWork)
 {
-    private readonly IUserSubscriptionRepository _userSubscriptionRepository;
-    private readonly IUserRepository _userRepository;
-    private readonly ISubscriptionPlanRepository _subscriptionPlanRepository;
-
-    public CreateUserSubscriptionUseCase(
-        IUserSubscriptionRepository userSubscriptionRepository,
-        IUserRepository userRepository,
-        ISubscriptionPlanRepository subscriptionPlanRepository)
-    {
-        _userSubscriptionRepository = userSubscriptionRepository;
-        _userRepository = userRepository;
-        _subscriptionPlanRepository = subscriptionPlanRepository;
-    }
+    private readonly IGenericRepository<UserSubscription> _userSubscriptionRepository = unitOfWork.GetRepository<UserSubscription>();
+    private readonly IGenericRepository<User> _userRepository = unitOfWork.GetRepository<User>();
+    private readonly IGenericRepository<SubscriptionPlan> _subscriptionPlanRepository = unitOfWork.GetRepository<SubscriptionPlan>();
 
     public async Task<UserSubscriptionResponseDto> ExecuteAsync(
         CreateUserSubscriptionRequestDto request, 
@@ -36,7 +26,9 @@ public class CreateUserSubscriptionUseCase
             throw new ArgumentException($"Subscription plan with ID {request.PlanId} not found");
 
         // Check if user already has an active subscription
-        var hasActiveSubscription = await _userSubscriptionRepository.HasActiveSubscriptionAsync(request.UserId, ct);
+        var hasActiveSubscription = await _userSubscriptionRepository.ExistsAsync(
+            us => us.UserId == request.UserId && us.Status == SubscriptionStatus.Active,
+            ct);
         if (hasActiveSubscription)
             throw new InvalidOperationException("User already has an active subscription");
 
@@ -57,7 +49,8 @@ public class CreateUserSubscriptionUseCase
             CreatedAt = DateTime.UtcNow
         };
 
-        var createdSubscription = await _userSubscriptionRepository.CreateAsync(subscription, ct);
+        var createdSubscription = await _userSubscriptionRepository.AddAsync(subscription, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         return new UserSubscriptionResponseDto(
             createdSubscription.Id,

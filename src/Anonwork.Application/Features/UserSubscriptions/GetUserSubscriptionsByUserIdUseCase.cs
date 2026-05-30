@@ -1,52 +1,46 @@
 using Anonwork.Application.Features.UserSubscriptions.DTOs;
 using Anonwork.Application.Interfaces;
+using Anonwork.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Anonwork.Application.Features.UserSubscriptions;
 
-public class GetUserSubscriptionsByUserIdUseCase
+public class GetUserSubscriptionsByUserIdUseCase(IUnitOfWork unitOfWork)
 {
-    private readonly IUserSubscriptionRepository _userSubscriptionRepository;
-    private readonly IUserRepository _userRepository;
-    private readonly ISubscriptionPlanRepository _subscriptionPlanRepository;
-
-    public GetUserSubscriptionsByUserIdUseCase(
-        IUserSubscriptionRepository userSubscriptionRepository,
-        IUserRepository userRepository,
-        ISubscriptionPlanRepository subscriptionPlanRepository)
-    {
-        _userSubscriptionRepository = userSubscriptionRepository;
-        _userRepository = userRepository;
-        _subscriptionPlanRepository = subscriptionPlanRepository;
-    }
+    private readonly IGenericRepository<UserSubscription> _userSubscriptionRepository = unitOfWork.GetRepository<UserSubscription>();
+    private readonly IGenericRepository<User> _userRepository = unitOfWork.GetRepository<User>();
+    private readonly IGenericRepository<SubscriptionPlan> _subscriptionPlanRepository = unitOfWork.GetRepository<SubscriptionPlan>();
 
     public async Task<UserSubscriptionListPaginatedResponseDto> ExecuteAsync(
-        GetUserSubscriptionsByUserIdRequestDto request, 
+        GetUserSubscriptionsByUserIdRequestDto request,
         CancellationToken ct = default)
     {
-        // Validate user exists
         var user = await _userRepository.GetByIdAsync(request.UserId, ct);
         if (user == null)
             throw new ArgumentException($"User with ID {request.UserId} not found");
 
-        // Get all subscriptions for the user
-        var allSubscriptions = await _userSubscriptionRepository.GetByUserIdAsync(request.UserId, ct);
-        
-        // Apply pagination
+        var page = request.Page < 1 ? 1 : request.Page;
+        var pageSize = request.PageSize < 1 ? 10 : request.PageSize;
+
+        var allSubscriptions = await _userSubscriptionRepository.GetQueryableNoTracking()
+            .Where(s => s.UserId == request.UserId)
+            .OrderByDescending(s => s.CreatedAt)
+            .ToListAsync(ct);
+
         var totalCount = allSubscriptions.Count;
-        var totalPages = (int)Math.Ceiling((double)totalCount / request.PageSize);
-        
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
         var paginatedSubscriptions = allSubscriptions
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToList();
 
-        // Get plan information for each subscription
         var subscriptionDtos = new List<UserSubscriptionListResponseDto>();
-        
+
         foreach (var subscription in paginatedSubscriptions)
         {
             var plan = await _subscriptionPlanRepository.GetByIdAsync(subscription.PlanId, ct);
-            
+
             subscriptionDtos.Add(new UserSubscriptionListResponseDto(
                 subscription.Id,
                 subscription.UserId,
@@ -64,8 +58,8 @@ public class GetUserSubscriptionsByUserIdUseCase
         return new UserSubscriptionListPaginatedResponseDto(
             subscriptionDtos,
             totalCount,
-            request.Page,
-            request.PageSize,
+            page,
+            pageSize,
             totalPages
         );
     }

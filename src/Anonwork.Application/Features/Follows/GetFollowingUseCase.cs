@@ -1,5 +1,6 @@
 using Anonwork.Application.Features.Follows.DTOs;
 using Anonwork.Application.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.Follows;
@@ -7,8 +8,10 @@ namespace Anonwork.Application.Features.Follows;
 /// <summary>
 /// Use case for getting users that a user is following with pagination
 /// </summary>
-public class GetFollowingUseCase(IFollowRepository followRepository)
+public class GetFollowingUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<Follow> _followRepository = unitOfWork.GetRepository<Follow>();
+
     public async Task<PaginatedFollowResponseDto> ExecuteAsync(
         Guid userId,
         int page = 1,
@@ -26,7 +29,14 @@ public class GetFollowingUseCase(IFollowRepository followRepository)
             throw new ArgumentException("Page size must be between 1 and 100.");
 
         // ── Get following ───────────────────────────
-        var (following, total) = await followRepository.GetFollowingAsync(userId, page, pageSize, ct);
+        var query = _followRepository.GetQueryableNoTracking()
+            .Include(f => f.Follower)
+            .Include(f => f.Following)
+            .Where(f => f.FollowerId == userId)
+            .OrderByDescending(f => f.CreatedAt);
+
+        var total = await query.CountAsync(ct);
+        var following = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
 
         // ── Map to DTO ──────────────────────────────
         var followDtos = following.Select(MapToResponse).ToList();

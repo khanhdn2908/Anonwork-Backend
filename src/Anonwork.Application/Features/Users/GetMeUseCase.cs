@@ -5,11 +5,13 @@ using Anonwork.Domain.Common.Exceptions;
 
 namespace Anonwork.Application.Features.Users;
 
-public class GetMeUseCase(IUserRepository userRepo)
+public class GetMeUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<Anonwork.Domain.Entities.User> _userRepo = unitOfWork.GetRepository<Anonwork.Domain.Entities.User>();
+
     public async Task<GetMeResponseDto> ExecuteAsync(Guid userId, CancellationToken ct = default)
     {
-        var user = await userRepo.GetByIdAsync(userId, ct)
+        var user = await _userRepo.GetByIdAsync(userId, ct)
             ?? throw new NotFoundException("User not found.");
 
         return new GetMeResponseDto(

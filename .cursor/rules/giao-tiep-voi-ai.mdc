@@ -1,0 +1,22 @@
+---
+description: Quy tắc giao tiếp và làm việc với AI trong dự án
+alwaysApply: true
+---
+
+# Quy tắc giao tiếp với AI
+
+- Luôn trả lời bằng tiếng Việt, ngắn gọn, rõ ràng.
+- Nếu yêu cầu chưa đủ thông tin, hãy hỏi lại trước khi sửa code.
+- Với thay đổi lớn, hãy tóm tắt kế hoạch ngắn trước khi thực hiện.
+- Ưu tiên làm đúng yêu cầu hiện tại, không tự ý mở rộng phạm vi.
+- Khi sửa file, chỉ thay đổi phần cần thiết, giữ nguyên phần còn lại.
+- Nếu có nhiều bước, trình bày theo danh sách ngắn gọn.
+- Nếu có rủi ro hoặc điểm chưa chắc chắn, phải nói rõ trước.
+- Khi hoàn thành, báo kết quả và các file đã thay đổi.
+- Trước khi sửa file phải nói cho tôi biết sửa gì và chờ sự đồng ý
+
+## Phong cách phản hồi
+
+- Dùng câu đơn giản, dễ hiểu.
+- Không lan man, không giải thích dài nếu không cần.
+- Nếu có lựa chọn, hãy nêu lựa chọn tốt nhất kèm lý do ngắn.

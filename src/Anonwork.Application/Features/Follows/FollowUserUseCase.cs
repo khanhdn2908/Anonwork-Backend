@@ -1,6 +1,7 @@
 
 using Anonwork.Application.Features.Follows.DTOs;
 using Anonwork.Application.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.Follows;
@@ -8,8 +9,11 @@ namespace Anonwork.Application.Features.Follows;
 /// <summary>
 /// Use case for following a user
 /// </summary>
-public class FollowUserUseCase(IFollowRepository followRepository, IUserRepository userRepository)
+public class FollowUserUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<Follow> _followRepository = unitOfWork.GetRepository<Follow>();
+    private readonly IGenericRepository<User> _userRepository = unitOfWork.GetRepository<User>();
+
     public async Task<FollowResponseDto> ExecuteAsync(Guid currentUserId, FollowUserRequest request, CancellationToken ct = default)
     {
         // ── Validate input ──────────────────────────
@@ -24,12 +28,12 @@ public class FollowUserUseCase(IFollowRepository followRepository, IUserReposito
             throw new InvalidOperationException("You cannot follow yourself.");
 
         // ── Check if following user exists ──────────
-        var followingUserExists = await userRepository.ExistsByIdAsync(request.FollowingId, ct);
+        var followingUserExists = await _userRepository.ExistsAsync(request.FollowingId, ct);
         if (!followingUserExists)
             throw new KeyNotFoundException("User to follow not found.");
 
         // ── Check if already following ──────────────
-        var alreadyFollowing = await followRepository.ExistsByFollowerAndFollowingAsync(currentUserId, request.FollowingId, ct);
+        var alreadyFollowing = await _followRepository.ExistsAsync(f => f.FollowerId == currentUserId && f.FollowingId == request.FollowingId, ct);
         if (alreadyFollowing)
             throw new InvalidOperationException("You are already following this user.");
 
@@ -42,10 +46,14 @@ public class FollowUserUseCase(IFollowRepository followRepository, IUserReposito
             CreatedAt = DateTime.UtcNow,
         };
 
-        var createdFollow = await followRepository.CreateAsync(follow, ct);
+        var createdFollow = await _followRepository.AddAsync(follow, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         // ── Load follow relationship with user data ─
-        var followWithUsers = await followRepository.GetByIdAsync(createdFollow.Id, ct);
+        var followWithUsers = await _followRepository.GetQueryableNoTracking()
+            .Include(f => f.Follower)
+            .Include(f => f.Following)
+            .FirstOrDefaultAsync(f => f.Id == createdFollow.Id, ct);
         if (followWithUsers == null)
             throw new InvalidOperationException("Failed to retrieve created follow relationship.");
 

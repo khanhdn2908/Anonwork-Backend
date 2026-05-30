@@ -8,8 +8,10 @@ namespace Anonwork.Application.Features.Subjects;
 /// <summary>
 /// Use case for getting a subject by id
 /// </summary>
-public class GetSubjectByIdUseCase(ISubjectRepository subjectRepo)
+public class GetSubjectByIdUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<Subject> _subjectRepo = unitOfWork.GetRepository<Subject>();
+
     public async Task<SubjectResponseDto> ExecuteAsync(Guid subjectId, CancellationToken ct = default)
     {
         // ── Validation ──────────────────────────────
@@ -17,7 +19,7 @@ public class GetSubjectByIdUseCase(ISubjectRepository subjectRepo)
             throw new ArgumentException("Subject id is required.");
 
         // ── Get subject ─────────────────────────────
-        var subject = await subjectRepo.GetByIdAsync(subjectId, ct);
+        var subject = await _subjectRepo.GetByIdAsync(subjectId, ct);
 
         if (subject is null)
             throw new NotFoundException(nameof(Subject), subjectId);

@@ -10,8 +10,10 @@ namespace Anonwork.Application.Features.Posts;
 /// <summary>
 /// Use case for updating a post
 /// </summary>
-public class UpdatePostUseCase(IPostRepository postRepo, ICloudinaryService cloudinaryService)
+public class UpdatePostUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudinaryService)
 {
+    private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
+
     public async Task<PostResponseDto> ExecuteAsync(UpdatePostRequest req, CancellationToken ct = default)
     {
         // ── Validation ──────────────────────────────
@@ -19,7 +21,7 @@ public class UpdatePostUseCase(IPostRepository postRepo, ICloudinaryService clou
             throw new ArgumentException("Post id is required.");
 
         // ── Get post ────────────────────────────────
-        var post = await postRepo.GetByIdWithDetailsAsync(req.PostId, ct);
+        var post = await _postRepo.FindSingleWithTrackingAsync(p => p.Id == req.PostId, ct);
         if (post is null)
             throw new NotFoundException(nameof(Post), req.PostId);
 
@@ -91,7 +93,8 @@ public class UpdatePostUseCase(IPostRepository postRepo, ICloudinaryService clou
         post.UpdatedAt = DateTime.UtcNow;
 
         // ── Save to database ───────────────────────
-        await postRepo.UpdateAsync(post, ct);
+        await _postRepo.UpdateAsync(post, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         // ── Return response ────────────────────────
         return MapToResponse(post);

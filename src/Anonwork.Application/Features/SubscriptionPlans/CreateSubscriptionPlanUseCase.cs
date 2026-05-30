@@ -6,14 +6,16 @@ using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.SubscriptionPlans;
 
-public class CreateSubscriptionPlanUseCase(ISubscriptionPlanRepository subscriptionPlanRepo)
+public class CreateSubscriptionPlanUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<SubscriptionPlan> _subscriptionPlanRepo = unitOfWork.GetRepository<SubscriptionPlan>();
+
     public async Task<SubscriptionPlanResponseDto> ExecuteAsync(
         CreateSubscriptionPlanRequestDto request,
         CancellationToken ct = default)
     {
         // Generate slug if not provided
-        var slug = !string.IsNullOrWhiteSpace(request.Slug) 
+        var slug = !string.IsNullOrWhiteSpace(request.Slug)
             ? request.Slug.Trim().ToLowerInvariant()
             : GenerateSlugFromName(request.Name);
 
@@ -24,7 +26,7 @@ public class CreateSubscriptionPlanUseCase(ISubscriptionPlanRepository subscript
         }
 
         // Check if slug already exists
-        if (await subscriptionPlanRepo.ExistsBySlugAsync(slug, ct))
+        if (await _subscriptionPlanRepo.ExistsAsync(p => p.Slug == slug, ct))
         {
             throw new ConflictException($"Subscription plan with slug '{slug}' already exists.");
         }
@@ -42,7 +44,8 @@ public class CreateSubscriptionPlanUseCase(ISubscriptionPlanRepository subscript
             CreatedAt = DateTime.UtcNow
         };
 
-        var createdPlan = await subscriptionPlanRepo.CreateAsync(plan, ct);
+        var createdPlan = await _subscriptionPlanRepo.AddAsync(plan, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
         return new SubscriptionPlanResponseDto(
             createdPlan.Id,

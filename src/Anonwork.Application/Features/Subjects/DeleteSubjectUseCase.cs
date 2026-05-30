@@ -7,21 +7,21 @@ namespace Anonwork.Application.Features.Subjects;
 /// <summary>
 /// Use case for deleting a subject
 /// </summary>
-public class DeleteSubjectUseCase(ISubjectRepository subjectRepo)
+public class DeleteSubjectUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<Subject> _subjectRepo = unitOfWork.GetRepository<Subject>();
+
     public async Task ExecuteAsync(Guid subjectId, CancellationToken ct = default)
     {
-        // ── Validation ──────────────────────────────
         if (subjectId == Guid.Empty)
             throw new ArgumentException("Subject id is required.");
 
-        // ── Check if subject exists ─────────────────
-        var exists = await subjectRepo.ExistsByIdAsync(subjectId, ct);
+        var subject = await _subjectRepo.GetByIdAsync(subjectId, ct);
 
-        if (!exists)
+        if (subject is null)
             throw new NotFoundException(nameof(Subject), subjectId);
 
-        // ── Delete subject ──────────────────────────
-        await subjectRepo.DeleteAsync(subjectId, ct);
+        await _subjectRepo.DeleteAsync(subjectId, ct);
+        await unitOfWork.SaveChangesAsync(ct);
     }
 }

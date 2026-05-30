@@ -1,12 +1,15 @@
 using Anonwork.Application.Interfaces;
+using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.Follows;
 
 /// <summary>
 /// Use case for checking if a user is following another user
 /// </summary>
-public class IsFollowingUseCase(IFollowRepository followRepository)
+public class IsFollowingUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<Follow> _followRepository = unitOfWork.GetRepository<Follow>();
+
     public async Task<bool> ExecuteAsync(Guid followerId, Guid followingId, CancellationToken ct = default)
     {
         // ── Validate input ──────────────────────────
@@ -17,6 +20,6 @@ public class IsFollowingUseCase(IFollowRepository followRepository)
             throw new ArgumentException("Following ID is required.");
 
         // ── Check if following ──────────────────────
-        return await followRepository.IsFollowingAsync(followerId, followingId, ct);
+        return await _followRepository.ExistsAsync(f => f.FollowerId == followerId && f.FollowingId == followingId, ct);
     }
 }
