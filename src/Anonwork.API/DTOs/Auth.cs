@@ -14,6 +14,11 @@ public record LoginRequestDto(
     [Required] string Password
 );
 
+public record GoogleLoginRequestDto(
+    [Required] string IdToken,
+    [MaxLength(80)] string? AnonAlias = null
+);
+
 public record RefreshRequestDto(
     [Required] string RefreshToken
 );

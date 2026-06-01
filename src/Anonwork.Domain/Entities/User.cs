@@ -23,6 +23,10 @@ public partial class User
 
     public string Role { get; set; } = null!;
 
+    public string? GoogleSubject { get; set; }
+
+    public bool IsEmailVerified { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
@@ -71,9 +75,52 @@ public partial class User
             AnonAlias = anonAlias,
             IsAnonDefault = false,
             Role = "student",
+            IsEmailVerified = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
+    }
+
+    public static User CreateGoogleUser(
+        string username,
+        string email,
+        string googleSubject,
+        string avatarUrl,
+        string anonAlias)
+    {
+        return new User
+        {
+            Id = Guid.NewGuid(),
+            Username = username.ToLower().Trim(),
+            Email = email.ToLower().Trim(),
+            PasswordHash = string.Empty,
+            GoogleSubject = googleSubject,
+            AvatarUrl = avatarUrl,
+            AnonAlias = anonAlias,
+            IsAnonDefault = false,
+            Role = "student",
+            IsEmailVerified = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+    }
+
+    public void MarkEmailVerified()
+    {
+        IsEmailVerified = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void LinkGoogleAccount(string googleSubject, string? avatarUrl = null)
+    {
+        GoogleSubject = googleSubject;
+        if (!string.IsNullOrWhiteSpace(avatarUrl))
+        {
+            AvatarUrl = avatarUrl;
+        }
+
+        IsEmailVerified = true;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     // Dùng cho login / update profile sau này

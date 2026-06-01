@@ -14,6 +14,7 @@ namespace Anonwork.API.Controllers;
 public class AuthController(
     RegisterUseCase registerUseCase,
     LoginUseCase loginUseCase,
+    GoogleLoginUseCase googleLoginUseCase,
     RefreshTokenUseCase refreshTokenUseCase,
     LogoutUseCase logoutUseCase) : BaseApiController
 {
@@ -32,6 +33,16 @@ public class AuthController(
     public async Task<IActionResult> Login([FromBody] LoginRequestDto req,CancellationToken ct)
     {
         var result = await loginUseCase.ExecuteAsync(new LoginRequest(req.Email, req.Password), ct);
+
+        return Ok(MapToResponse(result));
+    }
+
+    [HttpPost("google")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequestDto req, CancellationToken ct)
+    {
+        var result = await googleLoginUseCase.ExecuteAsync(
+            new GoogleLoginRequest(req.IdToken, req.AnonAlias), ct);
 
         return Ok(MapToResponse(result));
     }

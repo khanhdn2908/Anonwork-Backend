@@ -14,13 +14,16 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         entity.HasIndex(e => e.AnonAlias, "users_anon_alias_key").IsUnique();
         entity.HasIndex(e => e.Email, "users_email_key").IsUnique();
         entity.HasIndex(e => e.Username, "users_username_key").IsUnique();
+        entity.HasIndex(e => e.GoogleSubject, "users_google_subject_key").IsUnique();
         entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()").HasColumnName("id");
         entity.Property(e => e.AnonAlias).HasMaxLength(80).HasColumnName("anon_alias");
         entity.Property(e => e.AvatarUrl).HasColumnName("avatar_url");
         entity.Property(e => e.Bio).HasColumnName("bio");
         entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
         entity.Property(e => e.Email).HasMaxLength(255).HasColumnName("email");
+        entity.Property(e => e.GoogleSubject).HasMaxLength(255).HasColumnName("google_subject");
         entity.Property(e => e.IsAnonDefault).HasDefaultValue(false).HasColumnName("is_anon_default");
+        entity.Property(e => e.IsEmailVerified).HasDefaultValue(false).HasColumnName("is_email_verified");
         entity.Property(e => e.PasswordHash).HasColumnName("password_hash");
         entity.Property(e => e.Role).HasMaxLength(20).HasDefaultValueSql("'student'::character varying").HasColumnName("role");
         entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");

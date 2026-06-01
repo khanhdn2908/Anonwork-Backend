@@ -22,6 +22,7 @@ namespace Anonwork.Application
             // ── Auth Use Cases ──────────────────────
             services.AddScoped<RegisterUseCase>();
             services.AddScoped<LoginUseCase>();
+            services.AddScoped<GoogleLoginUseCase>();
             services.AddScoped<RefreshTokenUseCase>();  
             services.AddScoped<LogoutUseCase>();
 

@@ -14,8 +14,8 @@ using NpgsqlTypes;
 namespace Anonwork.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260527061249_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260601083139_InitialBaseline")]
+    partial class InitialBaseline
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -798,11 +798,22 @@ namespace Anonwork.Infrastructure.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("email");
 
+                    b.Property<string>("GoogleSubject")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("google_subject");
+
                     b.Property<bool>("IsAnonDefault")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("is_anon_default");
+
+                    b.Property<bool>("IsEmailVerified")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_email_verified");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -842,6 +853,10 @@ namespace Anonwork.Infrastructure.Migrations
                     b.HasIndex(new[] { "Email" }, "users_email_key")
                         .IsUnique()
                         .HasDatabaseName("ix_users_email");
+
+                    b.HasIndex(new[] { "GoogleSubject" }, "users_google_subject_key")
+                        .IsUnique()
+                        .HasDatabaseName("ix_users_google_subject");
 
                     b.HasIndex(new[] { "Username" }, "users_username_key")
                         .IsUnique()
