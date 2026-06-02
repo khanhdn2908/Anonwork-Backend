@@ -9,6 +9,7 @@ public interface IAppDbContext
     public DbSet<Comment> Comments { get; }
     public DbSet<Conversation> Conversations { get; }
     public DbSet<ConversationMember> ConversationMembers { get; }
+    public DbSet<EmailVerificationToken> EmailVerificationTokens { get; }
     public DbSet<Follow> Follows { get; }
     public DbSet<Message> Messages { get; }
     public DbSet<Notification> Notifications { get; }
@@ -17,7 +18,7 @@ public interface IAppDbContext
     public DbSet<PostTag> PostTags { get; }
     public DbSet<Report> Reports { get; }
     public DbSet<Subject> Subjects { get; }
-    public  DbSet<User> Users { get; }
+    public DbSet<User> Users { get; }
     public DbSet<Vote> Votes { get; }
     public DbSet<SubscriptionPlan> SubscriptionPlans { get; }
     public DbSet<Order> Orders { get; }

@@ -15,6 +15,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public virtual DbSet<Comment> Comments { get; set; } = null!;
     public virtual DbSet<Conversation> Conversations { get; set; } = null!;
     public virtual DbSet<ConversationMember> ConversationMembers { get; set; } = null!;
+    public virtual DbSet<EmailVerificationToken> EmailVerificationTokens { get; set; } = null!;
     public virtual DbSet<Follow> Follows { get; set; } = null!;
     public virtual DbSet<Message> Messages { get; set; } = null!;
     public virtual DbSet<Notification> Notifications { get; set; } = null!;

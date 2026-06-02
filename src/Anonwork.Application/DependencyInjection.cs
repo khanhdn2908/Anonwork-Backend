@@ -25,6 +25,7 @@ namespace Anonwork.Application
             services.AddScoped<GoogleLoginUseCase>();
             services.AddScoped<RefreshTokenUseCase>();  
             services.AddScoped<LogoutUseCase>();
+            services.AddScoped<VerifyEmailUseCase>();
 
             // ── Posts Use Cases ─────────────────────
             services.AddScoped<CreatePostUseCase>();

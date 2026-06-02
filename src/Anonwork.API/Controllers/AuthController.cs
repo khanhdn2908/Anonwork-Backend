@@ -13,6 +13,7 @@ namespace Anonwork.API.Controllers;
 [Authorize]
 public class AuthController(
     RegisterUseCase registerUseCase,
+    VerifyEmailUseCase verifyEmailUseCase,
     LoginUseCase loginUseCase,
     GoogleLoginUseCase googleLoginUseCase,
     RefreshTokenUseCase refreshTokenUseCase,
@@ -22,10 +23,18 @@ public class AuthController(
     [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto req, CancellationToken ct)
     {
-        var result = await registerUseCase.ExecuteAsync(
+        await registerUseCase.ExecuteAsync(
             new RegisterRequest(req.Username, req.Email, req.Password, req.AnonAlias), ct);
 
-        return CreatedAtAction(nameof(Register), MapToResponse(result));
+        return Accepted(new { message = "Verification email has been created." });
+    }
+
+    [HttpPost("verify-email")]
+    [AllowAnonymous]
+    public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequestDto req, CancellationToken ct)
+    {
+        var result = await verifyEmailUseCase.ExecuteAsync(new VerifyEmailRequest(req.Email, req.Token), ct);
+        return Ok(MapToResponse(result));
     }
 
     [HttpPost("login")]
@@ -65,8 +74,6 @@ public class AuthController(
 
         return NoContent();
     }
-
-    // ── Helpers ─────────────────────────────────────────
 
     private static AuthResponseDto MapToResponse(AuthResult result) => 
         new(

@@ -9,6 +9,11 @@ public record RegisterRequestDto(
     [MaxLength(80)] string? AnonAlias = null
 );
 
+public record VerifyEmailRequestDto(
+    [Required, EmailAddress] string Email,
+    [Required] string Token
+);
+
 public record LoginRequestDto(
     [Required, EmailAddress] string Email,
     [Required] string Password

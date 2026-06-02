@@ -1,43 +1,71 @@
-﻿using Anonwork.Application.Common;
+﻿using System.Security.Cryptography;
+using System.Text;
+using Anonwork.Application.Common;
 using Anonwork.Application.Common.Exceptions;
-using Anonwork.Application.Interfaces;
 using Anonwork.Application.Features.Auth.DTOs;
+using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
-using Anonwork.Application.Common.Model;
 
 namespace Anonwork.Application.Features.Auth;
 
-public class RegisterUseCase(IUnitOfWork unitOfWork, IJwtService jwtService, IPasswordHasher passwordHasher)
+public class RegisterUseCase(
+    IUnitOfWork unitOfWork,
+    IPasswordHasher passwordHasher,
+    IEmailSender emailSender)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
 
-    public async Task<AuthResult> ExecuteAsync(RegisterRequest req, CancellationToken ct = default)
+    public async Task ExecuteAsync(RegisterRequest req, CancellationToken ct = default)
     {
-        // ── Validation ──────────────────────────────
-        if (await _userRepo.ExistsAsync(u => u.Email == req.Email.ToLower().Trim()))
+        var email = req.Email.ToLower().Trim();
+        var username = req.Username.Trim();
+
+        if (await _userRepo.ExistsAsync(u => u.Email == email, ct))
             throw new ConflictException("Email already in use.");
 
-        if (await _userRepo.ExistsAsync(u => u.Username == req.Username.ToLower().Trim()))
+        if (await _userRepo.ExistsAsync(u => u.Username == username.ToLower(), ct))
             throw new ConflictException("Username already taken.");
 
-        // ── Anon alias ──────────────────────────────
         var alias = await ResolveAnonAliasAsync(req.AnonAlias, ct);
+        var token = GenerateVerificationToken();
+        var tokenHash = HashToken(token);
+        var expiresAt = DateTime.UtcNow.AddMinutes(15);
 
-        // ── Create user ─────────────────────────────
-        var user = User.Create(
-            req.Username,
-            req.Email,
-            passwordHasher.Hash(req.Password),
-            alias);
+        var verificationToken = EmailVerificationToken.Create(email, username, tokenHash, expiresAt);
+        await unitOfWork.GetRepository<EmailVerificationToken>().AddAsync(verificationToken, ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
-        await  _userRepo.AddAsync(user, ct);
-        await unitOfWork.SaveChangesAsync();
+        var subject = "Verify your email for Anonwork";
+        var body = $@"
+            <div style=""font-family: Arial, sans-serif; line-height: 1.6; color: #1f2937;"">
+                <p>Xin chào <strong>{username}</strong>,</p>
 
-        // ── Issue tokens ────────────────────────────
-        var accessToken = jwtService.GenerateAccessToken(user);
-        var refreshToken = await jwtService.GenerateRefreshTokenAsync(user.Id, ct);
+                <p>Chúng tôi đã nhận được yêu cầu xác minh email cho tài khoản Anonwork của bạn.</p>
 
-        return new AuthResult(accessToken, refreshToken, user.Id, user.AnonAlias, user.Role);
+                <div style=""margin: 24px 0; padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; background-color: #f9fafb; text-align: center;"">
+                    <p style=""margin: 0 0 8px; font-size: 14px; color: #6b7280;"">Mã xác minh của bạn là</p>
+                    <div style=""font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #111827;"">{token}</div>
+                </div>
+
+                <p>Mã này sẽ hết hạn sau <strong>15 phút</strong>. Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>
+
+                <p style=""margin-top: 24px;"">Trân trọng,<br/>Đội ngũ Anonwork</p>
+            </div>";
+        await emailSender.SendAsync(email, subject, body, ct);
+
+        _ = alias;
+    }
+
+    private static string GenerateVerificationToken()
+    {
+        var code = RandomNumberGenerator.GetInt32(0, 1_000_000);
+        return code.ToString("D6");
+    }
+
+    public static string HashToken(string token)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token.Trim().ToLowerInvariant()));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
     private async Task<string> ResolveAnonAliasAsync(string? requested, CancellationToken ct)
@@ -49,7 +77,6 @@ public class RegisterUseCase(IUnitOfWork unitOfWork, IJwtService jwtService, IPa
             return requested;
         }
 
-        // Auto-generate với retry tối đa 5 lần
         for (var i = 0; i < 5; i++)
         {
             var alias = AnonAliasGenerator.Generate();
