@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Resend;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,6 +50,13 @@ namespace Anonwork.Infrastructure
 
             // Email options
             services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+            services.Configure<ResendClientOptions>(options =>
+            {
+                options.ApiToken = configuration[$"{EmailOptions.SectionName}:ResendApiKey"]
+                    ?? configuration["RESEND_API_KEY"]
+                    ?? string.Empty;
+            });
+            services.AddHttpClient<IResend, ResendClient>();
 
             // Unit of Work & Generic Repository
             services.AddScoped<IUnitOfWork, UnitOfWork>();
