@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
-using Anonwork.Infrastructure.Services;
+using Anonwork.Infrastructure.Common;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;

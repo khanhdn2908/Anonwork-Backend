@@ -16,7 +16,8 @@ public class AuthController(
     LoginUseCase loginUseCase,
     GoogleLoginUseCase googleLoginUseCase,
     RefreshTokenUseCase refreshTokenUseCase,
-    LogoutUseCase logoutUseCase) : BaseApiController
+    LogoutUseCase logoutUseCase,
+    IConfiguration configuration) : BaseApiController
 {
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto req, CancellationToken ct)

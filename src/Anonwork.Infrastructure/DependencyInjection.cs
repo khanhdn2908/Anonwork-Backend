@@ -1,5 +1,6 @@
 ﻿using Anonwork.Application.Common.Authorization;
 using Anonwork.Application.Interfaces;
+using Anonwork.Application.Common;
 using Anonwork.Infrastructure.Common;
 using Anonwork.Infrastructure.Persistence;
 using Anonwork.Infrastructure.Repositories;
@@ -36,6 +37,7 @@ public static class DependencyInjection
         });
 
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.Configure<MaintenanceOptions>(configuration.GetSection(MaintenanceOptions.SectionName));
         services.Configure<CloudinaryOptions>(configuration.GetSection(CloudinaryOptions.SectionName));
         services.Configure<SepayOptions>(configuration.GetSection(SepayOptions.SectionName));
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));

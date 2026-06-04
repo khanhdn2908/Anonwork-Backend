@@ -1,6 +1,6 @@
 ﻿// Infrastructure/Services/JwtOptions.cs
 
-namespace Anonwork.Infrastructure.Services;
+namespace Anonwork.Infrastructure.Common;
 
 public class JwtOptions
 {
