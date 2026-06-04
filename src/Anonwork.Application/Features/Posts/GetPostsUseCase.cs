@@ -24,7 +24,11 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork)
         if (pageSize > 100) pageSize = 100; // Max 100 per page
 
         // ── Get posts ───────────────────────────────
-        var query = _postRepo.GetQueryableNoTracking();
+        IQueryable<Post> query = _postRepo.GetQueryableNoTracking()
+            .Include(p => p.Author)
+            .Include(p => p.Subject)
+            .Include(p => p.PostImages)
+            .Include(p => p.PostTags);
 
         if (!string.IsNullOrWhiteSpace(searchQuery))
         {
@@ -34,7 +38,7 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork)
                 p.Content.Contains(keyword));
         }
 
-        var total = await _postRepo.CountAsync(ct);
+        var total = await query.CountAsync(ct);
         var posts = await query
             .OrderByDescending(p => p.CreatedAt)
             .Skip((page - 1) * pageSize)
@@ -51,6 +55,14 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork)
 
     private static PostResponseDto MapToResponse(Post post)
     {
+        var imageUrls = post.PostImages
+            .OrderBy(pi => pi.DisplayOrder)
+            .Select(pi => pi.ImageUrl)
+            .ToList();
+
+        var previewImageUrls = imageUrls.Take(2).ToList();
+        var remainingImagesCount = Math.Max(0, imageUrls.Count - previewImageUrls.Count);
+
         return new PostResponseDto(
             Id: post.Id,
             Title: post.Title,
@@ -61,10 +73,8 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork)
             IsAnonymous: post.IsAnonymous,
             SubjectId: post.SubjectId,
             SubjectName: post.Subject?.Name,
-            ImageUrls: post.PostImages
-                .OrderBy(pi => pi.DisplayOrder)
-                .Select(pi => pi.ImageUrl)
-                .ToList(),
+            ImageUrls: previewImageUrls,
+            RemainingImagesCount: remainingImagesCount,
             Tags: post.PostTags
                 .Select(pt => pt.Tag)
                 .ToList(),

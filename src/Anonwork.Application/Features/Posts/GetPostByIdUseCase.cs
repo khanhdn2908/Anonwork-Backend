@@ -42,6 +42,11 @@ public class GetPostByIdUseCase(IUnitOfWork unitOfWork)
 
     private static PostResponseDto MapToResponse(Post post)
     {
+        var imageUrls = post.PostImages
+            .OrderBy(pi => pi.DisplayOrder)
+            .Select(pi => pi.ImageUrl)
+            .ToList();
+
         return new PostResponseDto(
             Id: post.Id,
             Title: post.Title,
@@ -52,10 +57,8 @@ public class GetPostByIdUseCase(IUnitOfWork unitOfWork)
             IsAnonymous: post.IsAnonymous,
             SubjectId: post.SubjectId,
             SubjectName: post.Subject?.Name,
-            ImageUrls: post.PostImages
-                .OrderBy(pi => pi.DisplayOrder)
-                .Select(pi => pi.ImageUrl)
-                .ToList(),
+            ImageUrls: imageUrls,
+            RemainingImagesCount: 0,
             Tags: post.PostTags
                 .Select(pt => pt.Tag)
                 .ToList(),

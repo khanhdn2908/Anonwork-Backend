@@ -52,6 +52,14 @@ public class GetPostsBySubjectUseCase(IUnitOfWork unitOfWork)
 
     private static PostResponseDto MapToResponse(Post post)
     {
+        var imageUrls = post.PostImages
+            .OrderBy(pi => pi.DisplayOrder)
+            .Select(pi => pi.ImageUrl)
+            .ToList();
+
+        var previewImageUrls = imageUrls.Take(2).ToList();
+        var remainingImagesCount = Math.Max(0, imageUrls.Count - previewImageUrls.Count);
+
         return new PostResponseDto(
             Id: post.Id,
             Title: post.Title,
@@ -62,10 +70,8 @@ public class GetPostsBySubjectUseCase(IUnitOfWork unitOfWork)
             IsAnonymous: post.IsAnonymous,
             SubjectId: post.SubjectId,
             SubjectName: post.Subject?.Name,
-            ImageUrls: post.PostImages
-                .OrderBy(pi => pi.DisplayOrder)
-                .Select(pi => pi.ImageUrl)
-                .ToList(),
+            ImageUrls: previewImageUrls,
+            RemainingImagesCount: remainingImagesCount,
             Tags: post.PostTags
                 .Select(pt => pt.Tag)
                 .ToList(),

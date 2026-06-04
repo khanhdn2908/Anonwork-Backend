@@ -14,6 +14,7 @@ public record PostResponseDto(
     Guid SubjectId,
     string? SubjectName,
     List<string> ImageUrls,
+    int RemainingImagesCount,
     List<string> Tags,
     int Upvotes,
     int CommentsCount,
