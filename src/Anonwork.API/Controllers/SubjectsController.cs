@@ -36,7 +36,7 @@ public class SubjectsController(
     /// <returns>Paginated list of subjects</returns>
     /// <response code="200">Subjects retrieved successfully</response>
     [HttpGet]
-    [AllowAnonymous]
+    [Authorize(Policy = "Permission:subjects.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? search = null,
@@ -64,7 +64,7 @@ public class SubjectsController(
     /// <response code="200">Subject found</response>
     /// <response code="404">Subject not found</response>
     [HttpGet("{id:guid}")]
-    [AllowAnonymous]
+    [Authorize(Policy = "Permission:subjects.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct = default)
@@ -103,6 +103,7 @@ public class SubjectsController(
     /// <response code="401">Unauthorized</response>
     [Authorize(Roles = "admin")]
     [HttpPost]
+    [Authorize(Policy = "Permission:subjects.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -150,6 +151,7 @@ public class SubjectsController(
     /// <response code="404">Subject not found</response>
     [Authorize(Roles = "admin")]
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "Permission:subjects.update")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -196,6 +198,7 @@ public class SubjectsController(
     /// <response code="404">Subject not found</response>
     [Authorize(Roles = "admin")]
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "Permission:subjects.delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -45,6 +45,7 @@ public class PostsController(
     /// <response code="400">Invalid request data</response>
     /// <response code="401">Unauthorized</response>
     [HttpPost]
+    [Authorize(Policy = "Permission:posts.create")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -174,6 +175,7 @@ public class PostsController(
     /// <response code="403">Forbidden - not the post author</response>
     /// <response code="404">Post not found</response>
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "Permission:posts.update")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -244,6 +246,7 @@ public class PostsController(
     /// <response code="403">Forbidden - not the post author</response>
     /// <response code="404">Post not found</response>
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "Permission:posts.delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

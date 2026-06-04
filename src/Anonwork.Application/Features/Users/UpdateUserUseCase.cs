@@ -1,3 +1,4 @@
+using System.Linq;
 using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Features.Users.DTOs;
 using Anonwork.Application.Interfaces;
@@ -9,6 +10,9 @@ namespace Anonwork.Application.Features.Users;
 public class UpdateUserUseCase(IUnitOfWork unitOfWork)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
+
+    //private static string GetPrimaryRoleName(User user) =>
+    //    user.UserRoles.FirstOrDefault()?.Role?.Name ?? "user";
 
     public async Task<GetMeResponseDto> ExecuteAsync(
         Guid userId,
@@ -50,7 +54,6 @@ public class UpdateUserUseCase(IUnitOfWork unitOfWork)
             user.Bio,
             user.AnonAlias,
             user.IsAnonDefault,
-            user.Role,
             user.CreatedAt,
             user.UpdatedAt
         );

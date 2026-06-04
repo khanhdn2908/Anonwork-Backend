@@ -52,10 +52,11 @@ public class GoogleLoginUseCase(
 
         await unitOfWork.SaveChangesAsync(ct);
 
-        var accessToken = jwtService.GenerateAccessToken(user);
+        var permissions = Array.Empty<string>();
+        var accessToken = jwtService.GenerateAccessToken(user, permissions);
         var refreshToken = await jwtService.GenerateRefreshTokenAsync(user.Id, ct);
 
-        return new AuthResult(accessToken, refreshToken, user.Id, user.AnonAlias, user.Role);
+        return new AuthResult(accessToken, refreshToken, user.Id, user.AnonAlias);
     }
 
     private static async Task<GoogleJsonWebSignature.Payload> ValidateGoogleTokenAsync(
@@ -74,6 +75,9 @@ public class GoogleLoginUseCase(
 
         return await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
     }
+
+    //private static string GetPrimaryRoleName(User user) =>
+    //    user.UserRoles.FirstOrDefault()?.Role?.Name ?? "user";
 
     private async Task<string> ResolveAnonAliasAsync(string? requested, CancellationToken ct)
     {

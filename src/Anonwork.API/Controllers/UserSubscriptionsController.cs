@@ -79,6 +79,7 @@ public class UserSubscriptionsController(
     /// <response code="200">Subscription found and returned</response>
     /// <response code="404">Subscription not found</response>
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = "Permission:user-subscriptions.read")]
     [ProducesResponseType(typeof(UserSubscriptionResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct = default)
@@ -109,6 +110,7 @@ public class UserSubscriptionsController(
     /// <response code="200">Subscriptions retrieved successfully</response>
     /// <response code="404">User not found</response>
     [HttpGet("user/{userId:guid}")]
+    [Authorize(Policy = "Permission:user-subscriptions.read")]
     [ProducesResponseType(typeof(UserSubscriptionListPaginatedResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetByUserId(
@@ -155,7 +157,7 @@ public class UserSubscriptionsController(
     /// <returns>Updated subscription details</returns>
     /// <response code="200">Subscription updated successfully</response>
     /// <response code="404">Subscription not found</response>
-    [Authorize(Roles = "admin")]
+    [Authorize(Policy = "Permission:user-subscriptions.manage")]
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(UserSubscriptionResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -192,7 +194,7 @@ public class UserSubscriptionsController(
     /// <response code="204">Subscription deleted successfully</response>
     /// <response code="400">Cannot delete active subscription</response>
     /// <response code="404">Subscription not found</response>
-    [Authorize(Roles = "admin")]
+    [Authorize(Policy = "Permission:user-subscriptions.manage")]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

@@ -6,7 +6,6 @@ public record UserListResponseDto(
     string? AvatarUrl,
     string? Bio,
     string AnonAlias,
-    string Role,
     DateTime CreatedAt
 );
 

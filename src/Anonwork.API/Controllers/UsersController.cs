@@ -12,12 +12,13 @@ public class UsersController(
     GetMeUseCase getMeUseCase,
     UpdateUserUseCase updateUserUseCase,
     DeleteUserUseCase deleteUserUseCase,
-    GetAllUsersUseCase getAllUsersUseCase) : BaseApiController
+    GetAllUsersUseCase getAllUsersUseCase,
+    AssignRoleToUserUseCase assignRoleToUserUseCase,
+    RemoveRoleFromUserUseCase removeRoleFromUserUseCase,
+    GetUserRolesUseCase getUserRolesUseCase) : BaseApiController
 {
-    /// <summary>
-    /// Get current user profile
-    /// </summary>
     [HttpGet("me")]
+    [Authorize]
     public async Task<IActionResult> GetMe(CancellationToken ct)
     {
         var userId = GetUserIdFromToken();
@@ -27,21 +28,16 @@ public class UsersController(
         return Ok(result);
     }
 
-    /// <summary>
-    /// Get user by ID
-    /// </summary>
     [HttpGet("{id}")]
+    [Authorize(Policy = "Permission:users.read")]
     public async Task<IActionResult> GetUserById(Guid id, CancellationToken ct)
     {
         var result = await getMeUseCase.ExecuteAsync(id, ct);
         return Ok(result);
     }
 
-    /// <summary>
-    /// Get all users (paginated)
-    /// </summary>
     [HttpGet]
-    [AllowAnonymous]
+    [Authorize(Policy = "Permission:users.read")]
     public async Task<IActionResult> GetAllUsers(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -51,10 +47,8 @@ public class UsersController(
         return Ok(result);
     }
 
-    /// <summary>
-    /// Update current user profile
-    /// </summary>
     [HttpPut("me")]
+    [Authorize]
     public async Task<IActionResult> UpdateMe(
         [FromBody] UpdateUserRequestDto req,
         CancellationToken ct)
@@ -66,25 +60,20 @@ public class UsersController(
         return Ok(result);
     }
 
-    /// <summary>
-    /// Update user by ID (admin only)
-    /// </summary>
-    [Authorize(Roles = "admin")]
+
     [HttpPut("{id}")]
+    [Authorize(Policy = "Permission:users.update")]
     public async Task<IActionResult> UpdateUser(
         Guid id,
         [FromBody] UpdateUserRequestDto req,
         CancellationToken ct)
     {
-
         var result = await updateUserUseCase.ExecuteAsync(id, req, ct);
         return Ok(result);
     }
 
-    /// <summary>
-    /// Delete current user account
-    /// </summary>
     [HttpDelete("me")]
+    [Authorize]
     public async Task<IActionResult> DeleteMe(CancellationToken ct)
     {
         var userId = GetUserIdFromToken();
@@ -94,18 +83,59 @@ public class UsersController(
         return NoContent();
     }
 
-    /// <summary>
-    /// Delete user by ID
-    /// </summary>
-    [Authorize(Roles = "admin")]
+
     [HttpDelete("{id}")]
+    [Authorize(Policy = "Permission:users.delete")]
     public async Task<IActionResult> DeleteUser(Guid id, CancellationToken ct)
     {
-        var userId = GetUserIdFromToken();
-        if (userId is null) return Unauthorized();
-
         await deleteUserUseCase.ExecuteAsync(id, ct);
         return NoContent();
     }
 
+
+    [HttpGet("{userId:guid}/roles")]
+    [Authorize(Policy = "Permission:users.read-roles")]
+    public async Task<IActionResult> GetUserRoles(Guid userId, CancellationToken ct)
+    {
+        try
+        {
+            return Ok(await getUserRolesUseCase.ExecuteAsync(userId, ct));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+
+    [HttpPost("{userId:guid}/roles/{roleId:guid}")]
+    [Authorize(Policy = "Permission:users.assign-role")]
+    public async Task<IActionResult> AssignRole(Guid userId, Guid roleId, CancellationToken ct)
+    {
+        try
+        {
+            await assignRoleToUserUseCase.ExecuteAsync(userId, roleId, ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+
+    [HttpDelete("{userId:guid}/roles/{roleId:guid}")]
+    [Authorize(Policy = "Permission:users.remove-role")]
+    public async Task<IActionResult> RemoveRole(Guid userId, Guid roleId, CancellationToken ct)
+    {
+        try
+        {
+            await removeRoleFromUserUseCase.ExecuteAsync(userId, roleId, ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
 }

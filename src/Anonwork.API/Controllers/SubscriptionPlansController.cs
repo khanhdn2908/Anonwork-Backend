@@ -35,7 +35,7 @@ public class SubscriptionPlansController(
     /// <returns>Paginated list of subscription plans</returns>
     /// <response code="200">Subscription plans retrieved successfully</response>
     [HttpGet]
-    [AllowAnonymous]
+    [Authorize(Policy = "Permission:subscription-plans.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? searchTerm = null,
@@ -65,7 +65,7 @@ public class SubscriptionPlansController(
     /// <response code="200">Subscription plan found</response>
     /// <response code="404">Subscription plan not found</response>
     [HttpGet("{id:guid}")]
-    [AllowAnonymous]
+    [Authorize(Policy = "Permission:subscription-plans.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct = default)
@@ -97,7 +97,7 @@ public class SubscriptionPlansController(
     /// <response code="200">Subscription plan found</response>
     /// <response code="404">Subscription plan not found</response>
     [HttpGet("slug/{slug}")]
-    [AllowAnonymous]
+    [Authorize(Policy = "Permission:subscription-plans.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetBySlug(string slug, CancellationToken ct = default)

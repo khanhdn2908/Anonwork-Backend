@@ -21,9 +21,10 @@ public class RefreshTokenUseCase(IUnitOfWork unitOfWork, IJwtService jwtService)
         // Revoke token cũ, issue cặp mới (rotation)
         await jwtService.RevokeRefreshTokenAsync(refreshToken, ct);
 
-        var newAccessToken = jwtService.GenerateAccessToken(user);
+        var permissions = Array.Empty<string>();
+        var newAccessToken = jwtService.GenerateAccessToken(user, permissions);
         var newRefreshToken = await jwtService.GenerateRefreshTokenAsync(user.Id, ct);
 
-        return new AuthResult(newAccessToken, newRefreshToken, user.Id, user.AnonAlias, user.Role);
+        return new AuthResult(newAccessToken, newRefreshToken, user.Id, user.AnonAlias);
     }
 }

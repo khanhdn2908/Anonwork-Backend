@@ -28,7 +28,6 @@ public class GetAllUsersUseCase(IUnitOfWork unitOfWork)
             u.AvatarUrl,
             u.Bio,
             u.AnonAlias,
-            u.Role,
             u.CreatedAt
         )).ToList();
 

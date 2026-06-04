@@ -1,84 +1,101 @@
 ﻿using Anonwork.Application.Features.Auth;
 using Anonwork.Application.Features.Follows;
 using Anonwork.Application.Features.Payments;
+using Anonwork.Application.Features.Permissions;
 using Anonwork.Application.Features.Posts;
+using Anonwork.Application.Features.Roles;
 using Anonwork.Application.Features.Subjects;
 using Anonwork.Application.Features.SubscriptionPlans;
 using Anonwork.Application.Features.UserSubscriptions;
 using Anonwork.Application.Features.Users;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Anonwork.Application
+namespace Anonwork.Application;
+
+public static class DependencyInjection
 {
-    public static class DependencyInjection
+    public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        public static IServiceCollection AddApplication(this IServiceCollection services)
-        {
-            // ── Auth Use Cases ──────────────────────
-            services.AddScoped<RegisterUseCase>();
-            services.AddScoped<LoginUseCase>();
-            services.AddScoped<GoogleLoginUseCase>();
-            services.AddScoped<RefreshTokenUseCase>();  
-            services.AddScoped<LogoutUseCase>();
-            services.AddScoped<VerifyEmailUseCase>();
+        // ── Auth Use Cases ──────────────────────
+        services.AddScoped<RegisterUseCase>();
+        services.AddScoped<LoginUseCase>();
+        services.AddScoped<GoogleLoginUseCase>();
+        services.AddScoped<RefreshTokenUseCase>();
+        services.AddScoped<LogoutUseCase>();
+        services.AddScoped<VerifyEmailUseCase>();
 
-            // ── Posts Use Cases ─────────────────────
-            services.AddScoped<CreatePostUseCase>();
-            services.AddScoped<GetPostByIdUseCase>();
-            services.AddScoped<GetPostsUseCase>();
-            services.AddScoped<GetPostsBySubjectUseCase>();
-            services.AddScoped<UpdatePostUseCase>();
-            services.AddScoped<DeletePostUseCase>();
+        // ── Posts Use Cases ─────────────────────
+        services.AddScoped<CreatePostUseCase>();
+        services.AddScoped<GetPostByIdUseCase>();
+        services.AddScoped<GetPostsUseCase>();
+        services.AddScoped<GetPostsBySubjectUseCase>();
+        services.AddScoped<UpdatePostUseCase>();
+        services.AddScoped<DeletePostUseCase>();
 
-            // ── Subjects Use Cases ──────────────────
-            services.AddScoped<GetSubjectsUseCase>();
-            services.AddScoped<GetSubjectByIdUseCase>();
-            services.AddScoped<CreateSubjectUseCase>();
-            services.AddScoped<UpdateSubjectUseCase>();
-            services.AddScoped<DeleteSubjectUseCase>();
+        // ── Subjects Use Cases ──────────────────
+        services.AddScoped<GetSubjectsUseCase>();
+        services.AddScoped<GetSubjectByIdUseCase>();
+        services.AddScoped<CreateSubjectUseCase>();
+        services.AddScoped<UpdateSubjectUseCase>();
+        services.AddScoped<DeleteSubjectUseCase>();
 
-            // ── Follows Use Cases ──────────────────
-            services.AddScoped<FollowUserUseCase>();
-            services.AddScoped<GetFollowByIdUseCase>();
-            services.AddScoped<GetFollowersUseCase>();
-            services.AddScoped<GetFollowingUseCase>();
-            services.AddScoped<GetFollowStatsUseCase>();
-            services.AddScoped<IsFollowingUseCase>();
-            services.AddScoped<UnfollowUserUseCase>();
+        // ── Follows Use Cases ──────────────────
+        services.AddScoped<FollowUserUseCase>();
+        services.AddScoped<GetFollowByIdUseCase>();
+        services.AddScoped<GetFollowersUseCase>();
+        services.AddScoped<GetFollowingUseCase>();
+        services.AddScoped<GetFollowStatsUseCase>();
+        services.AddScoped<IsFollowingUseCase>();
+        services.AddScoped<UnfollowUserUseCase>();
 
-            // ── Users Use Cases ─────────────────────
-            services.AddScoped<GetMeUseCase>();
-            services.AddScoped<UpdateUserUseCase>();
-            services.AddScoped<DeleteUserUseCase>();
-            services.AddScoped<GetAllUsersUseCase>();
+        // ── Users Use Cases ─────────────────────
+        services.AddScoped<GetMeUseCase>();
+        services.AddScoped<UpdateUserUseCase>();
+        services.AddScoped<DeleteUserUseCase>();
+        services.AddScoped<GetAllUsersUseCase>();
+        services.AddScoped<AssignRoleToUserUseCase>();
+        services.AddScoped<RemoveRoleFromUserUseCase>();
+        services.AddScoped<GetUserRolesUseCase>();
 
-            // ── Payments Use Cases ──────────────────
-            services.AddScoped<CreateOrderUseCase>();
-            services.AddScoped<GetOrderStatusUseCase>();
-            services.AddScoped<HandleSepayWebhookUseCase>();
-            services.AddScoped<RenewSubscriptionUseCase>();
+        // ── Payments Use Cases ──────────────────
+        services.AddScoped<CreateOrderUseCase>();
+        services.AddScoped<GetOrderStatusUseCase>();
+        services.AddScoped<HandleSepayWebhookUseCase>();
+        services.AddScoped<RenewSubscriptionUseCase>();
 
-            // ── SubscriptionPlans Use Cases ─────────
-            services.AddScoped<GetAllSubscriptionPlansUseCase>();
-            services.AddScoped<GetSubscriptionPlanByIdUseCase>();
-            services.AddScoped<GetSubscriptionPlanBySlugUseCase>();
-            services.AddScoped<CreateSubscriptionPlanUseCase>();
-            services.AddScoped<UpdateSubscriptionPlanUseCase>();
-            services.AddScoped<DeleteSubscriptionPlanUseCase>();
+        // ── Roles Use Cases ─────────────────────
+        services.AddScoped<GetAllRolesUseCase>();
+        services.AddScoped<GetRoleByIdUseCase>();
+        services.AddScoped<CreateRoleUseCase>();
+        services.AddScoped<UpdateRoleUseCase>();
+        services.AddScoped<DeleteRoleUseCase>();
+        services.AddScoped<AssignPermissionToRoleUseCase>();
+        services.AddScoped<AssignPermissionsToRoleUseCase>();
+        services.AddScoped<RemovePermissionFromRoleUseCase>();
+        services.AddScoped<GetRolePermissionsUseCase>();
 
-            // ── UserSubscriptions Use Cases ─────────
-            services.AddScoped<CreateUserSubscriptionUseCase>();
-            services.AddScoped<GetUserSubscriptionByIdUseCase>();
-            services.AddScoped<GetUserSubscriptionsByUserIdUseCase>();
-            services.AddScoped<UpdateUserSubscriptionUseCase>();
-            services.AddScoped<DeleteUserSubscriptionUseCase>();
+        // ── Permissions Use Cases ───────────────
+        services.AddScoped<GetAllPermissionsUseCase>();
+        services.AddScoped<GetPermissionByIdUseCase>();
+        services.AddScoped<CreatePermissionUseCase>();
+        services.AddScoped<UpdatePermissionUseCase>();
+        services.AddScoped<DeletePermissionUseCase>();
 
-            return services;
-        }
+        // ── SubscriptionPlans Use Cases ─────────
+        services.AddScoped<GetAllSubscriptionPlansUseCase>();
+        services.AddScoped<GetSubscriptionPlanByIdUseCase>();
+        services.AddScoped<GetSubscriptionPlanBySlugUseCase>();
+        services.AddScoped<CreateSubscriptionPlanUseCase>();
+        services.AddScoped<UpdateSubscriptionPlanUseCase>();
+        services.AddScoped<DeleteSubscriptionPlanUseCase>();
+
+        // ── UserSubscriptions Use Cases ─────────
+        services.AddScoped<CreateUserSubscriptionUseCase>();
+        services.AddScoped<GetUserSubscriptionByIdUseCase>();
+        services.AddScoped<GetUserSubscriptionsByUserIdUseCase>();
+        services.AddScoped<UpdateUserSubscriptionUseCase>();
+        services.AddScoped<DeleteUserSubscriptionUseCase>();
+
+        return services;
     }
 }

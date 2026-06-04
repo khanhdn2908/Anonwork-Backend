@@ -8,7 +8,6 @@ public record GetMeResponseDto(
     string? Bio,
     string AnonAlias,
     bool IsAnonDefault,
-    string Role,
     DateTime CreatedAt,
     DateTime UpdatedAt
 );

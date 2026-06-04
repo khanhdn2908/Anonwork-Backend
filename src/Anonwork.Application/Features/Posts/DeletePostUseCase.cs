@@ -33,11 +33,11 @@ public class DeletePostUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudi
         // ── Authorization ──────────────────────────
         // Allow if: author OR admin OR moderator
         var isAuthor = post.AuthorId == userId;
-        var isAdmin = user.Role == "admin";
-        var isModerator = user.Role == "moderator";
+        //var isAdmin = user.Role == "admin";
+        //var isModerator = user.Role == "moderator";
 
-        if (!isAuthor && !isAdmin && !isModerator)
-            throw new UnauthorizedException("You can only delete your own posts. Only admins and moderators can delete other posts.");
+        //if (!isAuthor && !isAdmin && !isModerator)
+        //    throw new UnauthorizedException("You can only delete your own posts. Only admins and moderators can delete other posts.");
 
         // ── Delete images from Cloudinary ──────────
         if (post.PostImages.Count > 0)

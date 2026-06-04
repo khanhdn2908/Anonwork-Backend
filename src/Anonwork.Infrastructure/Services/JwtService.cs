@@ -21,17 +21,18 @@ public class JwtService(
     // ACCESS TOKEN
     // ──────────────────────────────────────────
 
-    public string GenerateAccessToken(User user)
+    public string GenerateAccessToken(User user, IEnumerable<string> permissions)
     {
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub,   user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim("username",  user.Username),
-            new Claim(ClaimTypes.Role, user.Role),
-            new Claim("anonAlias", user.AnonAlias)
+            new(JwtRegisteredClaimNames.Sub,   user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString()),
+            new(JwtRegisteredClaimNames.Email, user.Email),
+            new("username",  user.Username),
+            new("anonAlias", user.AnonAlias)
         };
+
+        claims.AddRange(permissions.Select(permission => new Claim("permission", permission)));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_opts.Secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

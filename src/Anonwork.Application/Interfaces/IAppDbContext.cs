@@ -22,6 +22,10 @@ public interface IAppDbContext
     public DbSet<Vote> Votes { get; }
     public DbSet<SubscriptionPlan> SubscriptionPlans { get; }
     public DbSet<Order> Orders { get; }
+    public DbSet<Permission> Permissions { get; }
+    public  DbSet<Role> Roles { get; }
+    public DbSet<RolePermission> RolePermissions { get; }
+    public DbSet<UserRole> UserRoles { get; }
     public DbSet<UserSubscription> UserSubscriptions { get; }
 
     DbSet<T> Set<T>()

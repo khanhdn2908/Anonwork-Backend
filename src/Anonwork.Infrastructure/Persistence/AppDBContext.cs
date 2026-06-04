@@ -28,6 +28,10 @@ public class AppDbContext : DbContext, IAppDbContext
     public virtual DbSet<Vote> Votes { get; set; } = null!;
     public virtual DbSet<SubscriptionPlan> SubscriptionPlans { get; set; } = null!;
     public virtual DbSet<Order> Orders { get; set; } = null!;
+    public virtual DbSet<Permission> Permissions { get; set; } = null!;
+    public virtual DbSet<Role> Roles { get; set; } = null!;
+    public virtual DbSet<RolePermission> RolePermissions { get; set; } = null!;
+    public virtual DbSet<UserRole> UserRoles { get; set; } = null!;
     public virtual DbSet<UserSubscription> UserSubscriptions { get; set; } = null!;
 
     public new DbSet<T> Set<T>()

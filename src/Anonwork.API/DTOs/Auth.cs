@@ -37,6 +37,5 @@ public record AuthResponseDto(
     string AccessToken,
     string RefreshToken,
     Guid UserId,
-    string AnonAlias,
-    string Role
+    string AnonAlias
 );

@@ -10,7 +10,6 @@ namespace Anonwork.API.Controllers;
 
 [ApiController]
 [Route("api/v1/auth")]
-[Authorize]
 public class AuthController(
     RegisterUseCase registerUseCase,
     VerifyEmailUseCase verifyEmailUseCase,
@@ -20,7 +19,6 @@ public class AuthController(
     LogoutUseCase logoutUseCase) : BaseApiController
 {
     [HttpPost("register")]
-    [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto req, CancellationToken ct)
     {
         await registerUseCase.ExecuteAsync(
@@ -30,7 +28,6 @@ public class AuthController(
     }
 
     [HttpPost("verify-email")]
-    [AllowAnonymous]
     public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequestDto req, CancellationToken ct)
     {
         var result = await verifyEmailUseCase.ExecuteAsync(new VerifyEmailRequest(req.Email, req.Token), ct);
@@ -38,7 +35,6 @@ public class AuthController(
     }
 
     [HttpPost("login")]
-    [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto req,CancellationToken ct)
     {
         var result = await loginUseCase.ExecuteAsync(new LoginRequest(req.Email, req.Password), ct);
@@ -47,7 +43,6 @@ public class AuthController(
     }
 
     [HttpPost("google")]
-    [AllowAnonymous]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequestDto req, CancellationToken ct)
     {
         var result = await googleLoginUseCase.ExecuteAsync(
@@ -57,13 +52,13 @@ public class AuthController(
     }
 
     [HttpPost("refresh")]
-    [AllowAnonymous]
     public async Task<IActionResult> Refresh([FromBody] RefreshRequestDto req, CancellationToken ct)
     {
         var result = await refreshTokenUseCase.ExecuteAsync(req.RefreshToken, ct);
         return Ok(MapToResponse(result));
     }
 
+    [Authorize]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] LogoutRequestDto req, CancellationToken ct)
     {
@@ -80,7 +75,6 @@ public class AuthController(
             result.AccessToken,
             result.RefreshToken,
             result.UserId,
-            result.AnonAlias,
-            result.Role
+            result.AnonAlias
         );
 }

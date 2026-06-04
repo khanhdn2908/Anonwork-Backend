@@ -21,8 +21,6 @@ public partial class User
 
     public bool IsAnonDefault { get; set; }
 
-    public string Role { get; set; } = null!;
-
     public string? GoogleSubject { get; set; }
 
     public bool IsEmailVerified { get; set; }
@@ -55,8 +53,9 @@ public partial class User
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
-    public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
+    public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 
+    public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
 
     private User() { }
 
@@ -74,7 +73,6 @@ public partial class User
             PasswordHash = passwordHash,
             AnonAlias = anonAlias,
             IsAnonDefault = false,
-            Role = "student",
             IsEmailVerified = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -98,7 +96,6 @@ public partial class User
             AvatarUrl = avatarUrl,
             AnonAlias = anonAlias,
             IsAnonDefault = false,
-            Role = "student",
             IsEmailVerified = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow

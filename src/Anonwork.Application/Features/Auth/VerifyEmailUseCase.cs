@@ -9,11 +9,12 @@ namespace Anonwork.Application.Features.Auth;
 
 public class VerifyEmailUseCase(
     IUnitOfWork unitOfWork,
-    IJwtService jwtService,
-    IPasswordHasher passwordHasher)
+    IJwtService jwtService)
 {
     private readonly IGenericRepository<EmailVerificationToken> _tokenRepo = unitOfWork.GetRepository<EmailVerificationToken>();
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
+    private readonly IGenericRepository<Role> _roleRepo = unitOfWork.GetRepository<Role>();
+    private readonly IGenericRepository<UserRole> _userRoleRepo = unitOfWork.GetRepository<UserRole>();
 
     public async Task<AuthResult> ExecuteAsync(VerifyEmailRequest req, CancellationToken ct = default)
     {
@@ -35,27 +36,35 @@ public class VerifyEmailUseCase(
         if (verificationToken.ExpiresAt < DateTime.UtcNow)
             throw new ConflictException("Verification code has expired.");
 
-        var existingUser = await _userRepo.FindSingleAsync(u => u.Email == email, ct);
-        if (existingUser is not null)
+        var user = await _userRepo.FindSingleWithTrackingAsync(u => u.Email == email, ct)
+            ?? throw new ConflictException("User not found.");
+
+        if (user.IsEmailVerified)
             throw new ConflictException("Email already verified.");
 
-        var alias = await ResolveAnonAliasAsync(null, ct);
+        var defaultRole = await _roleRepo.FindSingleAsync(r => r.Name == "user", ct)
+            ?? throw new ConflictException("Default role 'user' was not found.");
 
-        var user = User.Create(
-            verificationToken.Username,
-            email,
-            passwordHasher.Hash(Guid.NewGuid().ToString("N")),
-            alias);
+        var alreadyAssigned = await _userRoleRepo.ExistsAsync(ur => ur.UserId == user.Id && ur.RoleId == defaultRole.Id, ct);
+        if (!alreadyAssigned)
+        {
+            await _userRoleRepo.AddAsync(new UserRole
+            {
+                UserId = user.Id,
+                RoleId = defaultRole.Id,
+                CreatedAt = DateTime.UtcNow
+            }, ct);
+        }
+
         user.MarkEmailVerified();
-
-        await _userRepo.AddAsync(user, ct);
         verificationToken.MarkVerified();
         await unitOfWork.SaveChangesAsync(ct);
 
-        var accessToken = jwtService.GenerateAccessToken(user);
+        var permissions = Array.Empty<string>();
+        var accessToken = jwtService.GenerateAccessToken(user, permissions);
         var refreshToken = await jwtService.GenerateRefreshTokenAsync(user.Id, ct);
 
-        return new AuthResult(accessToken, refreshToken, user.Id, user.AnonAlias, user.Role);
+        return new AuthResult(accessToken, refreshToken, user.Id, user.AnonAlias);
     }
 
     private async Task<string> ResolveAnonAliasAsync(string? requested, CancellationToken ct)

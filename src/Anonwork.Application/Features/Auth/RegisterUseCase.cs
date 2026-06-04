@@ -31,6 +31,9 @@ public class RegisterUseCase(
         var tokenHash = HashToken(token);
         var expiresAt = DateTime.UtcNow.AddMinutes(15);
 
+        var user = User.Create(username, email, passwordHasher.Hash(req.Password), alias);
+        await _userRepo.AddAsync(user, ct);
+
         var verificationToken = EmailVerificationToken.Create(email, username, tokenHash, expiresAt);
         await unitOfWork.GetRepository<EmailVerificationToken>().AddAsync(verificationToken, ct);
         await unitOfWork.SaveChangesAsync(ct);

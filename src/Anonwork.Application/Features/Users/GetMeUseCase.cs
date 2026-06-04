@@ -22,7 +22,6 @@ public class GetMeUseCase(IUnitOfWork unitOfWork)
             user.Bio,
             user.AnonAlias,
             user.IsAnonDefault,
-            user.Role,
             user.CreatedAt,
             user.UpdatedAt
         );
