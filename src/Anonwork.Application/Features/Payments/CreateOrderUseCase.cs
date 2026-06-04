@@ -7,7 +7,9 @@ using Anonwork.Domain.Enums;
 
 namespace Anonwork.Application.Features.Payments;
 
-public class CreateOrderUseCase(IUnitOfWork unitOfWork, ISepayService sepayService)
+public class CreateOrderUseCase(
+    IUnitOfWork unitOfWork,
+    ISepayService sepayService)
 {
     private readonly IGenericRepository<Order> _orderRepo = unitOfWork.GetRepository<Order>();
     private readonly IGenericRepository<SubscriptionPlan> _planRepo = unitOfWork.GetRepository<SubscriptionPlan>();
@@ -60,7 +62,10 @@ public class CreateOrderUseCase(IUnitOfWork unitOfWork, ISepayService sepayServi
             transferContent,
             qrUrl,
             order.Amount,
-            order.Status.ToString()
+            order.Status.ToString(),
+            sepayService.GetAccountName(),
+            sepayService.GetBankCode(),
+            sepayService.GetBankAccount()
         );
     }
 

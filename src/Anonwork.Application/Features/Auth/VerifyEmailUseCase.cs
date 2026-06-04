@@ -26,7 +26,7 @@ public class VerifyEmailUseCase(
 
         var tokenHash = RegisterUseCase.HashToken(token);
 
-        var verificationToken = await _tokenRepo.FindSingleAsync(
+        var verificationToken = await _tokenRepo.FindSingleWithTrackingAsync(
             t => t.Email == email && t.TokenHash == tokenHash && !t.IsUsed,
             ct);
 
@@ -61,10 +61,10 @@ public class VerifyEmailUseCase(
         await unitOfWork.SaveChangesAsync(ct);
 
         var permissions = Array.Empty<string>();
-        var accessToken = jwtService.GenerateAccessToken(user, permissions);
-        var refreshToken = await jwtService.GenerateRefreshTokenAsync(user.Id, ct);
+        //var accessToken = jwtService.GenerateAccessToken(user, permissions);
+        //var refreshToken = await jwtService.GenerateRefreshTokenAsync(user.Id, ct);
 
-        return new AuthResult(accessToken, refreshToken, user.Id, user.AnonAlias);
+        return new AuthResult("", "", user.Id, user.AnonAlias);
     }
 
     private async Task<string> ResolveAnonAliasAsync(string? requested, CancellationToken ct)

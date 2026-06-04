@@ -6,5 +6,8 @@ public record OrderResponse(
     string TransferContent,
     string QrUrl,
     decimal Amount,
-    string Status
+    string Status,
+    string? AccountName,
+    string? BankName,
+    string? BankAccount
 );

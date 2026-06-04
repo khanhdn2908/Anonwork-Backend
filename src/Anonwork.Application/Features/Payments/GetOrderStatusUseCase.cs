@@ -44,6 +44,9 @@ public class GetOrderStatusUseCase(IUnitOfWork unitOfWork, ISepayService sepaySe
             order.TransferContent,
             qrUrl,
             order.Amount,
-            order.Status.ToString()
+            order.Status.ToString(),
+            null,
+            null,
+            null
         );
 }

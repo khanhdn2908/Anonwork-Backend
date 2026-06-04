@@ -17,6 +17,21 @@ public interface ISepayService
         string transferContent);
 
     /// <summary>
+    /// Get configured bank account number
+    /// </summary>
+    string GetBankAccount();
+
+    /// <summary>
+    /// Get configured bank code
+    /// </summary>
+    string GetBankCode();
+
+    /// <summary>
+    /// Get configured account holder name
+    /// </summary>
+    string GetAccountName();
+
+    /// <summary>
     /// Verify Sepay webhook signature
     /// </summary>
     bool VerifyWebhookSignature(

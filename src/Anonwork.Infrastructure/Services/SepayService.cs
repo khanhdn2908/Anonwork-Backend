@@ -39,6 +39,12 @@ public class SepayService : ISepayService
             $"&des={Uri.EscapeDataString(transferContent)}";
     }
 
+    public string GetBankAccount() => _options.BankAccount;
+
+    public string GetBankCode() => _options.BankCode;
+
+    public string GetAccountName() => _options.AccountName;
+
     public bool VerifyWebhookSignature(
         string payload,
         string signature)
