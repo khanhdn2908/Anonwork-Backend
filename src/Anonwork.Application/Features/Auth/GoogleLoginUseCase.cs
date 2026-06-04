@@ -15,6 +15,8 @@ public class GoogleLoginUseCase(
     IConfiguration configuration)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
+    private readonly IGenericRepository<Role> _roleRepo = unitOfWork.GetRepository<Role>();
+    private readonly IGenericRepository<UserRole> _userRoleRepo = unitOfWork.GetRepository<UserRole>();
 
     public async Task<AuthResult> ExecuteAsync(GoogleLoginRequest req, CancellationToken ct = default)
     {
@@ -34,11 +36,14 @@ public class GoogleLoginUseCase(
         var user = await _userRepo.FindSingleAsync(u => u.GoogleSubject == googleSubject, ct)
             ?? await _userRepo.FindSingleAsync(u => u.Email == email, ct);
 
+        var isNewUser = false;
+
         if (user is null)
         {
             var alias = await ResolveAnonAliasAsync(req.AnonAlias, ct);
             user = User.CreateGoogleUser(username, email, googleSubject, picture ?? string.Empty, alias);
             await _userRepo.AddAsync(user, ct);
+            isNewUser = true;
         }
         else
         {
@@ -48,6 +53,11 @@ public class GoogleLoginUseCase(
             {
                 user.AvatarUrl = picture;
             }
+        }
+
+        if (isNewUser)
+        {
+            await AssignDefaultUserRoleAsync(user.Id, ct);
         }
 
         await unitOfWork.SaveChangesAsync(ct);
@@ -78,6 +88,23 @@ public class GoogleLoginUseCase(
 
     //private static string GetPrimaryRoleName(User user) =>
     //    user.UserRoles.FirstOrDefault()?.Role?.Name ?? "user";
+
+    private async Task AssignDefaultUserRoleAsync(Guid userId, CancellationToken ct)
+    {
+        var role = await _roleRepo.FindSingleAsync(r => r.Name == "user", ct)
+            ?? throw new InvalidOperationException("Default role 'user' was not found.");
+
+        var existing = await _userRoleRepo.ExistsAsync(ur => ur.UserId == userId && ur.RoleId == role.Id, ct);
+        if (existing)
+            return;
+
+        await _userRoleRepo.AddAsync(new UserRole
+        {
+            UserId = userId,
+            RoleId = role.Id,
+            CreatedAt = DateTime.UtcNow
+        }, ct);
+    }
 
     private async Task<string> ResolveAnonAliasAsync(string? requested, CancellationToken ct)
     {
