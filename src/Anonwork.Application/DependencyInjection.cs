@@ -1,4 +1,6 @@
 ﻿using Anonwork.Application.Features.Auth;
+using Anonwork.Application.Features.Bookmarks;
+using Anonwork.Application.Features.Comments;
 using Anonwork.Application.Features.Follows;
 using Anonwork.Application.Features.Payments;
 using Anonwork.Application.Features.Permissions;
@@ -8,6 +10,7 @@ using Anonwork.Application.Features.Subjects;
 using Anonwork.Application.Features.SubscriptionPlans;
 using Anonwork.Application.Features.UserSubscriptions;
 using Anonwork.Application.Features.Users;
+using Anonwork.Application.Features.Bookmarks;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Anonwork.Application;
@@ -58,6 +61,12 @@ public static class DependencyInjection
         services.AddScoped<RemoveRoleFromUserUseCase>();
         services.AddScoped<GetUserRolesUseCase>();
 
+        // ── Comments Use Cases ──────────────────
+        services.AddScoped<CreateCommentUseCase>();
+        services.AddScoped<GetCommentsByPostUseCase>();
+        services.AddScoped<UpdateCommentUseCase>();
+        services.AddScoped<DeleteCommentUseCase>();
+
         // ── Payments Use Cases ──────────────────
         services.AddScoped<CreateOrderUseCase>();
         services.AddScoped<GetOrderStatusUseCase>();
@@ -96,6 +105,12 @@ public static class DependencyInjection
         services.AddScoped<GetUserSubscriptionsByUserIdUseCase>();
         services.AddScoped<UpdateUserSubscriptionUseCase>();
         services.AddScoped<DeleteUserSubscriptionUseCase>();
+
+        // ── Bookmarks Use Cases ─────────────────
+        services.AddScoped<CreateBookmarkUseCase>();
+        services.AddScoped<DeleteBookmarkUseCase>();
+        services.AddScoped<GetBookmarksUseCase>();
+        services.AddScoped<IsBookmarkedUseCase>();
 
         return services;
     }
