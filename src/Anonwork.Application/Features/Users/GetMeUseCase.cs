@@ -1,5 +1,5 @@
 using Anonwork.Application.Common.Exceptions;
-using Anonwork.Application.Features.Users.DTOs;
+using Anonwork.Application.Features.Users.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Common.Exceptions;
 

@@ -1,5 +1,5 @@
 using Anonwork.Application.Features.Permissions;
-using Anonwork.Application.Features.Permissions.DTOs;
+using Anonwork.Application.Features.Permissions.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

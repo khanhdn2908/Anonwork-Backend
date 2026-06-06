@@ -1,5 +1,6 @@
 using Anonwork.Application.Common.Exceptions;
-using Anonwork.Application.Features.Posts.DTOs;
+using Anonwork.Application.Features.Posts.DTOs.Request;
+using Anonwork.Application.Features.Posts.DTOs.Response;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Common.Exceptions;
 using Anonwork.Domain.Entities;
@@ -130,7 +131,8 @@ public class UpdatePostUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudi
             ViewCount: post.ViewCount,
             Status: post.Status,
             CreatedAt: post.CreatedAt,
-            UpdatedAt: post.UpdatedAt
+            UpdatedAt: post.UpdatedAt,
+            false
         );
     }
 }

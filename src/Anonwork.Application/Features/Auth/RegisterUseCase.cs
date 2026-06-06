@@ -2,7 +2,7 @@
 using System.Text;
 using Anonwork.Application.Common;
 using Anonwork.Application.Common.Exceptions;
-using Anonwork.Application.Features.Auth.DTOs;
+using Anonwork.Application.Features.Auth.DTOs.Requests;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 

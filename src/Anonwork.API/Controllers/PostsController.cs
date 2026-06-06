@@ -1,7 +1,7 @@
 using Anonwork.API.DTOs;
 using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Features.Posts;
-using Anonwork.Application.Features.Posts.DTOs;
+using Anonwork.Application.Features.Posts.DTOs.Request;
 using Anonwork.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,32 +18,10 @@ public class PostsController(
     GetPostsBySubjectUseCase getPostsBySubjectUseCase,
     UpdatePostUseCase updatePostUseCase,
     DeletePostUseCase deletePostUseCase,
+    TogglePostVoteUseCase togglePostVoteUseCase,
     ICloudinaryService cloudinaryService) : BaseApiController
 {
-    /// <summary>
-    /// Create a new post with optional images
-    /// </summary>
-    /// <remarks>
-    /// Requires authentication. User must be logged in to create a post.
-    /// 
-    /// Sample request:
-    /// 
-    ///     POST /api/v1/posts
-    ///     {
-    ///       "title": "Cách học C# hiệu quả",
-    ///       "content": "Bài viết chi tiết về cách học C#...",
-    ///       "subjectId": "550e8400-e29b-41d4-a716-446655440000",
-    ///       "tags": ["csharp", "learning"],
-    ///       "isAnonymous": false,
-    ///       "images": [file1.jpg, file2.png]
-    ///     }
-    /// </remarks>
-    /// <param name="req">Post creation request</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>Created post with 201 status</returns>
-    /// <response code="201">Post created successfully</response>
-    /// <response code="400">Invalid request data</response>
-    /// <response code="401">Unauthorized</response>
+
     [HttpPost]
     [Authorize(Policy = "Permission:posts.create")]
     [Consumes("multipart/form-data")]
@@ -85,21 +63,7 @@ public class PostsController(
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
-    /// <summary>
-    /// Get a post by ID
-    /// </summary>
-    /// <remarks>
-    /// Retrieves a specific post by its ID. View count is automatically incremented.
-    /// 
-    /// Sample request:
-    /// 
-    ///     GET /api/v1/posts/550e8400-e29b-41d4-a716-446655440001
-    /// </remarks>
-    /// <param name="id">Post ID</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>Post details</returns>
-    /// <response code="200">Post found</response>
-    /// <response code="404">Post not found</response>
+
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -108,7 +72,8 @@ public class PostsController(
     {
         try
         {
-            var result = await getPostByIdUseCase.ExecuteAsync(id, ct);
+            var userId = GetUserIdFromToken();
+            var result = await getPostByIdUseCase.ExecuteAsync(id, userId, ct);
             return Ok(result);
         }
         catch (Exception ex)
@@ -117,24 +82,7 @@ public class PostsController(
         }
     }
 
-    /// <summary>
-    /// Get all posts with pagination and optional search
-    /// </summary>
-    /// <remarks>
-    /// Retrieves a paginated list of all active posts, sorted by creation date (newest first).
-    /// If search query is provided, performs full-text search on title and content.
-    /// 
-    /// Sample request:
-    /// 
-    ///     GET /api/v1/posts?page=1&pageSize=10
-    ///     GET /api/v1/posts?page=1&pageSize=10&search=C%23
-    /// </remarks>
-    /// <param name="page">Page number (default: 1)</param>
-    /// <param name="pageSize">Items per page (default: 10, max: 100)</param>
-    /// <param name="search">Optional search query for full-text search</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>Paginated list of posts</returns>
-    /// <response code="200">Posts retrieved successfully</response>
+
     [HttpGet]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -144,36 +92,12 @@ public class PostsController(
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var result = await getPostsUseCase.ExecuteAsync(page, pageSize, search, ct);
+        var userId = GetUserIdFromToken();
+        var result = await getPostsUseCase.ExecuteAsync(page, pageSize, search, userId, ct);
         return Ok(result);
     }
 
-    /// <summary>
-    /// Update a post
-    /// </summary>
-    /// <remarks>
-    /// Updates an existing post. Only the post author can update their own posts.
-    /// 
-    /// Sample request:
-    /// 
-    ///     PUT /api/v1/posts/550e8400-e29b-41d4-a716-446655440001
-    ///     {
-    ///       "title": "Tiêu đề mới",
-    ///       "content": "Nội dung mới...",
-    ///       "tags": ["tag1", "tag2"],
-    ///       "newImages": [file.jpg],
-    ///       "removeImageUrls": ["https://..."]
-    ///     }
-    /// </remarks>
-    /// <param name="id">Post ID</param>
-    /// <param name="req">Update request</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>Updated post</returns>
-    /// <response code="200">Post updated successfully</response>
-    /// <response code="400">Invalid request data</response>
-    /// <response code="401">Unauthorized</response>
-    /// <response code="403">Forbidden - not the post author</response>
-    /// <response code="404">Post not found</response>
+
     [HttpPut("{id:guid}")]
     [Authorize(Policy = "Permission:posts.update")]
     [Consumes("multipart/form-data")]
@@ -228,23 +152,7 @@ public class PostsController(
         }
     }
 
-    /// <summary>
-    /// Delete a post
-    /// </summary>
-    /// <remarks>
-    /// Deletes a post (soft delete). Only the post author can delete their own posts.
-    /// 
-    /// Sample request:
-    /// 
-    ///     DELETE /api/v1/posts/550e8400-e29b-41d4-a716-446655440001
-    /// </remarks>
-    /// <param name="id">Post ID</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>No content</returns>
-    /// <response code="204">Post deleted successfully</response>
-    /// <response code="401">Unauthorized</response>
-    /// <response code="403">Forbidden - not the post author</response>
-    /// <response code="404">Post not found</response>
+
     [HttpDelete("{id:guid}")]
     [Authorize(Policy = "Permission:posts.delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -267,6 +175,29 @@ public class PostsController(
             return Forbid();
         }
         catch (Exception ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+
+    [HttpPost("{id:guid}/upvote")]
+    [Authorize(Policy = "Permission:posts.vote")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ToggleUpvote(Guid id, CancellationToken ct)
+    {
+        var userId = GetUserIdFromToken();
+        if (userId is null)
+            return Unauthorized(new { message = "User not authenticated" });
+
+        try
+        {
+            var result = await togglePostVoteUseCase.ExecuteAsync(userId.Value, id, ct);
+            return Ok(result);
+        }
+        catch (Exception ex) when (ex.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
         {
             return NotFound(new { message = ex.Message });
         }

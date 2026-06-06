@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<GetPostsBySubjectUseCase>();
         services.AddScoped<UpdatePostUseCase>();
         services.AddScoped<DeletePostUseCase>();
+        services.AddScoped<TogglePostVoteUseCase>();
 
         // ── Subjects Use Cases ──────────────────
         services.AddScoped<GetSubjectsUseCase>();

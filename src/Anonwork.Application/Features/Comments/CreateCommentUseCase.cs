@@ -1,4 +1,5 @@
-using Anonwork.Application.Features.Comments.DTOs;
+using Anonwork.Application.Features.Comments.DTOs.Requests;
+using Anonwork.Application.Features.Comments.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 using Microsoft.EntityFrameworkCore;

@@ -1,5 +1,5 @@
 using Anonwork.Application.Features.Payments;
-using Anonwork.Application.Features.Payments.DTOs;
+using Anonwork.Application.Features.Payments.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

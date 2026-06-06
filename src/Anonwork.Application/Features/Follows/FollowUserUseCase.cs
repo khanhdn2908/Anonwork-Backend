@@ -1,8 +1,8 @@
-
-using Anonwork.Application.Features.Follows.DTOs;
 using Anonwork.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Anonwork.Domain.Entities;
+using Anonwork.Application.Features.Follows.DTOs.Responses;
+using Anonwork.Application.Features.Follows.DTOs.Requests;
 
 namespace Anonwork.Application.Features.Follows;
 

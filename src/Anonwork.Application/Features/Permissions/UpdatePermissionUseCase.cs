@@ -1,4 +1,4 @@
-using Anonwork.Application.Features.Permissions.DTOs;
+using Anonwork.Application.Features.Permissions.DTOs.Requests;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 

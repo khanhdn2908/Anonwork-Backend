@@ -1,5 +1,5 @@
 using Anonwork.Application.Features.Bookmarks;
-using Anonwork.Application.Features.Bookmarks.DTOs;
+using Anonwork.Application.Features.Bookmarks.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,6 +18,7 @@ public class BookmarkController(
     /// Create a bookmark for a post
     /// </summary>
     [HttpPost]
+    [Authorize(Policy = "Permission:bookmarks.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -42,6 +43,7 @@ public class BookmarkController(
     /// Delete bookmark for a post
     /// </summary>
     [HttpDelete("{postId:guid}")]
+    [Authorize(Policy = "Permission:bookmarks.delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

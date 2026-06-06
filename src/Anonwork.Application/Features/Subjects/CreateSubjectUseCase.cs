@@ -1,4 +1,5 @@
-using Anonwork.Application.Features.Subjects.DTOs;
+using Anonwork.Application.Features.Subjects.DTOs.Requests;
+using Anonwork.Application.Features.Subjects.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 

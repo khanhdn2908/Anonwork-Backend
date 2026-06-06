@@ -1,4 +1,5 @@
-using Anonwork.Application.Features.Bookmarks.DTOs;
+using Anonwork.Application.Features.Bookmarks.DTOs.Requests;
+using Anonwork.Application.Features.Bookmarks.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 using Microsoft.EntityFrameworkCore;

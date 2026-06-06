@@ -19,7 +19,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Features\Posts\" />
+    <Folder Include="Features\Auth\DTOs\Responses\" />
+    <Folder Include="Features\Permissions\DTOs\Responses\" />
+    <Folder Include="Features\Roles\DTOs\Responses\" />
   </ItemGroup>
 
   <PropertyGroup>

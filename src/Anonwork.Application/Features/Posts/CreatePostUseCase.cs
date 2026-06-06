@@ -1,8 +1,9 @@
-using Anonwork.Application.Features.Posts.DTOs;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 using Anonwork.Domain.Common.Exceptions;
 using Post = Anonwork.Domain.Entities.Post;
+using Anonwork.Application.Features.Posts.DTOs.Request;
+using Anonwork.Application.Features.Posts.DTOs.Response;
 
 namespace Anonwork.Application.Features.Posts;
 
@@ -106,7 +107,8 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork)
             ViewCount: post.ViewCount,
             Status: post.Status,
             CreatedAt: post.CreatedAt,
-            UpdatedAt: post.UpdatedAt
+            UpdatedAt: post.UpdatedAt,
+            IsUpvotedByMe: false
         );
     }
 }

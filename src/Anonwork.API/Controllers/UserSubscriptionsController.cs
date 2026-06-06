@@ -1,5 +1,6 @@
 using Anonwork.Application.Features.UserSubscriptions;
-using Anonwork.Application.Features.UserSubscriptions.DTOs;
+using Anonwork.Application.Features.UserSubscriptions.DTOs.Requests;
+using Anonwork.Application.Features.UserSubscriptions.DTOs.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

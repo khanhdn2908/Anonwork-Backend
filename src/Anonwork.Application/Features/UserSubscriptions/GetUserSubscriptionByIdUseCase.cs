@@ -1,4 +1,4 @@
-using Anonwork.Application.Features.UserSubscriptions.DTOs;
+using Anonwork.Application.Features.UserSubscriptions.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 

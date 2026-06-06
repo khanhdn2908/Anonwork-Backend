@@ -1,7 +1,7 @@
 using Anonwork.Application.Features.Posts;
 using Anonwork.Application.Features.Posts.DTOs;
 using Anonwork.Application.Features.Subjects;
-using Anonwork.Application.Features.Subjects.DTOs;
+using Anonwork.Application.Features.Subjects.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -215,23 +215,7 @@ public class SubjectsController(
         }
     }
 
-    /// <summary>
-    /// Get posts by subject with pagination
-    /// </summary>
-    /// <remarks>
-    /// Retrieves a paginated list of posts for a specific subject, sorted by creation date (newest first).
-    /// 
-    /// Sample request:
-    /// 
-    ///     GET /api/v1/subjects/550e8400-e29b-41d4-a716-446655440000/posts?page=1&pageSize=10
-    /// </remarks>
-    /// <param name="subjectId">Subject ID</param>
-    /// <param name="page">Page number (default: 1)</param>
-    /// <param name="pageSize">Items per page (default: 10, max: 100)</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>Paginated list of posts for the subject</returns>
-    /// <response code="200">Posts retrieved successfully</response>
-    /// <response code="404">Subject not found</response>
+ 
     [HttpGet("{subjectId:guid}/posts")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -244,7 +228,7 @@ public class SubjectsController(
     {
         try
         {
-            var result = await getPostsBySubjectUseCase.ExecuteAsync(subjectId, page, pageSize, ct);
+            var result = await getPostsBySubjectUseCase.ExecuteAsync(subjectId, page, pageSize, null,ct);
             return Ok(result);
         }
         catch (Exception ex)

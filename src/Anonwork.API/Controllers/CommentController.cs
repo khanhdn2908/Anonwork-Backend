@@ -1,5 +1,5 @@
 using Anonwork.Application.Features.Comments;
-using Anonwork.Application.Features.Comments.DTOs;
+using Anonwork.Application.Features.Comments.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,6 +18,7 @@ public class CommentController(
     /// Create a comment for a post
     /// </summary>
     [HttpPost]
+    [Authorize(Policy = "Permission:comments.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -42,6 +43,7 @@ public class CommentController(
     /// Get comments by post
     /// </summary>
     [HttpGet("post/{postId:guid}")]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetAllByPost(Guid postId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
@@ -54,6 +56,7 @@ public class CommentController(
     /// Update a comment
     /// </summary>
     [HttpPut("{commentId:guid}")]
+    [Authorize(Policy = "Permission:comments.update")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -79,6 +82,7 @@ public class CommentController(
     /// Delete a comment
     /// </summary>
     [HttpDelete("{commentId:guid}")]
+    [Authorize(Policy = "Permission:comments.delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

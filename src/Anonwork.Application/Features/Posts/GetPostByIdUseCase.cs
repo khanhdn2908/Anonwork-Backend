@@ -1,6 +1,7 @@
-using Anonwork.Application.Features.Posts.DTOs;
+using Anonwork.Application.Features.Posts.DTOs.Response;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Common.Exceptions;
+using Anonwork.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Post = Anonwork.Domain.Entities.Post;
 
@@ -12,8 +13,9 @@ namespace Anonwork.Application.Features.Posts;
 public class GetPostByIdUseCase(IUnitOfWork unitOfWork)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
+    private readonly IGenericRepository<Vote> _voteRepo = unitOfWork.GetRepository<Vote>();
 
-    public async Task<PostResponseDto> ExecuteAsync(Guid postId, CancellationToken ct = default)
+    public async Task<PostResponseDto> ExecuteAsync(Guid postId, Guid? currentUserId = null, CancellationToken ct = default)
     {
         // ── Validation ──────────────────────────────
         if (postId == Guid.Empty)
@@ -36,38 +38,11 @@ public class GetPostByIdUseCase(IUnitOfWork unitOfWork)
         await _postRepo.UpdateAsync(post, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
+        var isUpvotedByMe = currentUserId.HasValue && await _voteRepo.GetQueryableNoTracking().AnyAsync(
+            v => v.UserId == currentUserId.Value && v.TargetId == postId && v.TargetType == "post" && v.VoteType == "up",
+            ct);
+
         // ── Return response ─────────────────────────
-        return MapToResponse(post);
-    }
-
-    private static PostResponseDto MapToResponse(Post post)
-    {
-        var imageUrls = post.PostImages
-            .OrderBy(pi => pi.DisplayOrder)
-            .Select(pi => pi.ImageUrl)
-            .ToList();
-
-        return new PostResponseDto(
-            Id: post.Id,
-            Title: post.Title,
-            Content: post.Content,
-            AuthorId: post.AuthorId,
-            AuthorUsername: post.Author?.Username,
-            AuthorAnonAlias: post.Author?.AnonAlias,
-            IsAnonymous: post.IsAnonymous,
-            SubjectId: post.SubjectId,
-            SubjectName: post.Subject?.Name,
-            ImageUrls: imageUrls,
-            RemainingImagesCount: 0,
-            Tags: post.PostTags
-                .Select(pt => pt.Tag)
-                .ToList(),
-            Upvotes: post.Upvotes,
-            CommentsCount: post.CommentsCount,
-            ViewCount: post.ViewCount,
-            Status: post.Status,
-            CreatedAt: post.CreatedAt,
-            UpdatedAt: post.UpdatedAt
-        );
+        return PostVoteProjectionHelper.MapToResponse(post, isUpvotedByMe);
     }
 }

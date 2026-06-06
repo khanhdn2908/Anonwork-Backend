@@ -1,4 +1,4 @@
-﻿using Anonwork.Application.Features.Auth.DTOs;
+﻿using Anonwork.Application.Features.Auth.DTOs.Requests;
 using Anonwork.Application.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 

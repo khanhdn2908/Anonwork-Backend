@@ -1,5 +1,5 @@
 using Anonwork.Application.Features.Follows;
-using Anonwork.Application.Features.Follows.DTOs;
+using Anonwork.Application.Features.Follows.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,7 +26,7 @@ public class FollowController(
     /// <response code="401">Unauthorized</response>
     /// <response code="404">User to follow not found</response>
     [HttpPost]
-    [Authorize]
+    [Authorize(Policy = "Permission:follows.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -73,7 +73,7 @@ public class FollowController(
     /// <response code="401">Unauthorized</response>
     /// <response code="404">Follow relationship not found</response>
     [HttpDelete("{followingId:guid}")]
-    [Authorize]
+    [Authorize(Policy = "Permission:follows.delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -260,7 +260,7 @@ public class FollowController(
     /// <response code="401">Unauthorized</response>
     /// <response code="400">Invalid user ID</response>
     [HttpGet("is-following/{followingId:guid}")]
-    [Authorize]
+    [Authorize(Policy = "Permission:follows.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
