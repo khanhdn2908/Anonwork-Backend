@@ -1,11 +1,10 @@
-
 using Anonwork.Application.Common;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace Anonwork.Application.Features.Auth;
+namespace Anonwork.Application.Features.Maintenance;
 
 public class CleanupEmailVerificationTokensUseCase(
     IAppDbContext dbContext,

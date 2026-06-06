@@ -14,6 +14,7 @@ public class GetBookmarksUseCase(IUnitOfWork unitOfWork)
 
     public async Task<BookmarkListResponseDto> ExecuteAsync(
         Guid currentUserId,
+        string? search = null,
         int page = 1,
         int pageSize = 10,
         CancellationToken ct = default)
@@ -26,6 +27,8 @@ public class GetBookmarksUseCase(IUnitOfWork unitOfWork)
         if (pageSize < 1) pageSize = 10;
         if (pageSize > 100) pageSize = 100; // Max 100 per page
 
+        search = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
+
         // ── Get bookmarks ───────────────────────────
         var query = _bookmarkRepository.GetQueryableNoTracking()
             .Include(b => b.Post)
@@ -36,8 +39,25 @@ public class GetBookmarksUseCase(IUnitOfWork unitOfWork)
                 .ThenInclude(p => p.PostImages)
             .Include(b => b.Post)
                 .ThenInclude(p => p.PostTags)
-            .Where(b => b.UserId == currentUserId)
-            .OrderByDescending(b => b.CreatedAt);
+            .Where(b => b.UserId == currentUserId);
+
+        if (search is not null)
+        {
+            query = query.Where(b =>
+                b.Post != null && (
+                    EF.Functions.Like(b.Post.Title, $"%{search}%") ||
+                    EF.Functions.Like(b.Post.Content, $"%{search}%") ||
+                    (b.Post.Author != null && (
+                        EF.Functions.Like(b.Post.Author.Username, $"%{search}%") ||
+                        EF.Functions.Like(b.Post.Author.AnonAlias, $"%{search}%")
+                    )) ||
+                    (b.Post.Subject != null && EF.Functions.Like(b.Post.Subject.Name, $"%{search}%")) ||
+                    b.Post.PostTags.Any(pt => EF.Functions.Like(pt.Tag, $"%{search}%"))
+                )
+            );
+        }
+
+        query = query.OrderByDescending(b => b.CreatedAt);
 
         var total = await query.CountAsync(ct);
         var bookmarks = await query

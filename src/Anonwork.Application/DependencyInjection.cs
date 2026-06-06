@@ -12,6 +12,7 @@ using Anonwork.Application.Features.UserSubscriptions;
 using Anonwork.Application.Features.Users;
 using Anonwork.Application.Features.Bookmarks;
 using Microsoft.Extensions.DependencyInjection;
+using Anonwork.Application.Features.Maintenance;
 
 namespace Anonwork.Application;
 
@@ -67,6 +68,7 @@ public static class DependencyInjection
         services.AddScoped<GetCommentsByPostUseCase>();
         services.AddScoped<UpdateCommentUseCase>();
         services.AddScoped<DeleteCommentUseCase>();
+        services.AddScoped<ToggleCommentVoteUseCase>();
 
         // ── Payments Use Cases ──────────────────
         services.AddScoped<CreateOrderUseCase>();

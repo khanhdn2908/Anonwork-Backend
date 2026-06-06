@@ -34,7 +34,7 @@ public class GetCommentsByPostUseCase(IUnitOfWork unitOfWork)
             .OrderBy(c => c.Depth)
             .ThenBy(c => c.CreatedAt);
 
-        var total = await query.CountAsync(ct);
+        var total = await query.CountAsync(ct); 
         var comments = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

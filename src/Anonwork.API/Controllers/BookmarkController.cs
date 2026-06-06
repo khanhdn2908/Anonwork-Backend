@@ -70,13 +70,13 @@ public class BookmarkController(
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
+    public async Task<IActionResult> GetAll([FromQuery] string? search = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
     {
         var userId = GetUserIdFromToken();
         if (userId is null)
             return Unauthorized(new { message = "User not authenticated" });
 
-        var result = await getBookmarksUseCase.ExecuteAsync(userId.Value, page, pageSize, ct);
+        var result = await getBookmarksUseCase.ExecuteAsync(userId.Value, search, page, pageSize, ct);
         return Ok(result);
     }
 

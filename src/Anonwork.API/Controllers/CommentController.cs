@@ -12,7 +12,8 @@ public class CommentController(
     CreateCommentUseCase createCommentUseCase,
     GetCommentsByPostUseCase getCommentsByPostUseCase,
     UpdateCommentUseCase updateCommentUseCase,
-    DeleteCommentUseCase deleteCommentUseCase) : BaseApiController
+    DeleteCommentUseCase deleteCommentUseCase,
+    ToggleCommentVoteUseCase toggleCommentVoteUseCase) : BaseApiController
 {
     /// <summary>
     /// Create a comment for a post
@@ -98,6 +99,31 @@ public class CommentController(
             return NoContent();
         }
         catch (Exception ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Toggle upvote for a comment
+    /// </summary>
+    [HttpPost("{commentId:guid}/upvote")]
+    [Authorize(Policy = "Permission:comments.vote")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ToggleUpvote(Guid commentId, CancellationToken ct)
+    {
+        var userId = GetUserIdFromToken();
+        if (userId is null)
+            return Unauthorized(new { message = "User not authenticated" });
+
+        try
+        {
+            var result = await toggleCommentVoteUseCase.ExecuteAsync(userId.Value, commentId, ct);
+            return Ok(result);
+        }
+        catch (Exception ex) when (ex.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
         {
             return NotFound(new { message = ex.Message });
         }
