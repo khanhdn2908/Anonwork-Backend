@@ -11,7 +11,7 @@ namespace Anonwork.Application.Features.Posts;
 /// <summary>
 /// Use case for updating a post
 /// </summary>
-public class UpdatePostUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudinaryService)
+public class UpdatePostUseCase(IUnitOfWork unitOfWork)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
 

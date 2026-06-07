@@ -8,12 +8,10 @@ using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.Users;
 
-public class UpdateUserUseCase(IUnitOfWork unitOfWork)
+public class UpdateUserUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudinaryService)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
-
-    //private static string GetPrimaryRoleName(User user) =>
-    //    user.UserRoles.FirstOrDefault()?.Role?.Name ?? "user";
+    private readonly ICloudinaryService _cloudinaryService = cloudinaryService;
 
     public async Task<GetMeResponseDto> ExecuteAsync(
         Guid userId,
@@ -36,11 +34,21 @@ public class UpdateUserUseCase(IUnitOfWork unitOfWork)
         if (req.Bio is not null)
             user.Bio = req.Bio;
 
-        if (req.AvatarUrl is not null)
-            user.AvatarUrl = req.AvatarUrl;
+        string? imageUrls = null;
+        if (req.Avatar is not null)
+        {
+            try
+            {
+                imageUrls = await _cloudinaryService.UploadImageAsync(req.Avatar, "avatars", ct);
+            }
+            catch (Exception ex) 
+            {
+                throw new BadRequestException("Failed to upload images");
+            }
 
-        if (req.IsAnonDefault.HasValue)
-            user.IsAnonDefault = req.IsAnonDefault.Value;
+            user.AvatarUrl = imageUrls;
+        }
+            
 
         user.UpdatedAt = DateTime.UtcNow;
 

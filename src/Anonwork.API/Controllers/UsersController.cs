@@ -1,5 +1,6 @@
 ﻿using Anonwork.Application.Features.Users;
 using Anonwork.Application.Features.Users.DTOs.Requests;
+using Anonwork.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -50,9 +51,10 @@ public class UsersController(
     }
 
     [HttpPut("me")]
+    [Consumes("multipart/form-data")]
     [Authorize]
     public async Task<IActionResult> UpdateMe(
-        [FromBody] UpdateUserRequestDto req,
+        [FromForm] UpdateUserRequestDto req,
         CancellationToken ct)
     {
         var userId = GetUserIdFromToken();
