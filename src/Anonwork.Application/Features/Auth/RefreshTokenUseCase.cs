@@ -1,5 +1,5 @@
 ﻿using Anonwork.Application.Common.Exceptions;
-using Anonwork.Application.Common.Model;
+using Anonwork.Application.Features.Auth.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 

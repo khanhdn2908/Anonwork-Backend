@@ -19,6 +19,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public virtual DbSet<Follow> Follows { get; set; } = null!;
     public virtual DbSet<Message> Messages { get; set; } = null!;
     public virtual DbSet<Notification> Notifications { get; set; } = null!;
+    public virtual DbSet<AnonImage> AnonImages { get; set; } = null!;
     public virtual DbSet<Post> Posts { get; set; } = null!;
     public virtual DbSet<PostImage> PostImages { get; set; } = null!;
     public virtual DbSet<PostTag> PostTags { get; set; } = null!;

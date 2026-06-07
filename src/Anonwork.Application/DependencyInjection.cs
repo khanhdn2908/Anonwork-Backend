@@ -1,7 +1,9 @@
-﻿using Anonwork.Application.Features.Auth;
+﻿using Anonwork.Application.Features.AnonImages;
+using Anonwork.Application.Features.Auth;
 using Anonwork.Application.Features.Bookmarks;
 using Anonwork.Application.Features.Comments;
 using Anonwork.Application.Features.Follows;
+using Anonwork.Application.Features.Maintenance;
 using Anonwork.Application.Features.Payments;
 using Anonwork.Application.Features.Permissions;
 using Anonwork.Application.Features.Posts;
@@ -10,9 +12,7 @@ using Anonwork.Application.Features.Subjects;
 using Anonwork.Application.Features.SubscriptionPlans;
 using Anonwork.Application.Features.UserSubscriptions;
 using Anonwork.Application.Features.Users;
-using Anonwork.Application.Features.Bookmarks;
 using Microsoft.Extensions.DependencyInjection;
-using Anonwork.Application.Features.Maintenance;
 
 namespace Anonwork.Application;
 
@@ -45,6 +45,13 @@ public static class DependencyInjection
         services.AddScoped<UpdateSubjectUseCase>();
         services.AddScoped<DeleteSubjectUseCase>();
 
+        // ── Anon Images Use Cases ───────────────
+        services.AddScoped<GetAllAnonImagesUseCase>();
+        services.AddScoped<GetAnonImageByIdUseCase>();
+        services.AddScoped<CreateAnonImageUseCase>();
+        services.AddScoped<UpdateAnonImageUseCase>();
+        services.AddScoped<DeleteAnonImageUseCase>();
+
         // ── Follows Use Cases ──────────────────
         services.AddScoped<FollowUserUseCase>();
         services.AddScoped<GetFollowByIdUseCase>();
@@ -57,6 +64,8 @@ public static class DependencyInjection
         // ── Users Use Cases ─────────────────────
         services.AddScoped<GetMeUseCase>();
         services.AddScoped<UpdateUserUseCase>();
+        services.AddScoped<ToggleUserAnonDefaultUseCase>();
+        services.AddScoped<AssignAnonImageToUserUseCase>();
         services.AddScoped<DeleteUserUseCase>();
         services.AddScoped<GetAllUsersUseCase>();
         services.AddScoped<AssignRoleToUserUseCase>();

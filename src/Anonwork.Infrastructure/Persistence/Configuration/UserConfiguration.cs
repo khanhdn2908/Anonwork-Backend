@@ -15,8 +15,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         entity.HasIndex(e => e.Email, "users_email_key").IsUnique();
         entity.HasIndex(e => e.Username, "users_username_key").IsUnique();
         entity.HasIndex(e => e.GoogleSubject, "users_google_subject_key").IsUnique();
+        entity.HasIndex(e => e.AnonImageId, "idx_users_anon_image_id");
         entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()").HasColumnName("id");
         entity.Property(e => e.AnonAlias).HasMaxLength(80).HasColumnName("anon_alias");
+        entity.Property(e => e.AnonImageId).HasColumnName("anon_image_id");
         entity.Property(e => e.AvatarUrl).HasColumnName("avatar_url");
         entity.Property(e => e.Bio).HasColumnName("bio");
         entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
@@ -27,5 +29,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         entity.Property(e => e.PasswordHash).HasColumnName("password_hash");
         entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");
         entity.Property(e => e.Username).HasMaxLength(50).HasColumnName("username");
+
+        entity.HasOne(d => d.AnonImage)
+            .WithMany(p => p.Users)
+            .HasForeignKey(d => d.AnonImageId)
+            .OnDelete(DeleteBehavior.SetNull)
+            .HasConstraintName("users_anon_image_id_fkey");
     }
 }

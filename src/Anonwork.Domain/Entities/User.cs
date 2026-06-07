@@ -21,6 +21,10 @@ public partial class User
 
     public bool IsAnonDefault { get; set; }
 
+    public Guid? AnonImageId { get; set; }
+
+    public virtual AnonImage? AnonImage { get; set; }
+
     public string? GoogleSubject { get; set; }
 
     public bool IsEmailVerified { get; set; }
@@ -105,6 +109,19 @@ public partial class User
     public void MarkEmailVerified()
     {
         IsEmailVerified = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void EnableAnonDefault(Guid? anonImageId = null)
+    {
+        IsAnonDefault = true;
+        AnonImageId = anonImageId;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void DisableAnonDefault()
+    {
+        IsAnonDefault = false;
         UpdatedAt = DateTime.UtcNow;
     }
 

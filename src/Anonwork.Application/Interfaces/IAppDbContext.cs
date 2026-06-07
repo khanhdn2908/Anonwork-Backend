@@ -18,6 +18,7 @@ public interface IAppDbContext
     public DbSet<PostTag> PostTags { get; }
     public DbSet<Report> Reports { get; }
     public DbSet<Subject> Subjects { get; }
+    public DbSet<AnonImage> AnonImages { get; }
     public DbSet<User> Users { get; }
     public DbSet<Vote> Votes { get; }
     public DbSet<SubscriptionPlan> SubscriptionPlans { get; }

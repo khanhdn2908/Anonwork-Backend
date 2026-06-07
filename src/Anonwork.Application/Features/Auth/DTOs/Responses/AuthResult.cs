@@ -1,4 +1,4 @@
-﻿namespace Anonwork.Application.Common.Model;
+﻿namespace Anonwork.Application.Features.Auth.DTOs.Responses;
 
 public record AuthResult(
     string AccessToken,

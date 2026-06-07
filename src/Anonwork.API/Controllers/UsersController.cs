@@ -11,6 +11,8 @@ namespace Anonwork.API.Controllers;
 public class UsersController(
     GetMeUseCase getMeUseCase,
     UpdateUserUseCase updateUserUseCase,
+    ToggleUserAnonDefaultUseCase toggleUserAnonDefaultUseCase,
+    AssignAnonImageToUserUseCase assignAnonImageToUserUseCase,
     DeleteUserUseCase deleteUserUseCase,
     GetAllUsersUseCase getAllUsersUseCase,
     AssignRoleToUserUseCase assignRoleToUserUseCase,
@@ -60,6 +62,27 @@ public class UsersController(
         return Ok(result);
     }
 
+    [HttpPatch("me/anon")]
+    [Authorize]
+    public async Task<IActionResult> ToggleMyAnonDefault(CancellationToken ct)
+    {
+        var userId = GetUserIdFromToken();
+        if (userId is null) return Unauthorized();
+
+        await toggleUserAnonDefaultUseCase.ExecuteAsync(userId.Value, ct);
+        return NoContent();
+    }
+
+    [HttpPatch("me/anon-image/{anonImageId:guid}")]
+    [Authorize]
+    public async Task<IActionResult> AssignMyAnonImage(Guid anonImageId, CancellationToken ct)
+    {
+        var userId = GetUserIdFromToken();
+        if (userId is null) return Unauthorized();
+
+        await assignAnonImageToUserUseCase.ExecuteAsync(userId.Value, anonImageId, ct);
+        return NoContent();
+    }
 
     [HttpPut("{id}")]
     [Authorize(Policy = "Permission:users.update")]
@@ -83,7 +106,6 @@ public class UsersController(
         return NoContent();
     }
 
-
     [HttpDelete("{id}")]
     [Authorize(Policy = "Permission:users.delete")]
     public async Task<IActionResult> DeleteUser(Guid id, CancellationToken ct)
@@ -91,7 +113,6 @@ public class UsersController(
         await deleteUserUseCase.ExecuteAsync(id, ct);
         return NoContent();
     }
-
 
     [HttpGet("{userId:guid}/roles")]
     [Authorize(Policy = "Permission:users.read-roles")]
@@ -107,7 +128,6 @@ public class UsersController(
         }
     }
 
-
     [HttpPost("{userId:guid}/roles/{roleId:guid}")]
     [Authorize(Policy = "Permission:users.assign-role")]
     public async Task<IActionResult> AssignRole(Guid userId, Guid roleId, CancellationToken ct)
@@ -122,7 +142,6 @@ public class UsersController(
             return NotFound(new { message = ex.Message });
         }
     }
-
 
     [HttpDelete("{userId:guid}/roles/{roleId:guid}")]
     [Authorize(Policy = "Permission:users.remove-role")]

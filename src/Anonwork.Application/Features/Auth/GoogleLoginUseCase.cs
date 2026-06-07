@@ -1,7 +1,7 @@
 using Anonwork.Application.Common;
 using Anonwork.Application.Common.Exceptions;
-using Anonwork.Application.Common.Model;
 using Anonwork.Application.Features.Auth.DTOs.Requests;
+using Anonwork.Application.Features.Auth.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 using Google.Apis.Auth;
@@ -33,8 +33,8 @@ public class GoogleLoginUseCase(
         var username = BuildUsername(payload.Name, email);
         var picture = payload.Picture;
 
-        var user = await _userRepo.FindSingleAsync(u => u.GoogleSubject == googleSubject, ct)
-            ?? await _userRepo.FindSingleAsync(u => u.Email == email, ct);
+        var user = await _userRepo.FindSingleWithTrackingAsync(u => u.GoogleSubject == googleSubject, ct)
+            ?? await _userRepo.FindSingleWithTrackingAsync(u => u.Email == email, ct);
 
         var isNewUser = false;
 
@@ -85,9 +85,6 @@ public class GoogleLoginUseCase(
 
         return await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
     }
-
-    //private static string GetPrimaryRoleName(User user) =>
-    //    user.UserRoles.FirstOrDefault()?.Role?.Name ?? "user";
 
     private async Task AssignDefaultUserRoleAsync(Guid userId, CancellationToken ct)
     {

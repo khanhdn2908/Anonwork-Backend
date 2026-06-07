@@ -1,8 +1,8 @@
 ﻿using Anonwork.API.DTOs;
 using Anonwork.Application.Common.Exceptions;
-using Anonwork.Application.Common.Model;
 using Anonwork.Application.Features.Auth;
 using Anonwork.Application.Features.Auth.DTOs.Requests;
+using Anonwork.Application.Features.Auth.DTOs.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
