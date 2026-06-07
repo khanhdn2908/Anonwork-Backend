@@ -18,7 +18,7 @@ public class AnonImagesController(
     ICloudinaryService cloudinaryService) : BaseApiController
 {
     [HttpGet]
-    [AllowAnonymous]
+    [Authorize(Policy = "Permission:anon-images.read")]
     public async Task<IActionResult> GetAll(
         [FromQuery] bool? isActive = null,
         CancellationToken ct = default)
@@ -28,7 +28,7 @@ public class AnonImagesController(
     }
 
     [HttpGet("{id:guid}")]
-    [AllowAnonymous]
+    [Authorize(Policy = "Permission:anon-images.read")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         try

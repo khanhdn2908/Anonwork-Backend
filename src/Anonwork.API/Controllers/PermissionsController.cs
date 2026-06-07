@@ -17,8 +17,11 @@ public class PermissionsController(
 {
     [HttpGet]
     [Authorize(Policy = "Permission:permissions.read")]
-    public async Task<IActionResult> GetAll(CancellationToken ct = default)
-        => Ok(await getAllPermissionsUseCase.ExecuteAsync(ct));
+    public async Task<IActionResult> GetAll(
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] bool? isActive = null,
+        CancellationToken ct = default)
+        => Ok(await getAllPermissionsUseCase.ExecuteAsync(searchTerm, isActive, ct));
 
     [HttpGet("{id:guid}")]
     [Authorize(Policy = "Permission:permissions.read")]

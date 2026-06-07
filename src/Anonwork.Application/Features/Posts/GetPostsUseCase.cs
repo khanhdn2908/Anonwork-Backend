@@ -11,7 +11,7 @@ namespace Anonwork.Application.Features.Posts;
 public class GetPostsUseCase(IUnitOfWork unitOfWork)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
-    private readonly IGenericRepository<Anonwork.Domain.Entities.Vote> _voteRepo = unitOfWork.GetRepository<Anonwork.Domain.Entities.Vote>();
+    private readonly IGenericRepository<Vote> _voteRepo = unitOfWork.GetRepository<Vote>();
 
     public async Task<PostListResponseDto> ExecuteAsync(
         int page = 1,
@@ -30,7 +30,8 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork)
             .Include(p => p.Author)
             .Include(p => p.Subject)
             .Include(p => p.PostImages)
-            .Include(p => p.PostTags);
+            .Include(p => p.PostTags)
+            .Include(p => p.Comments);
 
         if (!string.IsNullOrWhiteSpace(searchQuery))
         {
