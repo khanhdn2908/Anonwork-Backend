@@ -28,6 +28,7 @@ public static class DependencyInjection
         services.AddScoped<LogoutUseCase>();
         services.AddScoped<VerifyEmailUseCase>();
         services.AddScoped<CleanupEmailVerificationTokensUseCase>();
+        services.AddScoped<CleanupUnpaidExpiredOrdersUseCase>();
 
         // ── Posts Use Cases ─────────────────────
         services.AddScoped<CreatePostUseCase>();
