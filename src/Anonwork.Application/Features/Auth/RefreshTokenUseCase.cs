@@ -5,7 +5,7 @@ using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.Auth;
 
-public class RefreshTokenUseCase(IUnitOfWork unitOfWork, IJwtService jwtService)
+public class RefreshTokenUseCase(IUnitOfWork unitOfWork, IJwtService jwtService, IRolePermissionService rolePermissionService)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
 
@@ -21,7 +21,7 @@ public class RefreshTokenUseCase(IUnitOfWork unitOfWork, IJwtService jwtService)
         // Revoke token cũ, issue cặp mới (rotation)
         await jwtService.RevokeRefreshTokenAsync(refreshToken, ct);
 
-        var permissions = Array.Empty<string>();
+        var permissions = await rolePermissionService.GetPermissionCodesAsync(user.Id, ct);
         var newAccessToken = jwtService.GenerateAccessToken(user, permissions);
         var newRefreshToken = await jwtService.GenerateRefreshTokenAsync(user.Id, ct);
 

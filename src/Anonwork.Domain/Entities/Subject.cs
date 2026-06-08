@@ -15,7 +15,11 @@ public partial class Subject
 
     public int PostCount { get; set; }
 
+    public bool IsActive { get; set; }
+
     public DateTime CreatedAt { get; set; }
+
+    public DateTime UpdatedAt { get; set; }
 
     public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
 }

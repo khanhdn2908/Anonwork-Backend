@@ -13,10 +13,12 @@ public class DeleteAnonImageUseCase(IUnitOfWork unitOfWork)
         if (anonImageId == Guid.Empty)
             throw new ArgumentException("Anon image id is required.");
 
-        var anonImage = await _anonImageRepo.GetByIdAsync(anonImageId, ct)
+        var anonImage = await _anonImageRepo.GetByIdWithTrackingAsync(anonImageId, ct)
             ?? throw new NotFoundException(nameof(AnonImage), anonImageId);
 
-        await _anonImageRepo.DeleteAsync(anonImage, ct);
+        anonImage.IsActive = false;
+        anonImage.UpdatedAt = DateTime.UtcNow;
+
         await unitOfWork.SaveChangesAsync(ct);
     }
 }

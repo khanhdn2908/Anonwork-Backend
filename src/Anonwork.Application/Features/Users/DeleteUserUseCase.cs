@@ -7,13 +7,14 @@ namespace Anonwork.Application.Features.Users;
 
 public class DeleteUserUseCase(IUnitOfWork unitOfWork)
 {
+    private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
     public async Task ExecuteAsync(Guid userId, CancellationToken ct = default)
     {
-        var userRepo = unitOfWork.GetRepository<User>();
-        var user = await userRepo.GetByIdAsync(userId, ct)
+        var user = await _userRepo.GetByIdWithTrackingAsync(userId, ct)
             ?? throw new NotFoundException("User not found.");
 
-        await userRepo.DeleteAsync(userId, ct);
+        await _userRepo.DeleteAsync(userId, ct);
+       
         await unitOfWork.SaveChangesAsync(ct);
     }
 }

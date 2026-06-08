@@ -1,6 +1,6 @@
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Common.Exceptions;
-using Subject = Anonwork.Domain.Entities.Subject;
+using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.Subjects;
 

@@ -12,7 +12,8 @@ public class DeleteRoleUseCase(IUnitOfWork unitOfWork)
         var role = await _roleRepo.GetByIdWithTrackingAsync(id, ct)
             ?? throw new KeyNotFoundException($"Role with id '{id}' not found.");
 
-        await _roleRepo.DeleteAsync(role, ct);
+        role.IsActive = false;
+        role.UpdatedAt = DateTime.UtcNow;
         await unitOfWork.SaveChangesAsync(ct);
     }
 }

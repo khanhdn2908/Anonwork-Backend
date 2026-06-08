@@ -12,7 +12,8 @@ public class DeletePermissionUseCase(IUnitOfWork unitOfWork)
         var permission = await _permissionRepo.GetByIdWithTrackingAsync(id, ct)
             ?? throw new KeyNotFoundException($"Permission with id '{id}' not found.");
 
-        await _permissionRepo.DeleteAsync(permission, ct);
+        permission.IsActive = false;
+        permission.UpdatedAt = DateTime.UtcNow;
         await unitOfWork.SaveChangesAsync(ct);
     }
 }
