@@ -6,26 +6,33 @@ using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.AnonImages;
 
-public class UpdateAnonImageUseCase(IUnitOfWork unitOfWork)
+public class UpdateAnonImageUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudinaryService)
 {
     private readonly IGenericRepository<AnonImage> _anonImageRepo = unitOfWork.GetRepository<AnonImage>();
+    private readonly ICloudinaryService _cloudinaryService = cloudinaryService;
 
     public async Task<AnonImageResponseDto> ExecuteAsync(Guid anonImageId, UpdateAnonImageRequestDto request, CancellationToken ct = default)
     {
         if (anonImageId == Guid.Empty)
             throw new ArgumentException("Anon image id is required.");
 
-        if (string.IsNullOrWhiteSpace(request.Name))
-            throw new ArgumentException("Anon image name is required.");
-
         var anonImage = await _anonImageRepo.GetByIdAsync(anonImageId, ct)
             ?? throw new NotFoundException(nameof(AnonImage), anonImageId);
 
-        anonImage.Name = request.Name.Trim();
-        if (!string.IsNullOrWhiteSpace(request.ImageUrl))
+        if(!string.IsNullOrWhiteSpace(request.Name))
+            anonImage.Name = request.Name.Trim();
+
+        string? imageUrl = null;
+        if (!(request.Image is null || request.Image.Length == 0))
         {
-            anonImage.ImageUrl = request.ImageUrl.Trim();
+            imageUrl = await _cloudinaryService.UploadImageAsync(request.Image, "anon-images", ct);
         }
+
+        if (!string.IsNullOrWhiteSpace(imageUrl))
+        {
+            anonImage.ImageUrl = imageUrl.Trim();
+        }
+
         anonImage.IsActive = request.IsActive;
         anonImage.UpdatedAt = DateTime.UtcNow;
 

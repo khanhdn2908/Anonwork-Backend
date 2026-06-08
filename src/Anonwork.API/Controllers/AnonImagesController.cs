@@ -14,8 +14,7 @@ public class AnonImagesController(
     GetAnonImageByIdUseCase getAnonImageByIdUseCase,
     CreateAnonImageUseCase createAnonImageUseCase,
     UpdateAnonImageUseCase updateAnonImageUseCase,
-    DeleteAnonImageUseCase deleteAnonImageUseCase,
-    ICloudinaryService cloudinaryService) : BaseApiController
+    DeleteAnonImageUseCase deleteAnonImageUseCase) : BaseApiController
 {
     [HttpGet]
     [Authorize(Policy = "Permission:anon-images.read")]
@@ -46,16 +45,10 @@ public class AnonImagesController(
     [Authorize(Policy = "Permission:anon-images.create")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Create(
-        [FromForm] CreateAnonImageFormRequestDto request,
+        [FromForm] CreateAnonImageRequestDto request,
         CancellationToken ct = default)
     {
-        if (request.Image is null || request.Image.Length == 0)
-            return BadRequest(new { message = "Image file is required." });
-
-        var imageUrl = await cloudinaryService.UploadImageAsync(request.Image, "anon-images", ct);
-        var useCaseRequest = new CreateAnonImageRequestDto(request.Name, imageUrl, request.IsActive);
-
-        var result = await createAnonImageUseCase.ExecuteAsync(useCaseRequest, ct);
+        var result = await createAnonImageUseCase.ExecuteAsync(request, ct);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
@@ -64,17 +57,10 @@ public class AnonImagesController(
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Update(
         Guid id,
-        [FromForm] UpdateAnonImageFormRequestDto request,
+        [FromForm] UpdateAnonImageRequestDto request,
         CancellationToken ct)
     {
-        string? imageUrl = null;
-        if (request.Image is not null && request.Image.Length > 0)
-        {
-            imageUrl = await cloudinaryService.UploadImageAsync(request.Image, "anon-images", ct);
-        }
-
-        var useCaseRequest = new UpdateAnonImageRequestDto(request.Name, imageUrl, request.IsActive);
-        var result = await updateAnonImageUseCase.ExecuteAsync(id, useCaseRequest, ct);
+        var result = await updateAnonImageUseCase.ExecuteAsync(id, request, ct);
         return Ok(result);
     }
 
