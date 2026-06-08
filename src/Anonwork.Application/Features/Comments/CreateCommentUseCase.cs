@@ -59,8 +59,7 @@ public class CreateCommentUseCase(IUnitOfWork unitOfWork)
             Content = request.Content.Trim(),
             Upvotes = 0,
             Depth = parentComment == null ? 0 : parentComment.Depth + 1,
-            IsDeleted = false,
-            DeletedAt = null,
+            IsActive = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
         };
@@ -91,8 +90,7 @@ public class CreateCommentUseCase(IUnitOfWork unitOfWork)
             Content: comment.Content,
             Upvotes: comment.Upvotes,
             Depth: comment.Depth,
-            IsDeleted: comment.IsDeleted,
-            DeletedAt: comment.DeletedAt,
+            IsActive: comment.IsActive,
             CreatedAt: comment.CreatedAt,
             UpdatedAt: comment.UpdatedAt,
             Author: comment.Author == null ? null : new CommentAuthorDto(

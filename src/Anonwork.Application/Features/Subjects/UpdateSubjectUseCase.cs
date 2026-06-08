@@ -42,6 +42,8 @@ public class UpdateSubjectUseCase(IUnitOfWork unitOfWork)
         subject.Slug = normalizedNewSlug;
         subject.IconEmoji = request.IconEmoji?.Trim();
 
+        subject.UpdatedAt = DateTime.UtcNow;
+
         await _subjectRepo.UpdateAsync(subject, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
@@ -51,12 +53,14 @@ public class UpdateSubjectUseCase(IUnitOfWork unitOfWork)
     private static SubjectResponseDto MapToResponse(Subject subject)
     {
         return new SubjectResponseDto(
-            Id: subject.Id,
+           Id: subject.Id,
             Name: subject.Name,
             Slug: subject.Slug,
             IconEmoji: subject.IconEmoji,
             PostCount: subject.PostCount,
-            CreatedAt: subject.CreatedAt
+            IsActive: subject.IsActive,
+            CreatedAt: subject.CreatedAt,
+            UpdatedAt: subject.UpdatedAt
         );
     }
 }

@@ -16,12 +16,13 @@ public class DeleteSubjectUseCase(IUnitOfWork unitOfWork)
         if (subjectId == Guid.Empty)
             throw new ArgumentException("Subject id is required.");
 
-        var subject = await _subjectRepo.GetByIdAsync(subjectId, ct);
+        var subject = await _subjectRepo.GetByIdWithTrackingAsync(subjectId, ct);
 
         if (subject is null)
             throw new NotFoundException(nameof(Subject), subjectId);
 
-        await _subjectRepo.DeleteAsync(subjectId, ct);
+        subject.IsActive = false;
+        subject.UpdatedAt = DateTime.UtcNow;
         await unitOfWork.SaveChangesAsync(ct);
     }
 }

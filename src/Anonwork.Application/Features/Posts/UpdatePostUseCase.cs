@@ -129,7 +129,7 @@ public class UpdatePostUseCase(IUnitOfWork unitOfWork)
             Upvotes: post.Upvotes,
             CommentsCount: post.CommentsCount,
             ViewCount: post.ViewCount,
-            Status: post.Status,
+            Status: post.Status.ToString(),
             CreatedAt: post.CreatedAt,
             UpdatedAt: post.UpdatedAt,
             false

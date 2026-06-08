@@ -31,7 +31,7 @@ public class UpdateCommentUseCase(IUnitOfWork unitOfWork)
         if (comment.AuthorId != currentUserId)
             throw new UnauthorizedAccessException("You can only update your own comments.");
 
-        if (comment.IsDeleted)
+        if (!comment.IsActive)
             throw new InvalidOperationException("Cannot update a deleted comment.");
 
         // ── Update comment ──────────────────────────
@@ -49,8 +49,7 @@ public class UpdateCommentUseCase(IUnitOfWork unitOfWork)
             Content: comment.Content,
             Upvotes: comment.Upvotes,
             Depth: comment.Depth,
-            IsDeleted: comment.IsDeleted,
-            DeletedAt: comment.DeletedAt,
+            IsActive: comment.IsActive,
             CreatedAt: comment.CreatedAt,
             UpdatedAt: comment.UpdatedAt
         );

@@ -1,48 +1,20 @@
 namespace Anonwork.Domain.Enums;
 
-public enum UserRole
-{
-    student, teacher, moderator, admin
-}
-
 public enum PostStatus
 {
-    active, pending, removed
-}
-
-public enum VoteType
-{
-    up, down
-}
-
-public enum VoteTargetType
-{
-    post, comment
-}
-
-public enum NotificationType
-{
-    newComment, upvote, newfollower, mention, system, ranking
-}
-
-public enum ReportTargetType
-{
-    post, comment
+    Pending,
+    Published,
+    Hidden,
+    Deleted,
+    Rejected
 }
 
 public enum ReportStatus
 {
-    pending, resolved, dismissed
-}
-
-public enum Plan
-{
-    free, premiummonth, premiumyear
-}
-
-public enum PaymentStatus
-{
-    pending, success, failed, refunded
+    Pending,
+    Reviewing,
+    Resolved,
+    Rejected
 }
 
 public enum OrderStatus

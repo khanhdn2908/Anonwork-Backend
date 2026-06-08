@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Anonwork.Domain.Enums;
 using NpgsqlTypes;
 
 namespace Anonwork.Domain.Entities;
@@ -26,9 +27,7 @@ public partial class Post
 
     public int ViewCount { get; set; }
 
-    public string Status { get; set; } = null!;
-
-    public DateTime? DeletedAt { get; set; }
+    public PostStatus Status { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

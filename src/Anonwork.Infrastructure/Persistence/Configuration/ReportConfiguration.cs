@@ -1,4 +1,5 @@
 using Anonwork.Domain.Entities;
+using Anonwork.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -15,7 +16,11 @@ public class ReportConfiguration : IEntityTypeConfiguration<Report>
         entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
         entity.Property(e => e.Reason).HasMaxLength(500).HasColumnName("reason");
         entity.Property(e => e.ReporterId).HasColumnName("reporter_id");
-        entity.Property(e => e.Status).HasMaxLength(20).HasColumnName("status");
+        entity.Property(e => e.Status)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(ReportStatus.Pending)
+            .HasColumnName("status");
         entity.Property(e => e.TargetId).HasColumnName("target_id");
         entity.Property(e => e.TargetType).HasMaxLength(10).HasColumnName("target_type");
         entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");

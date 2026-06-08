@@ -24,7 +24,7 @@ public class ToggleCommentVoteUseCase(IUnitOfWork unitOfWork)
 
         // ── Find comment ────────────────────────────
         var comment = await _commentRepository.GetQueryable()
-            .FirstOrDefaultAsync(c => c.Id == commentId && !c.IsDeleted, ct);
+            .FirstOrDefaultAsync(c => c.Id == commentId && c.IsActive, ct);
 
         if (comment is null)
             throw new KeyNotFoundException("Comment not found.");

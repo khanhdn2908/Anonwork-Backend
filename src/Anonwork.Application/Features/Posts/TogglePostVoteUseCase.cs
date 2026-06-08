@@ -1,6 +1,7 @@
 using Anonwork.Application.Features.Posts.DTOs.Response;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
+using Anonwork.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Anonwork.Application.Features.Posts;
@@ -19,7 +20,7 @@ public class TogglePostVoteUseCase(IUnitOfWork unitOfWork)
             throw new ArgumentException("Post ID is required.");
 
         var post = await _postRepository.GetQueryable()
-            .FirstOrDefaultAsync(p => p.Id == postId && p.DeletedAt == null, ct);
+            .FirstOrDefaultAsync(p => p.Id == postId && p.Status == PostStatus.Published, ct);
 
         if (post is null)
             throw new KeyNotFoundException("Post not found.");

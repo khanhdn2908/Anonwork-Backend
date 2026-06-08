@@ -4,6 +4,7 @@ using Anonwork.Domain.Common.Exceptions;
 using Post = Anonwork.Domain.Entities.Post;
 using Anonwork.Application.Features.Posts.DTOs.Request;
 using Anonwork.Application.Features.Posts.DTOs.Response;
+using Anonwork.Domain.Enums;
 
 namespace Anonwork.Application.Features.Posts;
 
@@ -32,7 +33,7 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork)
             Title = req.Title.Trim(),
             Content = req.Content.Trim(),
             IsAnonymous = req.IsAnonymous,
-            Status = "active",
+            Status = PostStatus.Published,
             Upvotes = 0,
             CommentsCount = 0,
             ViewCount = 0,
@@ -105,7 +106,7 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork)
             Upvotes: post.Upvotes,
             CommentsCount: post.CommentsCount,
             ViewCount: post.ViewCount,
-            Status: post.Status,
+            Status: post.Status.ToString(),
             CreatedAt: post.CreatedAt,
             UpdatedAt: post.UpdatedAt,
             IsUpvotedByMe: false

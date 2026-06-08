@@ -33,7 +33,9 @@ public class CreateSubjectUseCase(IUnitOfWork unitOfWork)
             Slug = request.Slug.Trim().ToLower(),
             IconEmoji = request.IconEmoji?.Trim(),
             PostCount = 0,
-            CreatedAt = DateTime.UtcNow
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
         };
 
         var created = await _subjectRepo.AddAsync(subject, ct);
@@ -50,7 +52,9 @@ public class CreateSubjectUseCase(IUnitOfWork unitOfWork)
             Slug: subject.Slug,
             IconEmoji: subject.IconEmoji,
             PostCount: subject.PostCount,
-            CreatedAt: subject.CreatedAt
+            IsActive: subject.IsActive,
+            CreatedAt: subject.CreatedAt,
+            UpdatedAt: subject.UpdatedAt
         );
     }
 }

@@ -36,7 +36,9 @@ public class GetSubjectByIdUseCase(IUnitOfWork unitOfWork)
             Slug: subject.Slug,
             IconEmoji: subject.IconEmoji,
             PostCount: subject.PostCount,
-            CreatedAt: subject.CreatedAt
+            IsActive: subject.IsActive,
+            CreatedAt: subject.CreatedAt,
+            UpdatedAt: subject.UpdatedAt
         );
     }
 }

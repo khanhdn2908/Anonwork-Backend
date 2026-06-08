@@ -2,6 +2,7 @@ using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Common.Exceptions;
 using Anonwork.Domain.Entities;
+using Anonwork.Domain.Enums;
 
 namespace Anonwork.Application.Features.Posts;
 
@@ -46,8 +47,8 @@ public class DeletePostUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudi
 
         // ── Soft delete post ────────────────────────
 
-        post.Status = "removed";
-        post.DeletedAt = DateTime.UtcNow;
+        post.Status = PostStatus.Deleted;
+        post.UpdatedAt = DateTime.UtcNow;
         await unitOfWork.SaveChangesAsync(ct);
     }
 }

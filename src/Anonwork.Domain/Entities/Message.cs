@@ -13,9 +13,11 @@ public partial class Message
 
     public string Content { get; set; } = null!;
 
-    public bool IsDeleted { get; set; }
+    public bool IsActive { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public DateTime UpdatedAt { get; set; }
 
     public virtual Conversation Conversation { get; set; } = null!;
 

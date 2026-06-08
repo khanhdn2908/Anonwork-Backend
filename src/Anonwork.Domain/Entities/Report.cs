@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Anonwork.Domain.Enums;
+using System;
 using System.Collections.Generic;
 
 namespace Anonwork.Domain.Entities;
@@ -15,7 +16,7 @@ public partial class Report
 
     public string Reason { get; set; } = null!;
 
-    public string Status { get; set; } = null!;
+    public ReportStatus Status { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

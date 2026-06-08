@@ -30,7 +30,7 @@ public class GetCommentsByPostUseCase(IUnitOfWork unitOfWork)
         var query = _commentRepository.GetQueryableNoTracking()
             .Include(c => c.Author)
             .Include(c => c.Parent)
-            .Where(c => c.PostId == postId && !c.IsDeleted)
+            .Where(c => c.PostId == postId && c.IsActive)
             .OrderBy(c => c.Depth)
             .ThenBy(c => c.CreatedAt);
 
@@ -59,8 +59,7 @@ public class GetCommentsByPostUseCase(IUnitOfWork unitOfWork)
             Content: comment.Content,
             Upvotes: comment.Upvotes,
             Depth: comment.Depth,
-            IsDeleted: comment.IsDeleted,
-            DeletedAt: comment.DeletedAt,
+            IsActive: comment.IsActive,
             CreatedAt: comment.CreatedAt,
             UpdatedAt: comment.UpdatedAt,
             Author: comment.Author == null ? null : new CommentAuthorDto(

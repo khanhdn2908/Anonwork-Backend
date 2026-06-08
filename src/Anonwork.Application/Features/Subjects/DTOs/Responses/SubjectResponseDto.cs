@@ -9,5 +9,7 @@ public record SubjectResponseDto(
     string Slug,
     string? IconEmoji,
     int PostCount,
-    DateTime CreatedAt
+    bool IsActive,
+    DateTime CreatedAt,
+    DateTime UpdatedAt
 );

@@ -27,12 +27,11 @@ public class DeleteCommentUseCase(IUnitOfWork unitOfWork)
         if (comment.AuthorId != currentUserId)
             throw new UnauthorizedAccessException("You can only delete your own comments.");
 
-        if (comment.IsDeleted)
+        if (!comment.IsActive)
             return;
 
         // ── Soft delete comment ─────────────────────
-        comment.IsDeleted = true;
-        comment.DeletedAt = DateTime.UtcNow;
+        comment.IsActive = false;
         comment.UpdatedAt = DateTime.UtcNow;
         comment.Content = "[deleted]";
 

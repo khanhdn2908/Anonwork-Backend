@@ -1,4 +1,5 @@
 using Anonwork.Domain.Entities;
+using Anonwork.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -19,10 +20,13 @@ public class PostConfiguration : IEntityTypeConfiguration<Post>
         entity.Property(e => e.CommentsCount).HasDefaultValue(0).HasColumnName("comments_count");
         entity.Property(e => e.Content).HasColumnName("content");
         entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
-        entity.Property(e => e.DeletedAt).HasColumnName("deleted_at");
         entity.Property(e => e.IsAnonymous).HasDefaultValue(false).HasColumnName("is_anonymous");
         entity.Property(e => e.SearchVector).HasColumnName("search_vector");
-        entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValueSql("'active'::character varying").HasColumnName("status");
+        entity.Property(e => e.Status)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(PostStatus.Pending)
+            .HasColumnName("status");
         entity.Property(e => e.SubjectId).HasColumnName("subject_id");
         entity.Property(e => e.Title).HasMaxLength(255).HasColumnName("title");
         entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");

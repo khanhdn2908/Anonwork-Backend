@@ -15,7 +15,7 @@ public class MessageConfiguration : IEntityTypeConfiguration<Message>
         entity.Property(e => e.Content).HasColumnName("content");
         entity.Property(e => e.ConversationId).HasColumnName("conversation_id");
         entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
-        entity.Property(e => e.IsDeleted).HasDefaultValue(false).HasColumnName("is_deleted");
+        entity.Property(e => e.IsActive).HasDefaultValue(true).HasColumnName("is_active");
         entity.Property(e => e.SenderId).HasColumnName("sender_id");
         entity.HasOne(d => d.Conversation).WithMany(p => p.Messages).HasForeignKey(d => d.ConversationId).HasConstraintName("messages_conversation_id_fkey");
         entity.HasOne(d => d.Sender).WithMany(p => p.Messages).HasForeignKey(d => d.SenderId).HasConstraintName("messages_sender_id_fkey");
