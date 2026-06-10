@@ -17,6 +17,8 @@ public class AuthController(
     GoogleLoginUseCase googleLoginUseCase,
     RefreshTokenUseCase refreshTokenUseCase,
     LogoutUseCase logoutUseCase,
+    ForgotPasswordUseCase forgotPasswordUseCase,
+    ResetPasswordUseCase resetPasswordUseCase,
     IConfiguration configuration) : BaseApiController
 {
     [HttpPost("register")]
@@ -57,6 +59,22 @@ public class AuthController(
     {
         var result = await refreshTokenUseCase.ExecuteAsync(req.RefreshToken, ct);
         return Ok(MapToResponse(result));
+    }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto req, CancellationToken ct)
+    {
+        await forgotPasswordUseCase.ExecuteAsync(new ForgotPasswordRequest(req.Email), ct);
+        return Accepted(new { message = "If the email exists, reset instructions have been sent." });
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto req, CancellationToken ct)
+    {
+        await resetPasswordUseCase.ExecuteAsync(
+            new ResetPasswordRequest(req.Email, req.Token, req.NewPassword), ct);
+
+        return NoContent();
     }
 
     [Authorize]
