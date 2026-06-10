@@ -40,3 +40,10 @@ public enum SubscriptionStatus
     Expired,
     Cancelled
 }
+
+public enum TokenPurpose
+{
+    EmailVerification,
+    ForgotPassword,
+    PasswordReset
+}

@@ -5,6 +5,7 @@ using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Features.Auth.DTOs.Requests;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
+using Anonwork.Domain.Enums;
 
 namespace Anonwork.Application.Features.Auth;
 
@@ -14,7 +15,8 @@ public class RegisterUseCase(
     IEmailSender emailSender)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
-    private readonly IGenericRepository<EmailVerificationToken> _verificationTokenRepo = unitOfWork.GetRepository<EmailVerificationToken>();
+    //private readonly IGenericRepository<EmailVerificationToken> _verificationTokenRepo = unitOfWork.GetRepository<EmailVerificationToken>();
+    private readonly IGenericRepository<OneTimeToken> _tokenRepo = unitOfWork.GetRepository<OneTimeToken>();
 
     public async Task ExecuteAsync(RegisterRequest req, CancellationToken ct = default)
     {
@@ -67,8 +69,11 @@ public class RegisterUseCase(
 
     private async Task SaveVerificationTokenAsync(VerificationContext verification, CancellationToken ct)
     {
-        var verificationToken = EmailVerificationToken.Create(verification.Email, verification.Username, verification.TokenHash, verification.ExpiresAt);
-        await _verificationTokenRepo.AddAsync(verificationToken, ct);
+        var verificationToken = OneTimeToken.Create(verification.Email, 
+                                                    verification.TokenHash, 
+                                                    TokenPurpose.EmailVerification, 
+                                                    verification.ExpiresAt);
+        await _tokenRepo.AddAsync(verificationToken, ct);
     }
 
     private async Task SendVerificationEmailAsync(string email, string username, string token, CancellationToken ct)
