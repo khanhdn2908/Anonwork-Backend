@@ -26,6 +26,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         entity.Property(e => e.GoogleSubject).HasMaxLength(255).HasColumnName("google_subject");
         entity.Property(e => e.IsAnonDefault).HasDefaultValue(false).HasColumnName("is_anon_default");
         entity.Property(e => e.IsEmailVerified).HasDefaultValue(false).HasColumnName("is_email_verified");
+        entity.Property(e => e.IsActive).HasDefaultValue(true).HasColumnName("is_active");
         entity.Property(e => e.PasswordHash).HasColumnName("password_hash");
         entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");
         entity.Property(e => e.Username).HasMaxLength(50).HasColumnName("username");

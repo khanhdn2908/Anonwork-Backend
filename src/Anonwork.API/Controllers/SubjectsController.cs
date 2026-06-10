@@ -18,23 +18,7 @@ public class SubjectsController(
     DeleteSubjectUseCase deleteSubjectUseCase,
     GetPostsBySubjectUseCase getPostsBySubjectUseCase) : ControllerBase
 {
-    /// <summary>
-    /// Get all subjects with search and pagination
-    /// </summary>
-    /// <remarks>
-    /// Retrieves a paginated list of subjects, sorted by post count (descending) and creation date.
-    /// Supports search by name or slug.
-    /// 
-    /// Sample request:
-    /// 
-    ///     GET /api/v1/subjects?search=csharp&page=1&pageSize=10
-    /// </remarks>
-    /// <param name="search">Search query (optional, searches in name and slug)</param>
-    /// <param name="page">Page number (default: 1)</param>
-    /// <param name="pageSize">Items per page (default: 10, max: 100)</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>Paginated list of subjects</returns>
-    /// <response code="200">Subjects retrieved successfully</response>
+  
     [HttpGet]
     [Authorize(Policy = "Permission:subjects.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -48,21 +32,7 @@ public class SubjectsController(
         return Ok(result);
     }
 
-    /// <summary>
-    /// Get a subject by ID
-    /// </summary>
-    /// <remarks>
-    /// Retrieves a specific subject by its ID.
-    /// 
-    /// Sample request:
-    /// 
-    ///     GET /api/v1/subjects/550e8400-e29b-41d4-a716-446655440000
-    /// </remarks>
-    /// <param name="id">Subject ID</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>Subject details</returns>
-    /// <response code="200">Subject found</response>
-    /// <response code="404">Subject not found</response>
+   
     [HttpGet("{id:guid}")]
     [Authorize(Policy = "Permission:subjects.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -80,28 +50,7 @@ public class SubjectsController(
         }
     }
 
-    /// <summary>
-    /// Create a new subject
-    /// </summary>
-    /// <remarks>
-    /// Creates a new subject. Requires authentication and admin role.
-    /// 
-    /// Sample request:
-    /// 
-    ///     POST /api/v1/subjects
-    ///     {
-    ///       "name": "C# Programming",
-    ///       "slug": "csharp-programming",
-    ///       "iconEmoji": "🔷"
-    ///     }
-    /// </remarks>
-    /// <param name="request">Subject creation request</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>Created subject with 201 status</returns>
-    /// <response code="201">Subject created successfully</response>
-    /// <response code="400">Invalid request data</response>
-    /// <response code="401">Unauthorized</response>
-    [Authorize(Roles = "admin")]
+ 
     [HttpPost]
     [Authorize(Policy = "Permission:subjects.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
@@ -126,30 +75,7 @@ public class SubjectsController(
         }
     }
 
-    /// <summary>
-    /// Update a subject
-    /// </summary>
-    /// <remarks>
-    /// Updates an existing subject. Requires authentication and admin role.
-    /// 
-    /// Sample request:
-    /// 
-    ///     PUT /api/v1/subjects/550e8400-e29b-41d4-a716-446655440000
-    ///     {
-    ///       "name": "C# Advanced",
-    ///       "slug": "csharp-advanced",
-    ///       "iconEmoji": "🔷"
-    ///     }
-    /// </remarks>
-    /// <param name="id">Subject ID</param>
-    /// <param name="request">Subject update request</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>Updated subject</returns>
-    /// <response code="200">Subject updated successfully</response>
-    /// <response code="400">Invalid request data</response>
-    /// <response code="401">Unauthorized</response>
-    /// <response code="404">Subject not found</response>
-    [Authorize(Roles = "admin")]
+
     [HttpPut("{id:guid}")]
     [Authorize(Policy = "Permission:subjects.update")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -180,23 +106,6 @@ public class SubjectsController(
         }
     }
 
-    /// <summary>
-    /// Delete a subject
-    /// </summary>
-    /// <remarks>
-    /// Deletes a subject. Requires authentication and admin role.
-    /// 
-    /// Sample request:
-    /// 
-    ///     DELETE /api/v1/subjects/550e8400-e29b-41d4-a716-446655440000
-    /// </remarks>
-    /// <param name="id">Subject ID</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>No content</returns>
-    /// <response code="204">Subject deleted successfully</response>
-    /// <response code="401">Unauthorized</response>
-    /// <response code="404">Subject not found</response>
-    [Authorize(Roles = "admin")]
     [HttpDelete("{id:guid}")]
     [Authorize(Policy = "Permission:subjects.delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

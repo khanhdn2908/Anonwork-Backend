@@ -29,6 +29,8 @@ public partial class User
 
     public bool IsEmailVerified { get; set; }
 
+    public bool IsActive { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
@@ -78,6 +80,7 @@ public partial class User
             AnonAlias = anonAlias,
             IsAnonDefault = false,
             IsEmailVerified = false,
+            IsActive = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };

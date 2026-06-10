@@ -13,8 +13,8 @@ public class DeleteUserUseCase(IUnitOfWork unitOfWork)
         var user = await _userRepo.GetByIdWithTrackingAsync(userId, ct)
             ?? throw new NotFoundException("User not found.");
 
-        await _userRepo.DeleteAsync(userId, ct);
-       
+        user.IsActive = false;
+        user.UpdatedAt = DateTime.UtcNow;
         await unitOfWork.SaveChangesAsync(ct);
     }
 }
