@@ -40,7 +40,7 @@ public class RegisterUseCase(
 
     private void ValidateRegistration(User? existingUser, string username, string email, CancellationToken ct)
     {
-        if (existingUser is not null && existingUser.IsEmailVerified)
+        if (existingUser is not null && existingUser.Status != UserStatus.PendingVerification)
             throw new ConflictException("Email already in use.");
     }
 
@@ -62,7 +62,7 @@ public class RegisterUseCase(
         existingUser.Username = username;
         existingUser.PasswordHash = passwordHasher.Hash(req.Password);
         existingUser.AnonAlias = alias;
-        existingUser.IsEmailVerified = false;
+        existingUser.Status = UserStatus.PendingVerification;
         existingUser.UpdatedAt = DateTime.UtcNow;
         await _userRepo.UpdateAsync(existingUser, ct);
     }

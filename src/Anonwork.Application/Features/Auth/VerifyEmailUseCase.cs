@@ -39,7 +39,7 @@ public class VerifyEmailUseCase(IUnitOfWork unitOfWork)
         var user = await _userRepo.FindSingleWithTrackingAsync(u => u.Email == email, ct)
             ?? throw new ConflictException("User not found.");
 
-        if (user.IsEmailVerified)
+        if (user.Status != UserStatus.PendingVerification)
             throw new ConflictException("Email already verified.");
 
         var defaultRole = await _roleRepo.FindSingleAsync(r => r.Name == "user", ct)
@@ -59,8 +59,6 @@ public class VerifyEmailUseCase(IUnitOfWork unitOfWork)
         user.MarkEmailVerified();
         verificationToken.MarkUsed();
         await unitOfWork.SaveChangesAsync(ct);
-
-        var permissions = Array.Empty<string>();
 
         return new AuthResult("", "", user.Id, user.AnonAlias);
     }

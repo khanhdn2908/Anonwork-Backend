@@ -3,6 +3,7 @@ using Anonwork.Application.Features.Auth.DTOs.Requests;
 using Anonwork.Application.Features.Auth.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
+using Anonwork.Domain.Enums;
 
 namespace Anonwork.Application.Features.Auth;
 
@@ -21,8 +22,14 @@ public class LoginUseCase(
         var user = await _userRepo.FindSingleAsync(u => u.Email == req.Email)
             ?? throw new UnauthorizedException(invalidMsg);
 
-        if (!user.IsEmailVerified)
+        if (user.Status == UserStatus.PendingVerification)
             throw new UnauthorizedException("Email has not been verified yet.");
+
+        if (user.Status == UserStatus.Deleted)
+            throw new UnauthorizedException("User account has been deleted.");
+
+        if (user.Status == UserStatus.Suspended)
+            throw new UnauthorizedException("User account has been suspended.");
 
         if (!passwordHasher.Verify(req.Password, user.PasswordHash))
             throw new UnauthorizedException(invalidMsg);

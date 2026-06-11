@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
+using Anonwork.Domain.Enums;
 
 namespace Anonwork.Domain.Entities;
 
@@ -27,9 +29,13 @@ public partial class User
 
     public string? GoogleSubject { get; set; }
 
-    public bool IsEmailVerified { get; set; }
+    public UserStatus Status { get; set; }
 
-    public bool IsActive { get; set; }
+    //[NotMapped]
+    //public bool IsEmailVerified => Status is UserStatus.Active or UserStatus.Suspended or UserStatus.Deleted;
+
+    //[NotMapped]
+    //public bool IsActive => Status is UserStatus.PendingVerification or UserStatus.Active or UserStatus.Suspended;
 
     public DateTime CreatedAt { get; set; }
 
@@ -79,8 +85,7 @@ public partial class User
             PasswordHash = passwordHash,
             AnonAlias = anonAlias,
             IsAnonDefault = false,
-            IsEmailVerified = false,
-            IsActive = true,
+            Status = UserStatus.PendingVerification,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -103,7 +108,7 @@ public partial class User
             AvatarUrl = avatarUrl,
             AnonAlias = anonAlias,
             IsAnonDefault = false,
-            IsEmailVerified = true,
+            Status = UserStatus.Active,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -111,7 +116,11 @@ public partial class User
 
     public void MarkEmailVerified()
     {
-        IsEmailVerified = true;
+        if (Status is UserStatus.PendingVerification)
+        {
+            Status = UserStatus.Active;
+        }
+
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -136,7 +145,7 @@ public partial class User
             AvatarUrl = avatarUrl;
         }
 
-        IsEmailVerified = true;
+        Status = UserStatus.Active;
         UpdatedAt = DateTime.UtcNow;
     }
 

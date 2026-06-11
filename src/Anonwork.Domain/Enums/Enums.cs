@@ -41,6 +41,14 @@ public enum SubscriptionStatus
     Cancelled
 }
 
+public enum UserStatus
+{
+    PendingVerification,
+    Active,
+    Suspended,
+    Deleted
+}
+
 public enum TokenPurpose
 {
     EmailVerification,
