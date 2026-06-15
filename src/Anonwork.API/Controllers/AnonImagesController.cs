@@ -14,7 +14,8 @@ public class AnonImagesController(
     GetAnonImageByIdUseCase getAnonImageByIdUseCase,
     CreateAnonImageUseCase createAnonImageUseCase,
     UpdateAnonImageUseCase updateAnonImageUseCase,
-    DeleteAnonImageUseCase deleteAnonImageUseCase) : BaseApiController
+    DeleteAnonImageUseCase deleteAnonImageUseCase,
+    DeleteAnonImageUseCasePermanent deleteAnonImageUseCasePermanent) : BaseApiController
 {
     [HttpGet]
     [Authorize(Policy = "Permission:anon-images.read")]
@@ -69,6 +70,14 @@ public class AnonImagesController(
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await deleteAnonImageUseCase.ExecuteAsync(id, ct);
+        return NoContent();
+    }
+
+    [HttpDelete("{id:guid}/permanent")]
+    [Authorize(Policy = "Permission:anon-images.delete-permanent")]
+    public async Task<IActionResult> DeletePermanent(Guid id, CancellationToken ct)
+    {
+        await deleteAnonImageUseCasePermanent.ExecuteAsync(id, ct);
         return NoContent();
     }
 }

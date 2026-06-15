@@ -13,7 +13,8 @@ public class PermissionsController(
     GetPermissionByIdUseCase getPermissionByIdUseCase,
     CreatePermissionUseCase createPermissionUseCase,
     UpdatePermissionUseCase updatePermissionUseCase,
-    DeletePermissionUseCase deletePermissionUseCase) : ControllerBase
+    DeletePermissionUseCase deletePermissionUseCase,
+    DeletePermissionUseCasePermanent deletePermissionUseCasePermanent) : ControllerBase
 {
     [HttpGet]
     [Authorize(Policy = "Permission:permissions.read")]
@@ -85,6 +86,21 @@ public class PermissionsController(
         try
         {
             await deletePermissionUseCase.ExecuteAsync(id, ct);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id:guid}/permanent")]
+    [Authorize(Policy = "Permission:permissions.delete-permanent")]
+    public async Task<IActionResult> DeletePermanent(Guid id, CancellationToken ct = default)
+    {
+        try
+        {
+            await deletePermissionUseCasePermanent.ExecuteAsync(id, ct);
             return NoContent();
         }
         catch (Exception ex)

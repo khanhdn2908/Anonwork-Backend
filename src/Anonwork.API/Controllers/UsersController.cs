@@ -15,6 +15,7 @@ public class UsersController(
     ToggleUserAnonDefaultUseCase toggleUserAnonDefaultUseCase,
     AssignAnonImageToUserUseCase assignAnonImageToUserUseCase,
     DeleteUserUseCase deleteUserUseCase,
+    DeleteUserUseCasePermanent deleteUserUseCasePermanent,
     GetAllUsersUseCase getAllUsersUseCase,
     AssignRoleToUserUseCase assignRoleToUserUseCase,
     RemoveRoleFromUserUseCase removeRoleFromUserUseCase,
@@ -114,6 +115,21 @@ public class UsersController(
     {
         await deleteUserUseCase.ExecuteAsync(id, ct);
         return NoContent();
+    }
+
+    [HttpDelete("{id:guid}/permanent")]
+    [Authorize(Policy = "Permission:users.delete-permanent")]
+    public async Task<IActionResult> DeleteUserPermanent(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await deleteUserUseCasePermanent.ExecuteAsync(id, ct);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
     }
 
     [HttpGet("{userId:guid}/roles")]

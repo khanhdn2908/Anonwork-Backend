@@ -16,6 +16,7 @@ public class SubjectsController(
     CreateSubjectUseCase createSubjectUseCase,
     UpdateSubjectUseCase updateSubjectUseCase,
     DeleteSubjectUseCase deleteSubjectUseCase,
+    DeleteSubjectUseCasePermanent deleteSubjectUseCasePermanent,
     GetPostsBySubjectUseCase getPostsBySubjectUseCase) : ControllerBase
 {
   
@@ -116,6 +117,24 @@ public class SubjectsController(
         try
         {
             await deleteSubjectUseCase.ExecuteAsync(id, ct);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id:guid}/permanent")]
+    [Authorize(Policy = "Permission:subjects.delete-permanent")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeletePermanent(Guid id, CancellationToken ct = default)
+    {
+        try
+        {
+            await deleteSubjectUseCasePermanent.ExecuteAsync(id, ct);
             return NoContent();
         }
         catch (Exception ex)

@@ -18,6 +18,7 @@ public class PostsController(
     GetPostsBySubjectUseCase getPostsBySubjectUseCase,
     UpdatePostUseCase updatePostUseCase,
     DeletePostUseCase deletePostUseCase,
+    DeletePostUseCasePermanent deletePostUseCasePermanent,
     TogglePostVoteUseCase togglePostVoteUseCase,
     ICloudinaryService cloudinaryService) : BaseApiController
 {
@@ -173,6 +174,24 @@ public class PostsController(
         catch (UnauthorizedException ex)
         {
             return Forbid();
+        }
+        catch (Exception ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id:guid}/permanent")]
+    [Authorize(Policy = "Permission:posts.delete-permanent")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeletePermanent(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await deletePostUseCasePermanent.ExecuteAsync(id, ct);
+            return NoContent();
         }
         catch (Exception ex)
         {

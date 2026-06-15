@@ -14,6 +14,7 @@ public class RolesController(
     CreateRoleUseCase createRoleUseCase,
     UpdateRoleUseCase updateRoleUseCase,
     DeleteRoleUseCase deleteRoleUseCase,
+    DeleteRoleUseCasePermanent deleteRoleUseCasePermanent,
     AssignPermissionToRoleUseCase assignPermissionToRoleUseCase,
     AssignPermissionsToRoleUseCase assignPermissionsToRoleUseCase,
     RemovePermissionFromRoleUseCase removePermissionFromRoleUseCase,
@@ -84,6 +85,21 @@ public class RolesController(
         try
         {
             await deleteRoleUseCase.ExecuteAsync(id, ct);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id:guid}/permanent")]
+    [Authorize(Policy = "Permission:roles.delete-permanent")]
+    public async Task<IActionResult> DeletePermanent(Guid id, CancellationToken ct = default)
+    {
+        try
+        {
+            await deleteRoleUseCasePermanent.ExecuteAsync(id, ct);
             return NoContent();
         }
         catch (Exception ex)

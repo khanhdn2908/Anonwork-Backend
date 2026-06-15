@@ -13,6 +13,7 @@ public class CommentController(
     GetCommentsByPostUseCase getCommentsByPostUseCase,
     UpdateCommentUseCase updateCommentUseCase,
     DeleteCommentUseCase deleteCommentUseCase,
+    DeleteCommentUseCasePermanent deleteCommentUseCasePermanent,
     ToggleCommentVoteUseCase toggleCommentVoteUseCase) : BaseApiController
 {
     /// <summary>
@@ -96,6 +97,28 @@ public class CommentController(
         try
         {
             await deleteCommentUseCase.ExecuteAsync(userId.Value, commentId, ct);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{commentId:guid}/permanent")]
+    [Authorize(Policy = "Permission:comments.delete-permanent")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeletePermanent(Guid commentId, CancellationToken ct)
+    {
+        var userId = GetUserIdFromToken();
+        if (userId is null)
+            return Unauthorized(new { message = "User not authenticated" });
+
+        try
+        {
+            await deleteCommentUseCasePermanent.ExecuteAsync(userId.Value, commentId, ct);
             return NoContent();
         }
         catch (Exception ex)
