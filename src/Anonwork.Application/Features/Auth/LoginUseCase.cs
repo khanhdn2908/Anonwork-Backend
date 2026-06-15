@@ -35,7 +35,8 @@ public class LoginUseCase(
             throw new UnauthorizedException(invalidMsg);
 
         var permissions = await rolePermissionService.GetPermissionCodesAsync(user.Id, ct);
-        var accessToken = jwtService.GenerateAccessToken(user, permissions);
+        var roles = await rolePermissionService.GetRoleCodesAsync(user.Id, ct);
+        var accessToken = jwtService.GenerateAccessToken(user, permissions, roles);
         var refreshToken = await jwtService.GenerateRefreshTokenAsync(user.Id, ct);
 
         return new AuthResult(accessToken, refreshToken, user.Id, user.AnonAlias);

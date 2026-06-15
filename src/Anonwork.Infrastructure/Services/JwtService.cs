@@ -21,7 +21,7 @@ public class JwtService(
     // ACCESS TOKEN
     // ──────────────────────────────────────────
 
-    public string GenerateAccessToken(User user, IEnumerable<string> permissions)
+    public string GenerateAccessToken(User user, IEnumerable<string> permissions, IEnumerable<string> roles)
     {
         var claims = new List<Claim>
         {
@@ -32,6 +32,7 @@ public class JwtService(
             new("anonAlias", user.AnonAlias)
         };
 
+        claims.AddRange(roles.Select(role => new Claim("role", role)));
         claims.AddRange(permissions.Select(permission => new Claim("permission", permission)));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_opts.Secret));

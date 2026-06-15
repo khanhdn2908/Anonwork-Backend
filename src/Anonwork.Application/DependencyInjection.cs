@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<GetPostsBySubjectUseCase>();
         services.AddScoped<UpdatePostUseCase>();
         services.AddScoped<DeletePostUseCase>();
+        services.AddScoped<DeletePostUseCasePermanent>();
         services.AddScoped<TogglePostVoteUseCase>();
 
         // ── Subjects Use Cases ──────────────────
@@ -47,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<CreateSubjectUseCase>();
         services.AddScoped<UpdateSubjectUseCase>();
         services.AddScoped<DeleteSubjectUseCase>();
+        services.AddScoped<DeleteSubjectUseCasePermanent>();
 
         // ── Anon Images Use Cases ───────────────
         services.AddScoped<GetAllAnonImagesUseCase>();
@@ -54,6 +56,7 @@ public static class DependencyInjection
         services.AddScoped<CreateAnonImageUseCase>();
         services.AddScoped<UpdateAnonImageUseCase>();
         services.AddScoped<DeleteAnonImageUseCase>();
+        services.AddScoped<DeleteAnonImageUseCasePermanent>();
 
         // ── Follows Use Cases ──────────────────
         services.AddScoped<FollowUserUseCase>();
@@ -70,6 +73,7 @@ public static class DependencyInjection
         services.AddScoped<ToggleUserAnonDefaultUseCase>();
         services.AddScoped<AssignAnonImageToUserUseCase>();
         services.AddScoped<DeleteUserUseCase>();
+        services.AddScoped<DeleteUserUseCasePermanent>();
         services.AddScoped<GetAllUsersUseCase>();
         services.AddScoped<AssignRoleToUserUseCase>();
         services.AddScoped<RemoveRoleFromUserUseCase>();
@@ -80,6 +84,7 @@ public static class DependencyInjection
         services.AddScoped<GetCommentsByPostUseCase>();
         services.AddScoped<UpdateCommentUseCase>();
         services.AddScoped<DeleteCommentUseCase>();
+        services.AddScoped<DeleteCommentUseCasePermanent>();
         services.AddScoped<ToggleCommentVoteUseCase>();
 
         // ── Payments Use Cases ──────────────────
@@ -94,6 +99,7 @@ public static class DependencyInjection
         services.AddScoped<CreateRoleUseCase>();
         services.AddScoped<UpdateRoleUseCase>();
         services.AddScoped<DeleteRoleUseCase>();
+        services.AddScoped<DeleteRoleUseCasePermanent>();
         services.AddScoped<AssignPermissionToRoleUseCase>();
         services.AddScoped<AssignPermissionsToRoleUseCase>();
         services.AddScoped<RemovePermissionFromRoleUseCase>();
@@ -105,6 +111,7 @@ public static class DependencyInjection
         services.AddScoped<CreatePermissionUseCase>();
         services.AddScoped<UpdatePermissionUseCase>();
         services.AddScoped<DeletePermissionUseCase>();
+        services.AddScoped<DeletePermissionUseCasePermanent>();
 
         // ── SubscriptionPlans Use Cases ─────────
         services.AddScoped<GetAllSubscriptionPlansUseCase>();

@@ -6,7 +6,7 @@ namespace Anonwork.Application.Interfaces;
 
 public interface IJwtService
 {
-    string GenerateAccessToken(User user, IEnumerable<string> permissions);
+    string GenerateAccessToken(User user, IEnumerable<string> permissions, IEnumerable<string> roles);
 
     Task<string> GenerateRefreshTokenAsync(Guid userId, CancellationToken ct = default);
     Task<Guid?> ValidateRefreshTokenAsync(string token, CancellationToken ct = default);

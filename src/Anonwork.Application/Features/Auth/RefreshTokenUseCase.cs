@@ -22,7 +22,8 @@ public class RefreshTokenUseCase(IUnitOfWork unitOfWork, IJwtService jwtService,
         await jwtService.RevokeRefreshTokenAsync(refreshToken, ct);
 
         var permissions = await rolePermissionService.GetPermissionCodesAsync(user.Id, ct);
-        var newAccessToken = jwtService.GenerateAccessToken(user, permissions);
+        var roles = await rolePermissionService.GetRoleCodesAsync(user.Id, ct);
+        var newAccessToken = jwtService.GenerateAccessToken(user, permissions, roles);
         var newRefreshToken = await jwtService.GenerateRefreshTokenAsync(user.Id, ct);
 
         return new AuthResult(newAccessToken, newRefreshToken, user.Id, user.AnonAlias);

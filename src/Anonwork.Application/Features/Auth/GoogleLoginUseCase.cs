@@ -6,12 +6,14 @@ using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 using Google.Apis.Auth;
 using Microsoft.Extensions.Configuration;
+using System.Linq;
 
 namespace Anonwork.Application.Features.Auth;
 
 public class GoogleLoginUseCase(
     IUnitOfWork unitOfWork,
     IJwtService jwtService,
+    IRolePermissionService rolePermissionService,
     IConfiguration configuration)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
@@ -62,8 +64,9 @@ public class GoogleLoginUseCase(
 
         await unitOfWork.SaveChangesAsync(ct);
 
-        var permissions = Array.Empty<string>();
-        var accessToken = jwtService.GenerateAccessToken(user, permissions);
+        var permissions = await rolePermissionService.GetPermissionCodesAsync(user.Id, ct);
+        var roles = await rolePermissionService.GetRoleCodesAsync(user.Id, ct);
+        var accessToken = jwtService.GenerateAccessToken(user, permissions, roles);
         var refreshToken = await jwtService.GenerateRefreshTokenAsync(user.Id, ct);
 
         return new AuthResult(accessToken, refreshToken, user.Id, user.AnonAlias);
