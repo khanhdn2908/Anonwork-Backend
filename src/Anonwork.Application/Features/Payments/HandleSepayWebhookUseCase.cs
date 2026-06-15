@@ -2,7 +2,6 @@ using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Features.Payments.DTOs.Requests;
 using Anonwork.Application.Features.Payments.DTOs.Responses;
 using Anonwork.Application.Interfaces;
-using Anonwork.Domain.Common.Exceptions;
 using Anonwork.Domain.Entities;
 using Anonwork.Domain.Enums;
 using Microsoft.Extensions.Logging;

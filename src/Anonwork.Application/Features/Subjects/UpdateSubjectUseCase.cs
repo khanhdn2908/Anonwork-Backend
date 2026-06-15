@@ -1,8 +1,8 @@
+using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Features.Subjects.DTOs.Requests;
 using Anonwork.Application.Features.Subjects.DTOs.Responses;
 using Anonwork.Application.Interfaces;
-using Anonwork.Domain.Common.Exceptions;
-using Subject = Anonwork.Domain.Entities.Subject;
+using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.Subjects;
 

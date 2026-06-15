@@ -1,5 +1,5 @@
+using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Interfaces;
-using Anonwork.Domain.Common.Exceptions;
 using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.AnonImages;
@@ -15,6 +15,8 @@ public class DeleteAnonImageUseCase(IUnitOfWork unitOfWork)
 
         var anonImage = await _anonImageRepo.GetByIdWithTrackingAsync(anonImageId, ct)
             ?? throw new NotFoundException(nameof(AnonImage), anonImageId);
+
+        if (anonImage.IsActive == false) throw new ArgumentException("Anon image is deleted");
 
         anonImage.IsActive = false;
         anonImage.UpdatedAt = DateTime.UtcNow;

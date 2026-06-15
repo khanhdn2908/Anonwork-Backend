@@ -1,3 +1,4 @@
+using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 
@@ -22,10 +23,10 @@ public class DeleteCommentUseCase(IUnitOfWork unitOfWork)
         // ── Find comment ────────────────────────────
         var comment = await _commentRepository.FindSingleWithTrackingAsync(c => c.Id == commentId, ct);
         if (comment is null)
-            throw new KeyNotFoundException("Comment not found.");
+            throw new NotFoundException(nameof(Comment), commentId);
 
         if (comment.AuthorId != currentUserId)
-            throw new UnauthorizedAccessException("You can only delete your own comments.");
+            throw new InvalidOperationException("You can only delete your own comments.");
 
         if (!comment.IsActive)
             return;

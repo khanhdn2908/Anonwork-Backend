@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Anonwork.Domain.Common.Exceptions
+namespace Anonwork.Application.Common.Exceptions
 {
     public class NotFoundException : Exception
     {

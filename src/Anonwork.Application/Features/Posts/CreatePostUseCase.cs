@@ -1,7 +1,5 @@
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
-using Anonwork.Domain.Common.Exceptions;
-using Post = Anonwork.Domain.Entities.Post;
 using Anonwork.Application.Features.Posts.DTOs.Request;
 using Anonwork.Application.Features.Posts.DTOs.Response;
 using Anonwork.Domain.Enums;

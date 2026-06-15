@@ -15,7 +15,6 @@ public class RegisterUseCase(
     IEmailSender emailSender)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
-    //private readonly IGenericRepository<EmailVerificationToken> _verificationTokenRepo = unitOfWork.GetRepository<EmailVerificationToken>();
     private readonly IGenericRepository<OneTimeToken> _tokenRepo = unitOfWork.GetRepository<OneTimeToken>();
 
     public async Task ExecuteAsync(RegisterRequest req, CancellationToken ct = default)

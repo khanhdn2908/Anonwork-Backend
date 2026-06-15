@@ -1,5 +1,4 @@
 ﻿using Anonwork.Application.Common.Exceptions;
-using Anonwork.Domain.Common.Exceptions;
 using System.Net;
 using System.Text.Json;
 

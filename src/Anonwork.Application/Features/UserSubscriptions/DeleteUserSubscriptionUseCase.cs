@@ -1,3 +1,4 @@
+using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Enums;
 
@@ -12,7 +13,7 @@ public class DeleteUserSubscriptionUseCase(IUnitOfWork unitOfWork)
         // Check if subscription exists
         var subscription = await _userSubscriptionRepository.GetByIdAsync(id, ct);
         if (subscription == null)
-            return false;
+            throw new NotFoundException(nameof(Anonwork.Domain.Entities.UserSubscription), id);
 
         // Business rule: Only allow deletion of non-active subscriptions
         // Active subscriptions should be cancelled instead of deleted

@@ -3,7 +3,6 @@ using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Features.Users.DTOs.Requests;
 using Anonwork.Application.Features.Users.DTOs.Responses;
 using Anonwork.Application.Interfaces;
-using Anonwork.Domain.Common.Exceptions;
 using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.Users;
