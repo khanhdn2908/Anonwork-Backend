@@ -91,8 +91,8 @@ public class GoogleLoginUseCase(
 
     private async Task AssignDefaultUserRoleAsync(Guid userId, CancellationToken ct)
     {
-        var role = await _roleRepo.FindSingleAsync(r => r.Name == "user", ct)
-            ?? throw new InvalidOperationException("Default role 'user' was not found.");
+        var role = await _roleRepo.FindSingleAsync(r => r.Name == "menber", ct)
+            ?? throw new InvalidOperationException("Default role 'menber' was not found.");
 
         var existing = await _userRoleRepo.ExistsAsync(ur => ur.UserId == userId && ur.RoleId == role.Id, ct);
         if (existing)

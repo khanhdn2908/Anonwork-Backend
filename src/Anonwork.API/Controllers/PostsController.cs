@@ -94,7 +94,8 @@ public class PostsController(
         CancellationToken ct = default)
     {
         var userId = GetUserIdFromToken();
-        var result = await getPostsUseCase.ExecuteAsync(page, pageSize, search, userId, ct);
+        var permissions = GetPermissionsFromToken();
+        var result = await getPostsUseCase.ExecuteAsync(page, pageSize, search, userId, permissions, ct);
         return Ok(result);
     }
 
@@ -223,5 +224,12 @@ public class PostsController(
     }
 
     // ── Helpers ─────────────────────────────────────────
+    private IReadOnlyCollection<string> GetPermissionsFromToken()
+    {
+        return User.Claims
+            .Where(c => c.Type == "permission")
+            .Select(c => c.Value)
+            .ToArray();
+    }
 }
 

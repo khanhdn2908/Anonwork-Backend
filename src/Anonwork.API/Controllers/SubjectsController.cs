@@ -4,6 +4,7 @@ using Anonwork.Application.Features.Subjects;
 using Anonwork.Application.Features.Subjects.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 
 namespace Anonwork.API.Controllers;
 
@@ -17,7 +18,7 @@ public class SubjectsController(
     UpdateSubjectUseCase updateSubjectUseCase,
     DeleteSubjectUseCase deleteSubjectUseCase,
     DeleteSubjectUseCasePermanent deleteSubjectUseCasePermanent,
-    GetPostsBySubjectUseCase getPostsBySubjectUseCase) : ControllerBase
+    GetPostsBySubjectUseCase getPostsBySubjectUseCase) : BaseApiController
 {
   
     [HttpGet]
@@ -143,7 +144,7 @@ public class SubjectsController(
         }
     }
 
- 
+
     [HttpGet("{subjectId:guid}/posts")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -156,12 +157,22 @@ public class SubjectsController(
     {
         try
         {
-            var result = await getPostsBySubjectUseCase.ExecuteAsync(subjectId, page, pageSize, null,ct);
+            var userId = GetUserIdFromToken();
+            var permissions = GetPermissionsFromToken();
+            var result = await getPostsBySubjectUseCase.ExecuteAsync(subjectId, page, pageSize, userId, permissions, ct);
             return Ok(result);
         }
         catch (Exception ex)
         {
             return NotFound(new { message = ex.Message });
         }
+    }
+
+    private IReadOnlyCollection<string> GetPermissionsFromToken()
+    {
+        return User.Claims
+            .Where(c => c.Type == "permission")
+            .Select(c => c.Value)
+            .ToArray();
     }
 }

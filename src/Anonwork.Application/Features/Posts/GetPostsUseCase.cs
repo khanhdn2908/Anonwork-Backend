@@ -1,6 +1,8 @@
+using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Features.Posts.DTOs.Response;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
+using Anonwork.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Anonwork.Application.Features.Posts;
@@ -18,6 +20,7 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork)
         int pageSize = 10,
         string? searchQuery = null,
         Guid? currentUserId = null,
+        IReadOnlyCollection<string>? permissions = null,
         CancellationToken ct = default)
     {
         // ── Validation ──────────────────────────────
@@ -32,6 +35,17 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork)
             .Include(p => p.PostImages)
             .Include(p => p.PostTags)
             .Include(p => p.Comments);
+
+        var canReadAll = permissions?.Contains("posts.read:all", StringComparer.OrdinalIgnoreCase) == true;
+        var canReadPublished = permissions?.Contains("posts.read:published", StringComparer.OrdinalIgnoreCase) == true;
+
+        if (!canReadAll)
+        {
+            if (!canReadPublished)
+                throw new UnauthorizedException("You do not have permission to read posts.");
+
+            query = query.Where(p => p.Status == PostStatus.Published);
+        }
 
         if (!string.IsNullOrWhiteSpace(searchQuery))
         {

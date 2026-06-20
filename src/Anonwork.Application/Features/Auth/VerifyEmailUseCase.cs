@@ -42,8 +42,8 @@ public class VerifyEmailUseCase(IUnitOfWork unitOfWork)
         if (user.Status != UserStatus.PendingVerification)
             throw new ConflictException("Email already verified.");
 
-        var defaultRole = await _roleRepo.FindSingleAsync(r => r.Name == "user", ct)
-            ?? throw new ConflictException("Default role 'user' was not found.");
+        var defaultRole = await _roleRepo.FindSingleAsync(r => r.Name == "menber", ct)
+            ?? throw new ConflictException("Default role 'menber' was not found.");
 
         var alreadyAssigned = await _userRoleRepo.ExistsAsync(ur => ur.UserId == user.Id && ur.RoleId == defaultRole.Id, ct);
         if (!alreadyAssigned)

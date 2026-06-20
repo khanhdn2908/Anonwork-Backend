@@ -18,8 +18,7 @@ public class AuthController(
     RefreshTokenUseCase refreshTokenUseCase,
     LogoutUseCase logoutUseCase,
     ForgotPasswordUseCase forgotPasswordUseCase,
-    ResetPasswordUseCase resetPasswordUseCase,
-    IConfiguration configuration) : BaseApiController
+    ResetPasswordUseCase resetPasswordUseCase) : BaseApiController
 {
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto req, CancellationToken ct)
