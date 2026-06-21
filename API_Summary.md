@@ -1,278 +1,621 @@
-# Tóm tắt chức năng và permission của các API
+# Anonwork Backend Summary
 
-Tài liệu này tóm tắt các API hiện có trong `Anonwork.API`, bao gồm chức năng chính và permission/role yêu cầu cho từng endpoint.
-
-## Quy ước chung
-
-- `Authorize` không gắn policy: chỉ cần đăng nhập.
-- `AllowAnonymous`: không cần đăng nhập.
-- `Authorize(Policy = "Permission:...")`: cần đúng permission trong token.
-- `Authorize(Roles = "admin")`: cần role `admin`.
-- Một số API lấy `userId` từ JWT để thao tác theo người dùng hiện tại.
+Tài liệu này là bản tóm tắt nhanh toàn bộ repository `Anonwork-Backend`. Mục tiêu là sau này chỉ cần đọc file này để hiểu cấu trúc, chức năng chính, các module quan trọng và trạng thái hiện tại của dự án mà không cần quét lại toàn bộ source.
 
 ---
 
-## 1) Auth API
+## 1) Tổng quan dự án
 
-Base path: `/api/v1/auth`
+`Anonwork-Backend` là backend cho một nền tảng Q&A/diễn đàn ẩn danh xây dựng bằng **.NET 8 / C#** theo **Clean Architecture**.
 
-| Method | Endpoint | Chức năng | Yêu cầu |
-|---|---|---|---|
-| POST | `/register` | Đăng ký tài khoản mới, tạo email xác thực | Anonymous |
-| POST | `/verify-email` | Xác thực email bằng token | Anonymous |
-| POST | `/login` | Đăng nhập bằng email/password, trả JWT | Anonymous |
-| POST | `/google` | Đăng nhập bằng Google ID token | Anonymous |
-| POST | `/refresh` | Làm mới access token bằng refresh token | Anonymous |
-| POST | `/forgot-password` | Gửi hướng dẫn đặt lại mật khẩu | Anonymous |
-| POST | `/reset-password` | Đặt lại mật khẩu bằng token | Anonymous |
-| POST | `/logout` | Đăng xuất, thu hồi token | Đã đăng nhập |
+Mục tiêu chính:
+- Xác thực và phân quyền người dùng bằng JWT + role/permission.
+- Quản lý bài viết, bình luận, follow, bookmark, vote.
+- Hỗ trợ ảnh ẩn danh, thanh toán, gói đăng ký, webhook Sepay.
+- Có sẵn hạ tầng cho moderation, messaging, báo cáo, thông báo, caching, migration.
 
 ---
 
-## 2) Users API
+## 2) Cấu trúc solution
 
-Base path: `/api/v1/users`
+### Các project chính
 
-| Method | Endpoint | Chức năng | Yêu cầu |
-|---|---|---|---|
-| GET | `/me` | Lấy thông tin tài khoản hiện tại | Đã đăng nhập |
-| GET | `/{id}` | Lấy thông tin user theo ID | `Permission:users.read` |
-| GET | `/` | Lấy danh sách user có phân trang | `Permission:users.read` |
-| PUT | `/me` | Cập nhật thông tin tài khoản hiện tại | Đã đăng nhập |
-| PATCH | `/me/anon` | Bật/tắt chế độ anon mặc định của user | Đã đăng nhập |
-| PATCH | `/me/anon-image/{anonImageId}` | Gán ảnh anon cho tài khoản hiện tại | Đã đăng nhập |
-| PUT | `/{id}` | Cập nhật user theo ID | `Permission:users.update` |
-| DELETE | `/me` | Xóa tài khoản hiện tại | Đã đăng nhập |
-| DELETE | `/{id}` | Xóa user | `Permission:users.delete` |
-| DELETE | `/{id}/permanent` | Xóa user vĩnh viễn | `Permission:users.delete-permanent` |
-| GET | `/{userId}/roles` | Lấy danh sách role của user | `Permission:users.read-roles` |
-| POST | `/{userId}/roles/{roleId}` | Gán role cho user | `Permission:users.assign-role` |
-| DELETE | `/{userId}/roles/{roleId}` | Gỡ role khỏi user | `Permission:users.remove-role` |
+- `src/Anonwork.API`
+  - Tầng presentation: controllers, DTOs, middleware, auth policies, `Program.cs`.
+- `src/Anonwork.Application`
+  - Tầng business logic: use case, DTO, interfaces, exception, authorization helpers.
+- `src/Anonwork.Domain`
+  - Tầng domain: entities, enums, base classes.
+- `src/Anonwork.Infrastructure`
+  - Tầng hạ tầng: EF Core persistence, configurations, services, repositories, migrations.
+- `src/Anonwork.Shared`
+  - Shared project, hiện rất nhỏ.
 
----
+### Tài liệu / file hỗ trợ
 
-## 3) Roles API
-
-Base path: `/api/v1/roles`
-
-| Method | Endpoint | Chức năng | Yêu cầu |
-|---|---|---|---|
-| GET | `/` | Lấy danh sách role | Mặc định công khai trong controller hiện tại |
-| GET | `/{id}` | Lấy role theo ID | Mặc định công khai trong controller hiện tại |
-| POST | `/` | Tạo role mới | `Permission:roles.create` |
-| PUT | `/{id}` | Cập nhật role | `Permission:roles.update` |
-| DELETE | `/{id}` | Xóa role mềm | `Permission:roles.delete` |
-| DELETE | `/{id}/permanent` | Xóa role vĩnh viễn | `Permission:roles.delete-permanent` |
-| GET | `/{roleId}/permissions` | Lấy permissions của role | `Permission:roles.read-permissions` |
-| POST | `/{roleId}/permissions/{permissionId}` | Gán 1 permission cho role | `Permission:roles.assign-permission` |
-| POST | `/{roleId}/permissions` | Gán nhiều permissions cho role | `Permission:roles.assign-permission` |
-| DELETE | `/{roleId}/permissions/{permissionId}` | Gỡ permission khỏi role | `Permission:roles.remove-permission` |
+- `README.md`: giới thiệu tổng quan, setup, API docs, database, hướng dẫn chạy.
+- `TASKS.md`: danh sách task theo phase và trạng thái.
+- `docs/`: tài liệu chi tiết cho từng phần như controller, cloudinary, payment, repository usage.
+- `*.sql`: script database / permission mock.
+- `.github/workflows/ci.yml`: pipeline CI.
 
 ---
 
-## 4) Permissions API
+## 3) Kiến trúc tổng thể
 
-Base path: `/api/v1/permissions`
+Luồng xử lý chuẩn:
 
-| Method | Endpoint | Chức năng | Yêu cầu |
-|---|---|---|---|
-| GET | `/` | Lấy danh sách permission | `Permission:permissions.read` |
-| GET | `/{id}` | Lấy permission theo ID | `Permission:permissions.read` |
-| POST | `/` | Tạo permission mới | `Permission:permissions.create` |
-| PUT | `/{id}` | Cập nhật permission | `Permission:permissions.update` |
-| DELETE | `/{id}` | Xóa permission mềm | `Permission:permissions.delete` |
-| DELETE | `/{id}/permanent` | Xóa permission vĩnh viễn | `Permission:permissions.delete-permanent` |
+`Request -> API Controller -> Use Case -> Repository/DbContext -> Database -> Response`
 
----
+### Vai trò từng layer
 
-## 5) Subjects API
-
-Base path: `/api/v1/subjects`
-
-| Method | Endpoint | Chức năng | Yêu cầu |
-|---|---|---|---|
-| GET | `/` | Lấy danh sách subject | `Permission:subjects.read` |
-| GET | `/{id}` | Lấy subject theo ID | `Permission:subjects.read` |
-| POST | `/` | Tạo subject mới | `Permission:subjects.create` |
-| PUT | `/{id}` | Cập nhật subject | `Permission:subjects.update` |
-| DELETE | `/{id}` | Xóa subject mềm | `Permission:subjects.delete` |
-| DELETE | `/{id}/permanent` | Xóa subject vĩnh viễn | `Permission:subjects.delete-permanent` |
-| GET | `/{subjectId}/posts` | Lấy bài viết theo subject | Anonymous |
+- **API**: nhận request, validate input cơ bản, gọi use case, trả response HTTP.
+- **Application**: chứa logic nghiệp vụ chính, không phụ thuộc trực tiếp vào framework web.
+- **Domain**: định nghĩa entity và quy tắc lõi của hệ thống.
+- **Infrastructure**: triển khai truy cập dữ liệu, dịch vụ ngoài, cấu hình EF, migrations, email, JWT, Cloudinary, Sepay.
 
 ---
 
-## 6) Posts API
+## 4) Module chức năng chính
 
-Base path: `/api/v1/posts`
+## 4.1 Authentication & Authorization
 
-| Method | Endpoint | Chức năng | Yêu cầu |
-|---|---|---|---|
-| POST | `/` | Tạo bài viết, hỗ trợ upload ảnh | `Permission:posts.create` |
-| GET | `/{id}` | Lấy chi tiết bài viết theo ID | Anonymous |
-| GET | `/` | Lấy danh sách bài viết, hỗ trợ search/pagination | Anonymous |
-| PUT | `/{id}` | Cập nhật bài viết, hỗ trợ thêm/xóa ảnh | `Permission:posts.update` |
-| DELETE | `/{id}` | Xóa bài viết mềm | `Permission:posts.delete` |
-| DELETE | `/{id}/permanent` | Xóa bài viết vĩnh viễn | `Permission:posts.delete-permanent` |
-| POST | `/{id}/upvote` | Upvote / bỏ upvote bài viết | `Permission:posts.vote` |
+Các use case và thành phần liên quan:
+- `LoginUseCase`
+- `RegisterUseCase`
+- `RefreshTokenUseCase`
+- `LogoutUseCase`
+- `ForgotPasswordUseCase`
+- `ResetPasswordUseCase`
+- `VerifyEmailUseCase`
+- `GoogleLoginUseCase`
+- `RefreshTokenUseCase`
+- `PermissionHandler`, `PermissionRequirement`, `PermissionPolicyProvider`
+- `PermissionAuthorizationExtensions`
 
-Ghi chú:
-- Một số endpoint public nhưng vẫn đọc `permission` từ JWT nếu có để tùy biến dữ liệu trả về.
+API:
+- `AuthController`
+- middleware xác thực và/hoặc xử lý exception trong `src/Anonwork.API/Middlewares`
 
----
-
-## 7) Comments API
-
-Base path: `/api/v1/comments`
-
-| Method | Endpoint | Chức năng | Yêu cầu |
-|---|---|---|---|
-| POST | `/` | Tạo bình luận cho bài viết | `Permission:comments.create` |
-| GET | `/post/{postId}` | Lấy danh sách bình luận theo bài viết | Anonymous |
-| PUT | `/{commentId}` | Cập nhật nội dung bình luận | `Permission:comments.update` |
-| DELETE | `/{commentId}` | Xóa bình luận mềm | `Permission:comments.delete` |
-| DELETE | `/{commentId}/permanent` | Xóa bình luận vĩnh viễn | `Permission:comments.delete-permanent` |
-| POST | `/{commentId}/upvote` | Upvote / bỏ upvote bình luận | `Permission:comments.vote` |
+Hệ thống này dùng:
+- JWT access token
+- refresh token
+- permission-based authorization
+- role-based access control
 
 ---
 
-## 8) Bookmarks API
+## 4.2 Users
 
-Base path: `/api/v1/bookmarks`
+Hiện có khá nhiều use case và DTO cho user:
+- `GetMeUseCase`
+- `GetUserUseCase`
+- `GetAllUsersUseCase`
+- `UpdateUserUseCase`
+- `DeleteUserUseCase`
+- `DeleteUserUseCasePermanent`
+- `AssignRoleToUserUseCase`
+- `RemoveRoleFromUserUseCase`
+- `GetUserRolesUseCase`
+- `AssignAnonImageToUserUseCase`
+- `ToggleUserAnonDefaultUseCase`
 
-| Method | Endpoint | Chức năng | Yêu cầu |
-|---|---|---|---|
-| POST | `/` | Tạo bookmark cho bài viết | `Permission:bookmarks.create` |
-| DELETE | `/{postId}` | Xóa bookmark khỏi bài viết | `Permission:bookmarks.delete` |
-| GET | `/` | Lấy danh sách bookmark của user hiện tại | Đã đăng nhập |
-| GET | `/{postId}/exists` | Kiểm tra post đã được bookmark chưa | Đã đăng nhập |
+DTO responses:
+- `UserResponseDto`
+- `UserListResponseDto`
+- `UpdateUserResponseDto`
+- `GetMeResponseDto`
 
----
+API:
+- `UsersController`
 
-## 9) Follows API
+Domain:
+- `User` entity
+- `UserRole` entity
 
-Base path: `/api/v1/follows`
-
-| Method | Endpoint | Chức năng | Yêu cầu |
-|---|---|---|---|
-| POST | `/` | Follow một user khác | `Permission:follows.create` |
-| DELETE | `/{followingId}` | Unfollow user | `Permission:follows.delete` |
-| GET | `/{id}` | Lấy chi tiết follow relationship | Anonymous |
-| GET | `/followers/{userId}` | Lấy danh sách followers của user | Anonymous |
-| GET | `/following/{userId}` | Lấy danh sách user đang follow | Anonymous |
-| GET | `/stats/{userId}` | Lấy thống kê follow/follower | Anonymous |
-| GET | `/is-following/{followingId}` | Kiểm tra user hiện tại có đang follow không | `Permission:follows.read` |
-
----
-
-## 10) Anon Images API
-
-Base path: `/api/v1/anon-images`
-
-| Method | Endpoint | Chức năng | Yêu cầu |
-|---|---|---|---|
-| GET | `/` | Lấy danh sách ảnh anon | `Permission:anon-images.read` |
-| GET | `/{id}` | Lấy ảnh anon theo ID | `Permission:anon-images.read` |
-| POST | `/` | Tạo ảnh anon mới | `Permission:anon-images.create` |
-| PUT | `/{id}` | Cập nhật ảnh anon | `Permission:anon-images.update` |
-| DELETE | `/{id}` | Xóa ảnh anon mềm | `Permission:anon-images.delete` |
-| DELETE | `/{id}/permanent` | Xóa ảnh anon vĩnh viễn | `Permission:anon-images.delete-permanent` |
+Ý nghĩa:
+- Quản lý hồ sơ người dùng.
+- Gán role / xóa role.
+- Lấy thông tin cá nhân (`me`).
+- Hỗ trợ anonymous alias và ảnh ẩn danh.
 
 ---
 
-## 11) Subscription Plans API
+## 4.3 Posts
 
-Base path: `/api/v1/subscription-plans`
+Đây là một trong các module lớn nhất.
 
-| Method | Endpoint | Chức năng | Yêu cầu |
-|---|---|---|---|
-| GET | `/` | Lấy danh sách gói subscription | `Permission:subscription-plans.read` |
-| GET | `/{id}` | Lấy gói subscription theo ID | `Permission:subscription-plans.read` |
-| GET | `/slug/{slug}` | Lấy gói subscription theo slug | `Permission:subscription-plans.read` |
-| POST | `/` | Tạo gói mới | Role `admin` |
-| PUT | `/{id}` | Cập nhật gói | Role `admin` |
-| DELETE | `/{id}` | Xóa gói | Role `admin` |
+Use case đáng chú ý:
+- `CreatePostUseCase`
+- `GetPostByIdUseCase`
+- `GetPostsUseCase`
+- `GetPostsBySubjectUseCase`
+- `UpdatePostUseCase`
+- `DeletePostUseCase`
+- `DeletePostUseCasePermanent`
+- `TogglePostVoteUseCase`
+- `PostVoteProjectionHelper`
 
----
+DTOs:
+- `CreatePostRequestDto`
+- `CreatePostRequest`
+- `UpdatePostRequestDto`
+- `UpdatePostRequest`
+- `UploadPostImagesRequestDto`
+- `PostResponseDto`
+- `PostListResponseDto`
+- `PostVoteResponseDto`
 
-## 12) Payments API
+API:
+- `PostsController`
 
-Base path: `/api/v1/payments`
+Domain:
+- `Post`
+- `PostImage`
+- `PostTag`
+- `Vote`
 
-| Method | Endpoint | Chức năng | Yêu cầu |
-|---|---|---|---|
-| POST | `/create-order` | Tạo order thanh toán | `Permission:payments.create` |
-| GET | `/orders/{orderId}` | Lấy trạng thái order | `Permission:payments.read` |
-| POST | `/webhook` | Nhận webhook từ Sepay | Anonymous |
-| POST | `/subscriptions/{subscriptionId}/renew` | Gia hạn subscription | `Permission:payments.create` |
-
----
-
-## 13) Maintenance API
-
-Base path: `/api/v1/maintenance`
-
-| Method | Endpoint | Chức năng | Yêu cầu |
-|---|---|---|---|
-| POST | `/cleanup-email-verification-tokens` | Xóa token xác thực email hết hạn | Header `X-Maintenance-Secret` đúng secret cấu hình |
-| POST | `/cleanup-unpaid-expired-orders` | Xóa order chưa thanh toán đã hết hạn | Header `X-Maintenance-Secret` đúng secret cấu hình |
-
----
-
-## 14) Danh sách permission xuất hiện trong controller
-
-- `posts.create`
-- `posts.update`
-- `posts.delete`
-- `posts.delete-permanent`
-- `posts.vote`
-- `subjects.read`
-- `subjects.create`
-- `subjects.update`
-- `subjects.delete`
-- `subjects.delete-permanent`
-- `permissions.read`
-- `permissions.create`
-- `permissions.update`
-- `permissions.delete`
-- `permissions.delete-permanent`
-- `roles.create`
-- `roles.update`
-- `roles.delete`
-- `roles.delete-permanent`
-- `roles.read-permissions`
-- `roles.assign-permission`
-- `roles.remove-permission`
-- `users.read`
-- `users.update`
-- `users.delete`
-- `users.delete-permanent`
-- `users.read-roles`
-- `users.assign-role`
-- `users.remove-role`
-- `comments.create`
-- `comments.update`
-- `comments.delete`
-- `comments.delete-permanent`
-- `comments.vote`
-- `bookmarks.create`
-- `bookmarks.delete`
-- `follows.create`
-- `follows.delete`
-- `follows.read`
-- `anon-images.read`
-- `anon-images.create`
-- `anon-images.update`
-- `anon-images.delete`
-- `anon-images.delete-permanent`
-- `subscription-plans.read`
-- `payments.create`
-- `payments.read`
+Lưu ý:
+- Có hỗ trợ vote, images, tags, subject association, pagination.
+- Có helper riêng cho projection vote để tối ưu query trả về.
+- Có cả file trùng chức năng ở `Features/Posts/Helpers` và `Features/Posts/DTOs/PostVoteProjectionHelper.cs`, nên nên kiểm tra khi refactor.
 
 ---
 
-## Ghi chú nhanh
+## 4.4 Comments
 
-- Một số controller đang cho phép `AllowAnonymous` ở các endpoint đọc công khai như post, comment, follow stats, subject posts, payment webhook.
-- `RolesController` hiện không gắn `[Authorize]` ở cấp controller, nhưng các endpoint tạo/sửa/xóa vẫn có permission riêng.
-- `SubscriptionPlansController` dùng role `admin` cho các thao tác ghi.
-- `MaintenanceController` không dùng JWT permission mà dùng secret header để bảo vệ.
+Use case:
+- `CreateCommentUseCase`
+- `GetCommentsByPostUseCase`
+- `UpdateCommentUseCase`
+- `DeleteCommentUseCase`
+- `DeleteCommentUseCasePermanent`
+- `ToggleCommentVoteUseCase`
+
+DTOs:
+- `CreateCommentRequest`
+- `UpdateCommentRequest`
+- `CommentResponseDto`
+- `CommentListResponseDto`
+- `CommentVoteResponseDto`
+
+API:
+- `CommentController`
+
+Domain:
+- `Comment`
+
+Đây là module đã có nền tảng đầy đủ cho CRUD và vote comment.
+
+---
+
+## 4.5 Follows
+
+Use case:
+- `FollowUserUseCase`
+- `UnfollowUserUseCase`
+- `GetFollowersUseCase`
+- `GetFollowingUseCase`
+- `GetFollowByIdUseCase`
+- `GetFollowStatsUseCase`
+- `IsFollowingUseCase`
+
+DTOs:
+- `FollowUserRequest`
+- `FollowStatsDto`
+- `FollowResponseDto`
+- `PaginatedFollowResponseDto`
+
+API:
+- `FollowController`
+
+Domain:
+- `Follow`
+
+Tài liệu liên quan:
+- `docs/FollowController.md`
+
+---
+
+## 4.6 Bookmarks
+
+Use case:
+- `CreateBookmarkUseCase`
+- `DeleteBookmarkUseCase`
+- `GetBookmarksUseCase`
+- `IsBookmarkedUseCase`
+
+DTOs:
+- `CreateBookmarkRequest`
+- `BookmarkResponseDto`
+- `BookmarkListResponseDto`
+
+API:
+- `BookmarkController`
+
+Domain:
+- `Bookmark`
+
+---
+
+## 4.7 Subjects
+
+Use case:
+- `CreateSubjectUseCase`
+- `GetSubjectsUseCase`
+- `GetSubjectByIdUseCase`
+- `UpdateSubjectUseCase`
+- `DeleteSubjectUseCase`
+- `DeleteSubjectUseCasePermanent`
+
+DTOs:
+- `CreateSubjectRequestDto`
+- `UpdateSubjectRequestDto`
+- `SubjectResponseDto`
+- `SubjectListResponseDto`
+
+API:
+- `SubjectsController`
+
+Domain:
+- `Subject`
+
+---
+
+## 4.8 Anonymous images
+
+Use case:
+- `CreateAnonImageUseCase`
+- `GetAllAnonImagesUseCase`
+- `GetAnonImageByIdUseCase`
+- `UpdateAnonImageUseCase`
+- `DeleteAnonImageUseCase`
+- `DeleteAnonImageUseCasePermanent`
+
+DTOs:
+- `CreateAnonImageRequestDto`
+- `UpdateAnonImageRequestDto`
+- `AnonImageResponseDto`
+
+API:
+- `AnonImagesController`
+
+Domain:
+- `AnonImage`
+
+---
+
+## 4.9 Subscription plans & user subscriptions
+
+Subscription plans use case:
+- `CreateSubscriptionPlanUseCase`
+- `GetAllSubscriptionPlansUseCase`
+- `GetSubscriptionPlanByIdUseCase`
+- `GetSubscriptionPlanBySlugUseCase`
+- `UpdateSubscriptionPlanUseCase`
+- `DeleteSubscriptionPlanUseCase`
+
+DTOs:
+- `CreateSubscriptionPlanRequestDto`
+- `UpdateSubscriptionPlanRequestDto`
+- `GetAllSubscriptionPlansRequestDto`
+- `SubscriptionPlanResponseDto`
+
+User subscriptions use case:
+- `CreateUserSubscriptionUseCase`
+- `GetUserSubscriptionByIdUseCase`
+- `GetUserSubscriptionsByUserIdUseCase`
+- `UpdateUserSubscriptionUseCase`
+- `DeleteUserSubscriptionUseCase`
+
+DTOs:
+- `UserSubscriptionRequestDto`
+- `UserSubscriptionResponseDto`
+
+API:
+- `SubscriptionPlansController`
+- `UserSubscriptionsController`
+
+Domain:
+- `SubscriptionPlan`
+- `UserSubscription`
+
+---
+
+## 4.10 Payments / Sepay
+
+Use case:
+- `CreateOrderUseCase`
+- `GetOrderStatusUseCase`
+- `HandleSepayWebhookUseCase`
+- `RenewSubscriptionUseCase`
+
+DTOs:
+- `CreateOrderRequest`
+- `OrderResponse`
+- `SepayQrResponse`
+- `SepayWebhookRequest`
+- `WebhookResult`
+
+API:
+- `PaymentController`
+
+Infrastructure services / config:
+- `SepayService`
+- `ISepayService`
+- `SepayOptions`
+
+Domain:
+- `Order`
+
+Tài liệu liên quan:
+- `docs/PAYMENT_SEPAY_INTEGRATION.md`
+- `docs/PAYMENT_QUICK_START.md`
+
+---
+
+## 4.11 Roles & Permissions
+
+Use case:
+- `CreateRoleUseCase`
+- `GetAllRolesUseCase`
+- `GetRoleByIdUseCase`
+- `UpdateRoleUseCase`
+- `DeleteRoleUseCase`
+- `DeleteRoleUseCasePermanent`
+- `AssignPermissionToRoleUseCase`
+- `AssignPermissionsToRoleUseCase`
+- `RemovePermissionFromRoleUseCase`
+- `GetRolePermissionsUseCase`
+
+Permissions use case:
+- `CreatePermissionUseCase`
+- `GetAllPermissionsUseCase`
+- `GetPermissionByIdUseCase`
+- `UpdatePermissionUseCase`
+- `DeletePermissionUseCase`
+- `DeletePermissionUseCasePermanent`
+
+DTOs:
+- `RoleRequestDto`
+- `RoleDto`
+- `AssignPermissionsRequestDto`
+- `PermissionDto`
+- `PermissionRequestDto`
+
+API:
+- `RolesController`
+- `PermissionsController`
+
+Domain:
+- `Role`
+- `Permission`
+- `RolePermission`
+
+Infrastructure:
+- `RolePermissionService`
+- configurations for role/permission mappings
+
+---
+
+## 4.12 Maintenance / housekeeping
+
+Use case:
+- `CleanupEmailVerificationTokensUseCase`
+- `CleanupUnpaidExpiredOrdersUseCase`
+
+API:
+- `MaintenanceController`
+
+Ý nghĩa:
+- Dọn token xác thực email hết hạn.
+- Dọn order chưa thanh toán quá hạn.
+
+---
+
+## 4.13 Folders / features hiện có khác
+
+Các feature khác xuất hiện trong source và đã có nền tảng:
+- `Messages`
+- `Conversations`
+- `Notifications`
+- `Reports`
+- `Votes`
+- `Maintenance`
+- `Permissions`
+- `Roles`
+- `Payments`
+- `UserSubscriptions`
+
+Một số module này đã có entity/config nhưng controller hoặc use case vẫn có thể chưa đầy đủ so với task list.
+
+---
+
+## 5) Domain entities chính
+
+Các entity đã thấy trong `src/Anonwork.Domain/Entities`:
+
+- `User`
+- `UserRole`
+- `Role`
+- `Permission`
+- `RolePermission`
+- `Post`
+- `PostImage`
+- `PostTag`
+- `Comment`
+- `Vote`
+- `Bookmark`
+- `Follow`
+- `Subject`
+- `AnonImage`
+- `SubscriptionPlan`
+- `UserSubscription`
+- `Order`
+- `Conversation`
+- `ConversationMember`
+- `Message`
+- `Notification`
+- `Report`
+- `OneTimeToken`
+- `EmailVerificationToken`
+
+Base / common:
+- `BaseEntity`
+- enums trong `src/Anonwork.Domain/Enums/Enums.cs`
+
+---
+
+## 6) Infrastructure quan trọng
+
+### DbContext / persistence
+- `AppDBContext.cs`
+- `UnitOfWork.cs`
+- `GenericRepository.cs`
+
+### EF Core configurations
+Có rất nhiều `IEntityTypeConfiguration<>` cho từng entity, ví dụ:
+- `UserConfiguration`
+- `PostConfiguration`
+- `CommentConfiguration`
+- `VoteConfiguration`
+- `FollowConfiguration`
+- `BookmarkConfiguration`
+- `SubscriptionPlanConfiguration`
+- `UserSubscriptionConfiguration`
+- `RoleConfiguration`
+- `PermissionConfiguration`
+- `RolePermissionConfiguration`
+- `OrderConfiguration`
+- `MessageConfiguration`
+- `ConversationConfiguration`
+- `ConversationMemberConfiguration`
+- `NotificationConfiguration`
+- `ReportConfiguration`
+- `AnonImageConfiguration`
+- `OneTimeTokenConfiguration`
+- `EmailVerificationTokenConfiguration`
+- `PostImageConfiguration`
+- `PostTagConfiguration`
+
+### Services
+- `JwtService`
+- `PasswordHasher`
+- `EmailSender`
+- `CloudinaryService`
+- `RolePermissionService`
+- `SepayService`
+
+### Options / config classes
+- `JwtOptions`
+- `EmailOptions`
+- `CloudinaryOptions`
+- `SepayOptions`
+- `MaintenanceOptions`
+
+### Migrations
+- `20260619141755_AddPostReadScopes`
+- `AppDbContextModelSnapshot`
+
+---
+
+## 7) API layer
+
+### Controllers hiện có
+- `AuthController`
+- `UsersController`
+- `PostsController`
+- `CommentController`
+- `FollowController`
+- `BookmarkController`
+- `SubjectsController`
+- `SubscriptionPlansController`
+- `UserSubscriptionsController`
+- `RolesController`
+- `PermissionsController`
+- `PaymentController`
+- `AnonImagesController`
+- `MaintenanceController`
+- `BaseApiController`
+
+### Middleware / auth helpers
+- `Middlewares.cs`
+- `Exception handling / request logging / authorization` có nền tảng trong project và task list.
+- `PermissionAuthorizationExtensions`
+
+### API DTOs ở tầng API
+- `Auth.cs`
+- `Follow.cs`
+- `RolePermissionDtos.cs`
+- `RegisterRequestDto.cs`
+- `ResetPasswordRequestDto.cs`
+- `ForgotPasswordRequestDto.cs`
+
+---
+
+## 8) Documentation hiện có
+
+Trong repo có khá nhiều file tài liệu. Các file đáng nhớ:
+- `README.md` — mô tả tổng quan lớn nhất.
+- `TASKS.md` — theo dõi tiến độ phát triển.
+- `API_Summary.md` — file tổng hợp này.
+- `docs/GENERIC_REPOSITORY_USAGE.md`
+- `docs/FollowController.md`
+- `docs/PostsController.md`
+- `docs/CLOUDINARY_SETUP.md`
+- `docs/CLOUDINARY_EXAMPLE.md`
+- `docs/PAYMENT_SEPAY_INTEGRATION.md`
+- `docs/PAYMENT_QUICK_START.md`
+- `docs/CLOUDINARY_SETUP.md`
+
+---
+
+## 9) Trạng thái phát triển theo `TASKS.md`
+
+### Đã hoàn thành nhiều ở Phase 1
+- Auth / JWT / refresh / logout đã xong.
+- Posts CRUD và upload images đã xong.
+- Một phần comments / voting / social features đã có nền tảng.
+- Nhiều controller và use case cho user, role, permission, payment, subject, bookmark, follow đã có sẵn.
+
+### Còn lại đáng chú ý
+- Một số task comment, notifications, messaging, reports, tests, logging, rate limiting, encryption, docs, CI/CD vẫn còn trong kế hoạch.
+
+---
+
+## 10) Những điểm cần chú ý khi làm việc tiếp
+
+1. **Có file trùng / gần trùng tên ở vài nơi**
+   - Ví dụ `GetPostsUseCase`, `GetPostByIdUseCase`, `PostVoteProjectionHelper`, `GetMeUseCase`, `UsersController`, `PostsController`, `BookmarkController` có cả đường dẫn dùng dấu `/` và `\` trong snapshot git status.
+   - Nên kiểm tra xem đây là file thật sự khác nhau hay chỉ là vấn đề path trên Windows / Git status.
+
+2. **Có nhiều file build output trong `bin/` và `obj/`**
+   - Không nên đọc/commit các file này.
+
+3. **Có file trong `.vs/`**
+   - Đây là cache của Visual Studio, không nên đưa vào git.
+
+4. **Module đã khá lớn**
+   - Nếu cần hiểu sâu một chức năng, nên đọc thêm file controller + use case + DTO + entity tương ứng.
+
+---
+
+## 11) Tóm tắt cực ngắn theo module
+
+- **Auth**: đăng ký, đăng nhập, refresh, logout, Google login, quên mật khẩu, verify email.
+- **Users**: hồ sơ, role, anon image, quản trị user.
+- **Posts**: CRUD, list, filter by subject, images, vote.
+- **Comments**: CRUD, nested replies, vote.
+- **Follow / Bookmark**: follow người dùng, lưu bài viết.
+- **Subjects**: quản lý chủ đề.
+- **Subscription / Payment**: gói đăng ký, order, webhook Sepay.
+- **Roles / Permissions**: hệ thống phân quyền chi tiết.
+- **Infrastructure**: EF Core, repository, unit of work, external services, migrations.
+
+---
+
+## 12) Ghi chú cuối
+
+Tài liệu này được tạo để làm “bản đồ nhanh” của repository. Khi codebase thay đổi đáng kể, nên cập nhật lại file này để giữ nó luôn là nguồn tham chiếu nhanh nhất.
+
+**Last updated**: 2026-06-21

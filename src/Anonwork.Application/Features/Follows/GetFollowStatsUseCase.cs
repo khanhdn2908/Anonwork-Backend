@@ -1,6 +1,7 @@
 using Anonwork.Application.Features.Follows.DTOs;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
+using Anonwork.Domain.Enums;
 
 namespace Anonwork.Application.Features.Follows;
 
@@ -20,10 +21,12 @@ public class GetFollowStatsUseCase(IUnitOfWork unitOfWork)
             throw new ArgumentException("User ID is required.");
 
         // ── Get follower count ──────────────────────
-        var followerCount = await _followRepository.CountAsync(f => f.Following.Id == userId);
+        var followerCount = await _followRepository.CountAsync(f => f.Following.Id == userId && 
+                                                                f.Following.Status == UserStatus.Active);
 
         // ── Get following count ─────────────────────
-        var followingCount = await _followRepository.CountAsync(f => f.Follower.Id == userId);
+        var followingCount = await _followRepository.CountAsync(f => f.Follower.Id == userId &&
+                                                                f.Follower.Status == UserStatus.Active);
 
         // ── Check if current user is following ──────
         var isFollowing = false;

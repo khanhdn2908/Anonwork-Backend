@@ -9,14 +9,14 @@ public class GetAllAnonImagesUseCase(IUnitOfWork unitOfWork)
     private readonly IGenericRepository<AnonImage> _anonImageRepo = unitOfWork.GetRepository<AnonImage>();
 
     public async Task<IReadOnlyList<AnonImageResponseDto>> ExecuteAsync(
-        bool? isActive = null,
+        bool hasPermision,
         CancellationToken ct = default)
     {
         var items = await _anonImageRepo.GetAllAsync(ct);
 
-        if (isActive.HasValue)
+        if (!hasPermision)
         {
-            items = items.Where(x => x.IsActive == isActive.Value).ToList();
+            items = items.Where(x => x.IsActive == true).ToList();
         }
 
         return items

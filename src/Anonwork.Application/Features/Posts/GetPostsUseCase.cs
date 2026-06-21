@@ -1,4 +1,3 @@
-using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Features.Posts.DTOs.Response;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
@@ -16,19 +15,17 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork)
     private readonly IGenericRepository<Vote> _voteRepo = unitOfWork.GetRepository<Vote>();
 
     public async Task<PostListResponseDto> ExecuteAsync(
+        bool hasPerrmission,
         int page = 1,
         int pageSize = 10,
         string? searchQuery = null,
         Guid? currentUserId = null,
-        IReadOnlyCollection<string>? permissions = null,
         CancellationToken ct = default)
     {
-        // ── Validation ──────────────────────────────
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 10;
-        if (pageSize > 100) pageSize = 100; // Max 100 per page
+        if (pageSize > 100) pageSize = 100;
 
-        // ── Get posts ───────────────────────────────
         IQueryable<Post> query = _postRepo.GetQueryableNoTracking()
             .Include(p => p.Author)
             .Include(p => p.Subject)
@@ -36,14 +33,8 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork)
             .Include(p => p.PostTags)
             .Include(p => p.Comments);
 
-        var canReadAll = permissions?.Contains("posts.read:all", StringComparer.OrdinalIgnoreCase) == true;
-        var canReadPublished = permissions?.Contains("posts.read:published", StringComparer.OrdinalIgnoreCase) == true;
-
-        if (!canReadAll)
+        if (!hasPerrmission)
         {
-            if (!canReadPublished)
-                throw new UnauthorizedException("You do not have permission to read posts.");
-
             query = query.Where(p => p.Status == PostStatus.Published);
         }
 
@@ -56,13 +47,13 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork)
         }
 
         var total = await query.CountAsync(ct);
+
         var posts = await query
             .OrderByDescending(p => p.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);
 
-        // ── Calculate pagination ────────────────────
         var totalPages = (int)Math.Ceiling((double)total / pageSize);
 
         var postIds = posts.Select(p => p.Id).ToList();
@@ -73,8 +64,40 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork)
                 .ToListAsync(ct)).ToHashSet()
             : new HashSet<Guid>();
 
-        // ── Return response ─────────────────────────
-        var postDtos = posts.Select(p => PostVoteProjectionHelper.MapToResponse(p, upvotedSet.Contains(p.Id))).ToList();
+        var postDtos = posts.Select(p =>
+        {
+            var isAnon = p.IsAnonymous && p.Author.IsAnonDefault;
+            var imageUrls = p.PostImages
+                .OrderBy(i => i.DisplayOrder)
+                .Select(i => i.ImageUrl)
+                .ToList();
+            var tags = p.PostTags
+                .Select(t => t.Tag)
+                .ToList();
+
+            return new PostResponseDto(
+                p.Id,
+                p.Title,
+                p.Content,
+                p.AuthorId,
+                isAnon ? null : p.Author.Username,
+                isAnon ? p.Author.AnonAlias : null,
+                isAnon,
+                p.SubjectId,
+                p.Subject?.Name,
+                imageUrls,
+                0,
+                tags,
+                p.Upvotes,
+                p.CommentsCount,
+                p.ViewCount,
+                p.Status.ToString(),
+                p.CreatedAt,
+                p.UpdatedAt,
+                upvotedSet.Contains(p.Id)
+            );
+        }).ToList();
+
         return new PostListResponseDto(postDtos, total, page, pageSize, totalPages);
     }
 }

@@ -1,5 +1,6 @@
 using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Features.Posts.DTOs.Response;
+using Anonwork.Application.Features.Posts.Helpers;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 using Anonwork.Domain.Enums;
@@ -16,11 +17,11 @@ public class GetPostsBySubjectUseCase(IUnitOfWork unitOfWork)
     private readonly IGenericRepository<Vote> _voteRepo = unitOfWork.GetRepository<Vote>();
 
     public async Task<PostListResponseDto> ExecuteAsync(
+        bool hasPermission,
         Guid subjectId,
+        Guid? usedId = null,
         int page = 1,
         int pageSize = 10,
-        Guid? currentUserId = null,
-        IReadOnlyCollection<string>? permissions = null,
         CancellationToken ct = default)
     {
         // ── Validation ──────────────────────────────
@@ -39,14 +40,8 @@ public class GetPostsBySubjectUseCase(IUnitOfWork unitOfWork)
             .Include(p => p.PostTags)
             .Where(p => p.SubjectId == subjectId);
 
-        var canReadAll = permissions?.Contains("posts.read:all", StringComparer.OrdinalIgnoreCase) == true;
-        var canReadPublished = permissions?.Contains("posts.read:published", StringComparer.OrdinalIgnoreCase) == true;
-
-        if (!canReadAll)
+        if (!hasPermission)
         {
-            if (!canReadPublished)
-                throw new UnauthorizedException("You do not have permission to read posts.");
-
             query = query.Where(p => p.Status == PostStatus.Published);
         }
 
@@ -62,9 +57,9 @@ public class GetPostsBySubjectUseCase(IUnitOfWork unitOfWork)
         var totalPages = (int)Math.Ceiling((double)total / pageSize);
 
         var postIds = posts.Select(p => p.Id).ToList();
-        var upvotedSet = currentUserId.HasValue
+        var upvotedSet = usedId.HasValue
             ? (await _voteRepo.GetQueryableNoTracking()
-                .Where(v => v.UserId == currentUserId.Value && v.TargetType == "post" && postIds.Contains(v.TargetId) && v.VoteType == "up")
+                .Where(v => v.UserId == usedId.Value && v.TargetType == "post" && postIds.Contains(v.TargetId) && v.VoteType == "up")
                 .Select(v => v.TargetId)
                 .ToListAsync(ct)).ToHashSet()
             : new HashSet<Guid>();

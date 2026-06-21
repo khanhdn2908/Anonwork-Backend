@@ -12,7 +12,7 @@ public class GetSubjectByIdUseCase(IUnitOfWork unitOfWork)
 {
     private readonly IGenericRepository<Subject> _subjectRepo = unitOfWork.GetRepository<Subject>();
 
-    public async Task<SubjectResponseDto> ExecuteAsync(Guid subjectId, CancellationToken ct = default)
+    public async Task<SubjectResponseDto> ExecuteAsync(Guid subjectId, bool hasPermission,CancellationToken ct = default)
     {
         // ── Validation ──────────────────────────────
         if (subjectId == Guid.Empty)
@@ -22,6 +22,9 @@ public class GetSubjectByIdUseCase(IUnitOfWork unitOfWork)
         var subject = await _subjectRepo.GetByIdAsync(subjectId, ct);
 
         if (subject is null)
+            throw new NotFoundException(nameof(Subject), subjectId);
+
+        if (!hasPermission && !subject.IsActive)
             throw new NotFoundException(nameof(Subject), subjectId);
 
         // ── Return response ─────────────────────────

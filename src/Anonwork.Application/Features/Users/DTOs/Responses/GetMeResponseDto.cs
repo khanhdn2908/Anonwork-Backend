@@ -1,3 +1,6 @@
+using Anonwork.Application.Features.AnonImages.DTOs.Responses;
+using Anonwork.Application.Features.UserSubscriptions.DTOs.Responses;
+
 namespace Anonwork.Application.Features.Users.DTOs.Responses;
 
 public record GetMeResponseDto(
@@ -8,6 +11,10 @@ public record GetMeResponseDto(
     string? Bio,
     string AnonAlias,
     bool IsAnonDefault,
+    int FollowerCount,
+    int FollowingCount,
+    string? AnonImageUrl,
+    List<string> UserSubscriptionPlanActive,
     DateTime CreatedAt,
     DateTime UpdatedAt
 );

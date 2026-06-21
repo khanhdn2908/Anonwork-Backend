@@ -17,4 +17,12 @@ public abstract class BaseApiController : ControllerBase
 
         return Guid.TryParse(sub, out var id) ? id : null;
     }
+
+    protected IReadOnlyCollection<string> GetPermissionsFromToken()
+    {
+        return User.Claims
+            .Where(c => c.Type == "permission")
+            .Select(c => c.Value)
+            .ToArray();
+    }
 }

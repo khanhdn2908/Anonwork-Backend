@@ -29,7 +29,7 @@ public class AssignAnonImageToUserUseCase(IUnitOfWork unitOfWork)
         if (!anonImage.IsActive)
             throw new InvalidOperationException("Anon image is inactive.");
 
-        user.EnableAnonDefault(anonImage.Id);
+        user.SetAnonInfo(anonImageId, anonImage.Name);
 
         await _userRepo.UpdateAsync(user, ct);
         await unitOfWork.SaveChangesAsync(ct);

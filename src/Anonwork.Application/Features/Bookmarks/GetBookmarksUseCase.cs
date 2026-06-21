@@ -1,6 +1,7 @@
 using Anonwork.Application.Features.Bookmarks.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
+using Anonwork.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Anonwork.Application.Features.Bookmarks;
@@ -14,6 +15,7 @@ public class GetBookmarksUseCase(IUnitOfWork unitOfWork)
 
     public async Task<BookmarkListResponseDto> ExecuteAsync(
         Guid currentUserId,
+        bool hasPermission,
         string? search = null,
         int page = 1,
         int pageSize = 10,
@@ -40,6 +42,8 @@ public class GetBookmarksUseCase(IUnitOfWork unitOfWork)
             .Include(b => b.Post)
                 .ThenInclude(p => p.PostTags)
             .Where(b => b.UserId == currentUserId);
+
+        if(!hasPermission) query = query.Where(b => b.Post.Status == PostStatus.Published);
 
         if (search is not null)
         {

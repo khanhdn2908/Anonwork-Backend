@@ -11,6 +11,7 @@ namespace Anonwork.API.Controllers;
 [Authorize]
 public class UsersController(
     GetMeUseCase getMeUseCase,
+    GetUserUseCase getUserUseCase,
     UpdateUserUseCase updateUserUseCase,
     ToggleUserAnonDefaultUseCase toggleUserAnonDefaultUseCase,
     AssignAnonImageToUserUseCase assignAnonImageToUserUseCase,
@@ -19,10 +20,10 @@ public class UsersController(
     GetAllUsersUseCase getAllUsersUseCase,
     AssignRoleToUserUseCase assignRoleToUserUseCase,
     RemoveRoleFromUserUseCase removeRoleFromUserUseCase,
-    GetUserRolesUseCase getUserRolesUseCase) : BaseApiController
+    GetUserRolesUseCase getUserRolesUseCase,
+    IAuthorizationService authorizationService) : BaseApiController
 {
     [HttpGet("me")]
-    [Authorize]
     public async Task<IActionResult> GetMe(CancellationToken ct)
     {
         var userId = GetUserIdFromToken();
@@ -33,27 +34,31 @@ public class UsersController(
     }
 
     [HttpGet("{id}")]
-    [Authorize(Policy = "Permission:users.read")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetUserById(Guid id, CancellationToken ct)
     {
-        var result = await getMeUseCase.ExecuteAsync(id, ct);
+        var authResult = await authorizationService.AuthorizeAsync(User, "Permission:users.read:all");
+
+        var result = await getUserUseCase.ExecuteAsync(id, authResult.Succeeded,ct);
         return Ok(result);
     }
 
     [HttpGet]
-    [Authorize(Policy = "Permission:users.read")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAllUsers(
+        [FromQuery] string? search = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var result = await getAllUsersUseCase.ExecuteAsync(page, pageSize, ct);
+        var authResult = await authorizationService.AuthorizeAsync(User, "Permission:users.read:all");
+
+        var result = await getAllUsersUseCase.ExecuteAsync(authResult.Succeeded, search, page, pageSize, ct);
         return Ok(result);
     }
 
     [HttpPut("me")]
     [Consumes("multipart/form-data")]
-    [Authorize]
     public async Task<IActionResult> UpdateMe(
         [FromForm] UpdateUserRequestDto req,
         CancellationToken ct)
@@ -66,7 +71,6 @@ public class UsersController(
     }
 
     [HttpPatch("me/anon")]
-    [Authorize]
     public async Task<IActionResult> ToggleMyAnonDefault(CancellationToken ct)
     {
         var userId = GetUserIdFromToken();
@@ -77,7 +81,6 @@ public class UsersController(
     }
 
     [HttpPatch("me/anon-image/{anonImageId:guid}")]
-    [Authorize]
     public async Task<IActionResult> AssignMyAnonImage(Guid anonImageId, CancellationToken ct)
     {
         var userId = GetUserIdFromToken();
@@ -99,7 +102,6 @@ public class UsersController(
     }
 
     [HttpDelete("me")]
-    [Authorize]
     public async Task<IActionResult> DeleteMe(CancellationToken ct)
     {
         var userId = GetUserIdFromToken();

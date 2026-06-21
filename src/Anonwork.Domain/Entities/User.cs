@@ -31,12 +31,6 @@ public partial class User
 
     public UserStatus Status { get; set; }
 
-    //[NotMapped]
-    //public bool IsEmailVerified => Status is UserStatus.Active or UserStatus.Suspended or UserStatus.Deleted;
-
-    //[NotMapped]
-    //public bool IsActive => Status is UserStatus.PendingVerification or UserStatus.Active or UserStatus.Suspended;
-
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
@@ -124,10 +118,16 @@ public partial class User
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void EnableAnonDefault(Guid? anonImageId = null)
+    public void SetAnonInfo(Guid anonImageId, string anonAlias)
+    {
+        AnonImageId = anonImageId;
+        AnonAlias = anonAlias;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void EnableAnonDefault()
     {
         IsAnonDefault = true;
-        AnonImageId = anonImageId;
         UpdatedAt = DateTime.UtcNow;
     }
 

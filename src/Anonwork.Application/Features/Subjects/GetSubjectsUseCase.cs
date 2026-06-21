@@ -12,6 +12,7 @@ public class GetSubjectsUseCase(IUnitOfWork unitOfWork)
     private readonly IGenericRepository<Subject> _subjectRepo = unitOfWork.GetRepository<Subject>();
 
     public async Task<SubjectListResponseDto> ExecuteAsync(
+        bool hasPermission,
         string? searchQuery = null,
         int page = 1,
         int pageSize = 10,
@@ -24,6 +25,8 @@ public class GetSubjectsUseCase(IUnitOfWork unitOfWork)
             pageSize = 10;
 
         var allSubjects = await _subjectRepo.GetAllAsync(ct);
+
+        if(!hasPermission) allSubjects = allSubjects.Where(s => s.IsActive == true);
 
         if (!string.IsNullOrWhiteSpace(searchQuery))
         {

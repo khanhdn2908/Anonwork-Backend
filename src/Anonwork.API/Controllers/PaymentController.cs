@@ -14,11 +14,8 @@ public class PaymentController(
     HandleSepayWebhookUseCase handleSepayWebhookUseCase,
     RenewSubscriptionUseCase renewSubscriptionUseCase) : BaseApiController
 {
-    /// <summary>
-    /// Tạo order thanh toán
-    /// </summary>
+
     [HttpPost("create-order")]
-    [Authorize(Policy = "Permission:payments.create")]
     public async Task<IActionResult> CreateOrder(
         [FromBody] CreateOrderRequest req,
         CancellationToken ct)
@@ -34,7 +31,6 @@ public class PaymentController(
     /// Lấy trạng thái order
     /// </summary>
     [HttpGet("orders/{orderId}")]
-    [Authorize(Policy = "Permission:payments.read")]
     public async Task<IActionResult> GetOrderStatus(
         Guid orderId,
         CancellationToken ct)
@@ -64,7 +60,6 @@ public class PaymentController(
     /// Renew subscription
     /// </summary>
     [HttpPost("subscriptions/{subscriptionId}/renew")]
-    [Authorize(Policy = "Permission:payments.create")]
     public async Task<IActionResult> RenewSubscription(
         Guid subscriptionId,
         CancellationToken ct)

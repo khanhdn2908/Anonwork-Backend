@@ -1,7 +1,8 @@
-using Anonwork.Application.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using Anonwork.Domain.Entities;
 using Anonwork.Application.Features.Follows.DTOs.Responses;
+using Anonwork.Application.Interfaces;
+using Anonwork.Domain.Entities;
+using Anonwork.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Anonwork.Application.Features.Follows;
 
@@ -14,6 +15,7 @@ public class GetFollowingUseCase(IUnitOfWork unitOfWork)
 
     public async Task<PaginatedFollowResponseDto> ExecuteAsync(
         Guid userId,
+        bool hasPermission,
         int page = 1,
         int pageSize = 10,
         CancellationToken ct = default)
@@ -32,8 +34,14 @@ public class GetFollowingUseCase(IUnitOfWork unitOfWork)
         var query = _followRepository.GetQueryableNoTracking()
             .Include(f => f.Follower)
             .Include(f => f.Following)
-            .Where(f => f.FollowerId == userId)
-            .OrderByDescending(f => f.CreatedAt);
+            .Where(f => f.FollowerId == userId);
+
+        if (!hasPermission)
+        {
+            query = query.Where(f => f.Follower.Status == UserStatus.Active);
+        }
+
+            query = query.OrderByDescending(f => f.CreatedAt);
 
         var total = await query.CountAsync(ct);
         var following = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);

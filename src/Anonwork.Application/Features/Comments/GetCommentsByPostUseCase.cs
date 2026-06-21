@@ -14,6 +14,7 @@ public class GetCommentsByPostUseCase(IUnitOfWork unitOfWork)
 
     public async Task<CommentListResponseDto> ExecuteAsync(
         Guid postId,
+        bool hasPermission,
         int page = 1,
         int pageSize = 10,
         CancellationToken ct = default)
@@ -30,7 +31,14 @@ public class GetCommentsByPostUseCase(IUnitOfWork unitOfWork)
         var query = _commentRepository.GetQueryableNoTracking()
             .Include(c => c.Author)
             .Include(c => c.Parent)
-            .Where(c => c.PostId == postId && c.IsActive)
+            .Where(c => c.PostId == postId && c.IsActive);
+
+        if (!hasPermission)
+        {
+            query = query.Where(c => c.IsActive);
+        }
+
+        query = query
             .OrderBy(c => c.Depth)
             .ThenBy(c => c.CreatedAt);
 

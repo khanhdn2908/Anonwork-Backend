@@ -12,7 +12,7 @@ public class UpdateUserUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudi
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
     private readonly ICloudinaryService _cloudinaryService = cloudinaryService;
 
-    public async Task<GetMeResponseDto> ExecuteAsync(
+    public async Task<UpdateUserResponseDto> ExecuteAsync(
         Guid userId,
         UpdateUserRequestDto req,
         CancellationToken ct = default)
@@ -33,37 +33,27 @@ public class UpdateUserUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudi
         if (req.Bio is not null)
             user.Bio = req.Bio;
 
-        string? imageUrls = null;
         if (req.Avatar is not null)
         {
             try
             {
-                imageUrls = await _cloudinaryService.UploadImageAsync(req.Avatar, "avatars", ct);
+                user.AvatarUrl = await _cloudinaryService.UploadImageAsync(req.Avatar, "avatars", ct);
             }
-            catch (Exception ex) 
+            catch
             {
-                throw new BadRequestException("Failed to upload images");
+                throw new BadRequestException("Failed to upload image.");
             }
-
-            user.AvatarUrl = imageUrls;
         }
-            
 
         user.UpdatedAt = DateTime.UtcNow;
 
         await _userRepo.UpdateAsync(user, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
-        return new GetMeResponseDto(
-            user.Id,
+        return new UpdateUserResponseDto(
             user.Username,
-            user.Email,
-            user.AvatarUrl,
             user.Bio,
-            user.AnonAlias,
-            user.IsAnonDefault,
-            user.CreatedAt,
-            user.UpdatedAt
+            user.AvatarUrl
         );
     }
 }

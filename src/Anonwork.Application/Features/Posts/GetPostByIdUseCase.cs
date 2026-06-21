@@ -1,7 +1,9 @@
 using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Features.Posts.DTOs.Response;
+using Anonwork.Application.Features.Posts.Helpers;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
+using Anonwork.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Anonwork.Application.Features.Posts;
@@ -14,13 +16,11 @@ public class GetPostByIdUseCase(IUnitOfWork unitOfWork)
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
     private readonly IGenericRepository<Vote> _voteRepo = unitOfWork.GetRepository<Vote>();
 
-    public async Task<PostResponseDto> ExecuteAsync(Guid postId, Guid? currentUserId = null, CancellationToken ct = default)
+    public async Task<PostResponseDto> ExecuteAsync(Guid postId, bool hasPermission, Guid? currentUserId = null, CancellationToken ct = default)
     {
-        // ── Validation ──────────────────────────────
         if (postId == Guid.Empty)
             throw new ArgumentException("Post id is required.");
 
-        // ── Get post ────────────────────────────────
         var post = await _postRepo.GetQueryableNoTracking()
             .Include(p => p.Author)
             .Include(p => p.Subject)
@@ -31,7 +31,9 @@ public class GetPostByIdUseCase(IUnitOfWork unitOfWork)
         if (post is null)
             throw new NotFoundException(nameof(Post), postId);
 
-        // ── Increment view count ────────────────────
+        if (!hasPermission && post.Status != PostStatus.Published)
+            throw new NotFoundException(nameof(Post), postId);
+
         post.ViewCount += 1;
         post.UpdatedAt = DateTime.UtcNow;
         await _postRepo.UpdateAsync(post, ct);
@@ -41,7 +43,6 @@ public class GetPostByIdUseCase(IUnitOfWork unitOfWork)
             v => v.UserId == currentUserId.Value && v.TargetId == postId && v.TargetType == "post" && v.VoteType == "up",
             ct);
 
-        // ── Return response ─────────────────────────
         return PostVoteProjectionHelper.MapToResponse(post, isUpvotedByMe);
     }
 }

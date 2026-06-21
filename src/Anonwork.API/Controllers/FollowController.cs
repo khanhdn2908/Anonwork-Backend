@@ -7,6 +7,7 @@ namespace Anonwork.API.Controllers;
 
 [ApiController]
 [Route("api/v1/follows")]
+[Authorize]
 public class FollowController(
     FollowUserUseCase followUserUseCase,
     UnfollowUserUseCase unfollowUserUseCase,
@@ -14,19 +15,11 @@ public class FollowController(
     GetFollowersUseCase getFollowersUseCase,
     GetFollowingUseCase getFollowingUseCase,
     GetFollowStatsUseCase getFollowStatsUseCase,
-    IsFollowingUseCase isFollowingUseCase) : BaseApiController
+    IsFollowingUseCase isFollowingUseCase,
+    IAuthorizationService authorizationService) : BaseApiController
 {
 
-    /// </remarks>
-    /// <param name="request">Follow request containing the user ID to follow</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>Created follow relationship with 201 status</returns>
-    /// <response code="201">Follow relationship created successfully</response>
-    /// <response code="400">Invalid request or already following</response>
-    /// <response code="401">Unauthorized</response>
-    /// <response code="404">User to follow not found</response>
     [HttpPost]
-    [Authorize(Policy = "Permission:follows.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -56,24 +49,7 @@ public class FollowController(
         }
     }
 
-    /// <summary>
-    /// Unfollow a user
-    /// </summary>
-    /// <remarks>
-    /// Requires authentication. Removes the follow relationship between the current user and the target user.
-    /// 
-    /// Sample request:
-    /// 
-    ///     DELETE /api/v1/follows/550e8400-e29b-41d4-a716-446655440000
-    /// </remarks>
-    /// <param name="followingId">ID of the user to unfollow</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>No content on success</returns>
-    /// <response code="204">Unfollow successful</response>
-    /// <response code="401">Unauthorized</response>
-    /// <response code="404">Follow relationship not found</response>
     [HttpDelete("{followingId:guid}")]
-    [Authorize(Policy = "Permission:follows.delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -98,23 +74,7 @@ public class FollowController(
         }
     }
 
-    /// <summary>
-    /// Get a follow relationship by ID
-    /// </summary>
-    /// <remarks>
-    /// Retrieves details of a specific follow relationship.
-    /// 
-    /// Sample request:
-    /// 
-    ///     GET /api/v1/follows/550e8400-e29b-41d4-a716-446655440001
-    /// </remarks>
-    /// <param name="id">Follow relationship ID</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>Follow relationship details</returns>
-    /// <response code="200">Follow relationship found</response>
-    /// <response code="404">Follow relationship not found</response>
     [HttpGet("{id:guid}")]
-    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
@@ -134,23 +94,6 @@ public class FollowController(
         }
     }
 
-    /// <summary>
-    /// Get followers of a user with pagination
-    /// </summary>
-    /// <remarks>
-    /// Retrieves a paginated list of all followers of a user.
-    /// 
-    /// Sample request:
-    /// 
-    ///     GET /api/v1/follows/followers/550e8400-e29b-41d4-a716-446655440000?page=1&pageSize=10
-    /// </remarks>
-    /// <param name="userId">User ID to get followers for</param>
-    /// <param name="page">Page number (default: 1)</param>
-    /// <param name="pageSize">Items per page (default: 10, max: 100)</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>Paginated list of followers</returns>
-    /// <response code="200">Followers retrieved successfully</response>
-    /// <response code="400">Invalid pagination parameters</response>
     [HttpGet("followers/{userId:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -161,9 +104,11 @@ public class FollowController(
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
+        var authResult = await authorizationService.AuthorizeAsync(User, "Permission:users.read:all");
+
         try
         {
-            var result = await getFollowersUseCase.ExecuteAsync(userId, page, pageSize, ct);
+            var result = await getFollowersUseCase.ExecuteAsync(userId, authResult.Succeeded, page, pageSize, ct);
             return Ok(result);
         }
         catch (ArgumentException ex)
@@ -172,23 +117,7 @@ public class FollowController(
         }
     }
 
-    /// <summary>
-    /// Get users that a user is following with pagination
-    /// </summary>
-    /// <remarks>
-    /// Retrieves a paginated list of all users that a user is following.
-    /// 
-    /// Sample request:
-    /// 
-    ///     GET /api/v1/follows/following/550e8400-e29b-41d4-a716-446655440000?page=1&pageSize=10
-    /// </remarks>
-    /// <param name="userId">User ID to get following list for</param>
-    /// <param name="page">Page number (default: 1)</param>
-    /// <param name="pageSize">Items per page (default: 10, max: 100)</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>Paginated list of users being followed</returns>
-    /// <response code="200">Following list retrieved successfully</response>
-    /// <response code="400">Invalid pagination parameters</response>
+
     [HttpGet("following/{userId:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -199,9 +128,11 @@ public class FollowController(
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
+        var authResult = await authorizationService.AuthorizeAsync(User, "Permission:users.read:all");
+
         try
         {
-            var result = await getFollowingUseCase.ExecuteAsync(userId, page, pageSize, ct);
+            var result = await getFollowingUseCase.ExecuteAsync(userId, authResult.Succeeded, page, pageSize, ct);
             return Ok(result);
         }
         catch (ArgumentException ex)
@@ -210,21 +141,6 @@ public class FollowController(
         }
     }
 
-    /// <summary>
-    /// Get follow statistics for a user
-    /// </summary>
-    /// <remarks>
-    /// Retrieves follow statistics including follower count, following count, and whether the current user is following this user.
-    /// 
-    /// Sample request:
-    /// 
-    ///     GET /api/v1/follows/stats/550e8400-e29b-41d4-a716-446655440000
-    /// </remarks>
-    /// <param name="userId">User ID to get statistics for</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>Follow statistics</returns>
-    /// <response code="200">Statistics retrieved successfully</response>
-    /// <response code="400">Invalid user ID</response>
     [HttpGet("stats/{userId:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -243,24 +159,7 @@ public class FollowController(
         }
     }
 
-    /// <summary>
-    /// Check if the current user is following a specific user
-    /// </summary>
-    /// <remarks>
-    /// Checks whether the current user is following the specified user.
-    /// 
-    /// Sample request:
-    /// 
-    ///     GET /api/v1/follows/is-following/550e8400-e29b-41d4-a716-446655440000
-    /// </remarks>
-    /// <param name="followingId">User ID to check if following</param>
-    /// <param name="ct">Cancellation token</param>
-    /// <returns>Boolean indicating if following</returns>
-    /// <response code="200">Check completed successfully</response>
-    /// <response code="401">Unauthorized</response>
-    /// <response code="400">Invalid user ID</response>
     [HttpGet("is-following/{followingId:guid}")]
-    [Authorize(Policy = "Permission:follows.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

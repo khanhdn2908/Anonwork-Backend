@@ -14,12 +14,17 @@ public record UserActiveSubscriptionDto(
 public record UserListResponseDto(
     Guid Id,
     string Username,
+    string? Email,
     string? AvatarUrl,
     string? Bio,
     string AnonAlias,
-    DateTime CreatedAt,
+    bool IsAnonDefault,
+    int FollowerCount,
+    int FollowingCount,
     bool HasActiveSubscription,
-    UserActiveSubscriptionDto? ActiveSubscription
+    UserActiveSubscriptionDto? ActiveSubscription,
+    DateTime CreatedAt,
+    DateTime UpdatedAt
 );
 
 public record UserListPaginatedResponseDto(

@@ -21,6 +21,7 @@ public class RolesController(
     GetRolePermissionsUseCase getRolePermissionsUseCase) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = "Permission:roles.read")]
     public async Task<IActionResult> GetAll(CancellationToken ct = default)
         => Ok(await getAllRolesUseCase.ExecuteAsync(ct));
 

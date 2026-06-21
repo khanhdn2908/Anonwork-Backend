@@ -14,13 +14,26 @@ public class CommentController(
     UpdateCommentUseCase updateCommentUseCase,
     DeleteCommentUseCase deleteCommentUseCase,
     DeleteCommentUseCasePermanent deleteCommentUseCasePermanent,
-    ToggleCommentVoteUseCase toggleCommentVoteUseCase) : BaseApiController
+    ToggleCommentVoteUseCase toggleCommentVoteUseCase,
+    IAuthorizationService authorizationService) : BaseApiController
 {
+
     /// <summary>
-    /// Create a comment for a post
+    /// Get comments by post
     /// </summary>
+    [HttpGet("post/{postId:guid}")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetAllByPost(Guid postId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
+    {
+        var authResult = await authorizationService.AuthorizeAsync(User, "Permission:comments.read:all");
+
+        var result = await getCommentsByPostUseCase.ExecuteAsync(postId, authResult.Succeeded, page, pageSize, ct);
+        return Ok(result);
+    }
+
     [HttpPost]
-    [Authorize(Policy = "Permission:comments.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -42,23 +55,33 @@ public class CommentController(
     }
 
     /// <summary>
-    /// Get comments by post
+    /// Toggle upvote for a comment
     /// </summary>
-    [HttpGet("post/{postId:guid}")]
-    [AllowAnonymous]
+    [HttpPost("{commentId:guid}/upvote")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetAllByPost(Guid postId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ToggleUpvote(Guid commentId, CancellationToken ct)
     {
-        var result = await getCommentsByPostUseCase.ExecuteAsync(postId, page, pageSize, ct);
-        return Ok(result);
+        var userId = GetUserIdFromToken();
+        if (userId is null)
+            return Unauthorized(new { message = "User not authenticated" });
+
+        try
+        {
+            var result = await toggleCommentVoteUseCase.ExecuteAsync(userId.Value, commentId, ct);
+            return Ok(result);
+        }
+        catch (Exception ex) when (ex.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+        {
+            return NotFound(new { message = ex.Message });
+        }
     }
 
     /// <summary>
     /// Update a comment
     /// </summary>
     [HttpPut("{commentId:guid}")]
-    [Authorize(Policy = "Permission:comments.update")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -84,7 +107,6 @@ public class CommentController(
     /// Delete a comment
     /// </summary>
     [HttpDelete("{commentId:guid}")]
-    [Authorize(Policy = "Permission:comments.delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -122,31 +144,6 @@ public class CommentController(
             return NoContent();
         }
         catch (Exception ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-    }
-
-    /// <summary>
-    /// Toggle upvote for a comment
-    /// </summary>
-    [HttpPost("{commentId:guid}/upvote")]
-    [Authorize(Policy = "Permission:comments.vote")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ToggleUpvote(Guid commentId, CancellationToken ct)
-    {
-        var userId = GetUserIdFromToken();
-        if (userId is null)
-            return Unauthorized(new { message = "User not authenticated" });
-
-        try
-        {
-            var result = await toggleCommentVoteUseCase.ExecuteAsync(userId.Value, commentId, ct);
-            return Ok(result);
-        }
-        catch (Exception ex) when (ex.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
         {
             return NotFound(new { message = ex.Message });
         }

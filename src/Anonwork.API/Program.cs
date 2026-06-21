@@ -1,4 +1,4 @@
-using Anonwork.API.Middlewares;
+﻿using Anonwork.API.Middlewares;
 using Anonwork.Application;
 using Anonwork.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -59,8 +59,9 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = ""
+        Description = "JWT Authorization header using the Bearer scheme."
     });
+
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -69,11 +70,25 @@ builder.Services.AddSwaggerGen(options =>
                 Reference = new OpenApiReference
                 {
                     Type = ReferenceType.SecurityScheme,
-                    Id   = "Bearer"
+                    Id = "Bearer"
                 }
             },
             Array.Empty<string>()
         }
+    });
+
+    options.OrderActionsBy(apiDesc =>
+    {
+        var methodOrder = apiDesc.HttpMethod?.ToUpperInvariant() switch
+        {
+            "GET" => 0,
+            "POST" => 1,
+            "PUT" => 2,
+            "DELETE" => 3,
+            _ => 99
+        };
+
+        return $"{methodOrder:D2}_{apiDesc.RelativePath}";
     });
 });
 

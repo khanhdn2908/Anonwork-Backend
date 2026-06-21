@@ -18,11 +18,12 @@ public class SubjectsController(
     UpdateSubjectUseCase updateSubjectUseCase,
     DeleteSubjectUseCase deleteSubjectUseCase,
     DeleteSubjectUseCasePermanent deleteSubjectUseCasePermanent,
-    GetPostsBySubjectUseCase getPostsBySubjectUseCase) : BaseApiController
+    GetPostsBySubjectUseCase getPostsBySubjectUseCase,
+    IAuthorizationService authorizationService) : BaseApiController
 {
   
     [HttpGet]
-    [Authorize(Policy = "Permission:subjects.read")]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? search = null,
@@ -30,20 +31,23 @@ public class SubjectsController(
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var result = await getSubjectsUseCase.ExecuteAsync(search, page, pageSize, ct);
+        var authResult = await authorizationService.AuthorizeAsync(User, "Permission:subjects.read:all");
+
+        var result = await getSubjectsUseCase.ExecuteAsync(authResult.Succeeded,search, page, pageSize, ct);
         return Ok(result);
     }
 
    
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = "Permission:subjects.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct = default)
     {
+        var authResult = await authorizationService.AuthorizeAsync(User, "Permission:subjects.read:all");
+
         try
         {
-            var result = await getSubjectByIdUseCase.ExecuteAsync(id, ct);
+            var result = await getSubjectByIdUseCase.ExecuteAsync(id, authResult.Succeeded,ct);
             return Ok(result);
         }
         catch (Exception ex)
@@ -155,24 +159,16 @@ public class SubjectsController(
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
+        var userId = GetUserIdFromToken();
+        var authResult = await authorizationService.AuthorizeAsync(User, "Permission:posts.read:all");
         try
         {
-            var userId = GetUserIdFromToken();
-            var permissions = GetPermissionsFromToken();
-            var result = await getPostsBySubjectUseCase.ExecuteAsync(subjectId, page, pageSize, userId, permissions, ct);
+            var result = await getPostsBySubjectUseCase.ExecuteAsync(authResult.Succeeded, subjectId, userId, page, pageSize, ct);
             return Ok(result);
         }
         catch (Exception ex)
         {
             return NotFound(new { message = ex.Message });
         }
-    }
-
-    private IReadOnlyCollection<string> GetPermissionsFromToken()
-    {
-        return User.Claims
-            .Where(c => c.Type == "permission")
-            .Select(c => c.Value)
-            .ToArray();
     }
 }

@@ -15,25 +15,27 @@ public class AnonImagesController(
     CreateAnonImageUseCase createAnonImageUseCase,
     UpdateAnonImageUseCase updateAnonImageUseCase,
     DeleteAnonImageUseCase deleteAnonImageUseCase,
-    DeleteAnonImageUseCasePermanent deleteAnonImageUseCasePermanent) : BaseApiController
+    DeleteAnonImageUseCasePermanent deleteAnonImageUseCasePermanent,
+    IAuthorizationService authorizationService) : BaseApiController
 {
     [HttpGet]
-    [Authorize(Policy = "Permission:anon-images.read")]
     public async Task<IActionResult> GetAll(
-        [FromQuery] bool? isActive = null,
         CancellationToken ct = default)
     {
-        var result = await getAllAnonImagesUseCase.ExecuteAsync(isActive, ct);
+        var authResult = await authorizationService.AuthorizeAsync(User, "Permission:anon-images.read:all");
+
+        var result = await getAllAnonImagesUseCase.ExecuteAsync(authResult.Succeeded, ct);
         return Ok(result);
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = "Permission:anon-images.read")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         try
         {
-            var result = await getAnonImageByIdUseCase.ExecuteAsync(id, ct);
+            var authResult = await authorizationService.AuthorizeAsync(User, "Permission:anon-images.read:all");
+
+            var result = await getAnonImageByIdUseCase.ExecuteAsync(id, authResult.Succeeded, ct);
             return Ok(result);
         }
         catch (KeyNotFoundException ex)

@@ -15,16 +15,15 @@ public class PostsController(
     CreatePostUseCase createPostUseCase,
     GetPostByIdUseCase getPostByIdUseCase,
     GetPostsUseCase getPostsUseCase,
-    GetPostsBySubjectUseCase getPostsBySubjectUseCase,
     UpdatePostUseCase updatePostUseCase,
     DeletePostUseCase deletePostUseCase,
     DeletePostUseCasePermanent deletePostUseCasePermanent,
     TogglePostVoteUseCase togglePostVoteUseCase,
-    ICloudinaryService cloudinaryService) : BaseApiController
+    ICloudinaryService cloudinaryService,
+    IAuthorizationService authorizationService) : BaseApiController
 {
 
     [HttpPost]
-    [Authorize(Policy = "Permission:posts.create")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -74,7 +73,9 @@ public class PostsController(
         try
         {
             var userId = GetUserIdFromToken();
-            var result = await getPostByIdUseCase.ExecuteAsync(id, userId, ct);
+            var authResult = await authorizationService.AuthorizeAsync(User, "Permission:posts.read:all");
+
+            var result = await getPostByIdUseCase.ExecuteAsync(id, authResult.Succeeded, userId, ct);
             return Ok(result);
         }
         catch (Exception ex)
@@ -94,14 +95,14 @@ public class PostsController(
         CancellationToken ct = default)
     {
         var userId = GetUserIdFromToken();
-        var permissions = GetPermissionsFromToken();
-        var result = await getPostsUseCase.ExecuteAsync(page, pageSize, search, userId, permissions, ct);
+        var authResult = await authorizationService.AuthorizeAsync(User, "Permission:posts.read:all");
+
+        var result = await getPostsUseCase.ExecuteAsync(authResult.Succeeded, page, pageSize, search, userId, ct);
         return Ok(result);
     }
 
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = "Permission:posts.update")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -202,7 +203,6 @@ public class PostsController(
 
 
     [HttpPost("{id:guid}/upvote")]
-    [Authorize(Policy = "Permission:posts.vote")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -221,15 +221,6 @@ public class PostsController(
         {
             return NotFound(new { message = ex.Message });
         }
-    }
-
-    // ── Helpers ─────────────────────────────────────────
-    private IReadOnlyCollection<string> GetPermissionsFromToken()
-    {
-        return User.Claims
-            .Where(c => c.Type == "permission")
-            .Select(c => c.Value)
-            .ToArray();
     }
 }
 
