@@ -11,10 +11,11 @@ namespace Anonwork.Application.Features.Posts;
 /// <summary>
 /// Use case for getting a post by id
 /// </summary>
-public class GetPostByIdUseCase(IUnitOfWork unitOfWork)
+public class GetPostByIdUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
     private readonly IGenericRepository<Vote> _voteRepo = unitOfWork.GetRepository<Vote>();
+    private readonly IR2Service _r2Service = r2Service;
 
     public async Task<PostResponseDto> ExecuteAsync(Guid postId, bool hasPermission, Guid? currentUserId = null, CancellationToken ct = default)
     {
@@ -24,7 +25,7 @@ public class GetPostByIdUseCase(IUnitOfWork unitOfWork)
         var post = await _postRepo.GetQueryableNoTracking()
             .Include(p => p.Author)
             .Include(p => p.Subject)
-            .Include(p => p.PostImages)
+            .Include(p => p.PostMediaItems)
             .Include(p => p.PostTags)
             .FirstOrDefaultAsync(p => p.Id == postId, ct);
 
@@ -43,6 +44,6 @@ public class GetPostByIdUseCase(IUnitOfWork unitOfWork)
             v => v.UserId == currentUserId.Value && v.TargetId == postId && v.TargetType == "post" && v.VoteType == "up",
             ct);
 
-        return PostVoteProjectionHelper.MapToResponse(post, isUpvotedByMe);
+        return PostVoteProjectionHelper.MapToResponse(post, isUpvotedByMe, _r2Service);
     }
 }

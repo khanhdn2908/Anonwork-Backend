@@ -6,10 +6,10 @@ using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.AnonImages;
 
-public class UpdateAnonImageUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudinaryService)
+public class UpdateAnonImageUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 {
     private readonly IGenericRepository<AnonImage> _anonImageRepo = unitOfWork.GetRepository<AnonImage>();
-    private readonly ICloudinaryService _cloudinaryService = cloudinaryService;
+    private readonly IR2Service _r2Service = r2Service;
 
     public async Task<AnonImageResponseDto> ExecuteAsync(Guid anonImageId, UpdateAnonImageRequestDto request, CancellationToken ct = default)
     {
@@ -22,15 +22,20 @@ public class UpdateAnonImageUseCase(IUnitOfWork unitOfWork, ICloudinaryService c
         if(!string.IsNullOrWhiteSpace(request.Name))
             anonImage.Name = request.Name.Trim();
 
-        string? imageUrl = null;
-        if (!(request.Image is null || request.Image.Length == 0))
+        string? fileKey = null;
+        if (request.Image is null)
         {
-            imageUrl = await _cloudinaryService.UploadImageAsync(request.Image, "anon-images", ct);
+            fileKey = anonImage.FileKey;
+        }
+        else 
+        {
+            var file = await _r2Service.UploadFileAsync(request.Image, "anon-images", ct);
+            fileKey = file.FileKey;
         }
 
-        if (!string.IsNullOrWhiteSpace(imageUrl))
+        if (!string.IsNullOrWhiteSpace(fileKey))
         {
-            anonImage.ImageUrl = imageUrl.Trim();
+            anonImage.FileKey = fileKey;
         }
 
         anonImage.IsActive = request.IsActive;
@@ -46,7 +51,7 @@ public class UpdateAnonImageUseCase(IUnitOfWork unitOfWork, ICloudinaryService c
         => new(
             Id: anonImage.Id,
             Name: anonImage.Name,
-            ImageUrl: anonImage.ImageUrl,
+            FileKey: anonImage.FileKey,
             IsActive: anonImage.IsActive,
             CreatedAt: anonImage.CreatedAt,
             UpdatedAt: anonImage.UpdatedAt);

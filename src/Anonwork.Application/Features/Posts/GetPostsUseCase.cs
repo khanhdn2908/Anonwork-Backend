@@ -7,15 +7,16 @@ using Microsoft.EntityFrameworkCore;
 namespace Anonwork.Application.Features.Posts;
 
 /// <summary>
-/// Use case for getting posts with pagination and search
+/// Use case for getting posts with pagination and search.
 /// </summary>
-public class GetPostsUseCase(IUnitOfWork unitOfWork)
+public class GetPostsUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
     private readonly IGenericRepository<Vote> _voteRepo = unitOfWork.GetRepository<Vote>();
+    private readonly IR2Service _r2Service = r2Service;
 
     public async Task<PostListResponseDto> ExecuteAsync(
-        bool hasPerrmission,
+        bool hasPermission,
         int page = 1,
         int pageSize = 10,
         string? searchQuery = null,
@@ -26,17 +27,12 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork)
         if (pageSize < 1) pageSize = 10;
         if (pageSize > 100) pageSize = 100;
 
-        IQueryable<Post> query = _postRepo.GetQueryableNoTracking()
+        var query = _postRepo.GetQueryableNoTracking()
             .Include(p => p.Author)
             .Include(p => p.Subject)
-            .Include(p => p.PostImages)
+            .Include(p => p.PostMediaItems)
             .Include(p => p.PostTags)
-            .Include(p => p.Comments);
-
-        if (!hasPerrmission)
-        {
-            query = query.Where(p => p.Status == PostStatus.Published);
-        }
+            .Where(p => hasPermission || p.Status == PostStatus.Published);
 
         if (!string.IsNullOrWhiteSpace(searchQuery))
         {
@@ -57,9 +53,12 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork)
         var totalPages = (int)Math.Ceiling((double)total / pageSize);
 
         var postIds = posts.Select(p => p.Id).ToList();
-        var upvotedSet = currentUserId.HasValue
+        var upvotedSet = currentUserId.HasValue && postIds.Count > 0
             ? (await _voteRepo.GetQueryableNoTracking()
-                .Where(v => v.UserId == currentUserId.Value && v.TargetType == "post" && postIds.Contains(v.TargetId) && v.VoteType == "up")
+                .Where(v => v.UserId == currentUserId.Value
+                    && v.TargetType == "post"
+                    && postIds.Contains(v.TargetId)
+                    && v.VoteType == "up")
                 .Select(v => v.TargetId)
                 .ToListAsync(ct)).ToHashSet()
             : new HashSet<Guid>();
@@ -67,10 +66,19 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork)
         var postDtos = posts.Select(p =>
         {
             var isAnon = p.IsAnonymous && p.Author.IsAnonDefault;
-            var imageUrls = p.PostImages
+            var media = p.PostMediaItems
                 .OrderBy(i => i.DisplayOrder)
-                .Select(i => i.ImageUrl)
+                .Select(i => new PostMediaResponseDto(
+                    i.Id,
+                    i.FileKey,
+                    _r2Service.GetPublicUrl(i.FileKey),
+                    i.ContentType,
+                    i.DisplayOrder,
+                    i.FileSize,
+                    i.OriginalFileName,
+                    i.MediaType.ToString()))
                 .ToList();
+
             var tags = p.PostTags
                 .Select(t => t.Tag)
                 .ToList();
@@ -85,8 +93,7 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork)
                 isAnon,
                 p.SubjectId,
                 p.Subject?.Name,
-                imageUrls,
-                0,
+                media,
                 tags,
                 p.Upvotes,
                 p.CommentsCount,
@@ -94,8 +101,7 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork)
                 p.Status.ToString(),
                 p.CreatedAt,
                 p.UpdatedAt,
-                upvotedSet.Contains(p.Id)
-            );
+                upvotedSet.Contains(p.Id));
         }).ToList();
 
         return new PostListResponseDto(postDtos, total, page, pageSize, totalPages);

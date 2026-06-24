@@ -13,6 +13,7 @@ using Anonwork.Application.Features.SubscriptionPlans;
 using Anonwork.Application.Features.UserSubscriptions;
 using Anonwork.Application.Features.Users;
 using Microsoft.Extensions.DependencyInjection;
+using Anonwork.Application.Interfaces;
 
 namespace Anonwork.Application;
 
@@ -29,7 +30,7 @@ public static class DependencyInjection
         services.AddScoped<VerifyEmailUseCase>();
         services.AddScoped<ForgotPasswordUseCase>();
         services.AddScoped<ResetPasswordUseCase>();
-        services.AddScoped<CleanupEmailVerificationTokensUseCase>();
+        // CleanupEmailVerificationTokensUseCase is currently commented out in source
         services.AddScoped<CleanupUnpaidExpiredOrdersUseCase>();
 
         // ── Posts Use Cases ─────────────────────
@@ -37,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<GetPostByIdUseCase>();
         services.AddScoped<GetPostsUseCase>();
         services.AddScoped<GetPostsBySubjectUseCase>();
+        services.AddScoped<GetTopPostsByTimeUseCase>();
         services.AddScoped<UpdatePostUseCase>();
         services.AddScoped<DeletePostUseCase>();
         services.AddScoped<DeletePostUseCasePermanent>();
@@ -69,6 +71,7 @@ public static class DependencyInjection
 
         // ── Users Use Cases ─────────────────────
         services.AddScoped<GetMeUseCase>();
+        services.AddScoped<GetUserUseCase>();
         services.AddScoped<UpdateUserUseCase>();
         services.AddScoped<ToggleUserAnonDefaultUseCase>();
         services.AddScoped<AssignAnonImageToUserUseCase>();

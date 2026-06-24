@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<MaintenanceOptions>(configuration.GetSection(MaintenanceOptions.SectionName));
         services.Configure<CloudinaryOptions>(configuration.GetSection(CloudinaryOptions.SectionName));
+        services.Configure<R2Options>(configuration.GetSection(R2Options.SectionName));
         services.Configure<SepayOptions>(configuration.GetSection(SepayOptions.SectionName));
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
         services.Configure<ResendClientOptions>(options =>
@@ -56,6 +57,8 @@ public static class DependencyInjection
         services.AddScoped<IJwtService, JwtService>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddScoped<ICloudinaryService, CloudinaryService>();
+        services.AddScoped<IR2Service, R2Service>();
+        services.AddScoped<IPostMediaService, PostMediaService>();
         services.AddScoped<ISepayService, SepayService>();
         services.AddScoped<IEmailSender, EmailSender>();
         services.AddScoped<IRolePermissionService, RolePermissionService>();

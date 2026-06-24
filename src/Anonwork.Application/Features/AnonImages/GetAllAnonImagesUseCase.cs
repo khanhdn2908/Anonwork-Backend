@@ -29,7 +29,7 @@ public class GetAllAnonImagesUseCase(IUnitOfWork unitOfWork)
         => new(
             Id: anonImage.Id,
             Name: anonImage.Name,
-            ImageUrl: anonImage.ImageUrl,
+            FileKey: anonImage.FileKey,
             IsActive: anonImage.IsActive,
             CreatedAt: anonImage.CreatedAt,
             UpdatedAt: anonImage.UpdatedAt);

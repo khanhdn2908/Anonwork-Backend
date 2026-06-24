@@ -1,6 +1,7 @@
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Anonwork.Infrastructure.Persistence;
 
@@ -15,14 +16,13 @@ public class AppDbContext : DbContext, IAppDbContext
     public virtual DbSet<Comment> Comments { get; set; } = null!;
     public virtual DbSet<Conversation> Conversations { get; set; } = null!;
     public virtual DbSet<ConversationMember> ConversationMembers { get; set; } = null!;
-    public virtual DbSet<EmailVerificationToken> EmailVerificationTokens { get; set; } = null!;
     public virtual DbSet<OneTimeToken> OneTimeTokens { get; set; } = null!;
     public virtual DbSet<Follow> Follows { get; set; } = null!;
     public virtual DbSet<Message> Messages { get; set; } = null!;
     public virtual DbSet<Notification> Notifications { get; set; } = null!;
     public virtual DbSet<AnonImage> AnonImages { get; set; } = null!;
     public virtual DbSet<Post> Posts { get; set; } = null!;
-    public virtual DbSet<PostImage> PostImages { get; set; } = null!;
+    public virtual DbSet<PostMedia> PostMedia { get; set; } = null!;
     public virtual DbSet<PostTag> PostTags { get; set; } = null!;
     public virtual DbSet<Report> Reports { get; set; } = null!;
     public virtual DbSet<Subject> Subjects { get; set; } = null!;
@@ -37,12 +37,18 @@ public class AppDbContext : DbContext, IAppDbContext
     public virtual DbSet<UserSubscription> UserSubscriptions { get; set; } = null!;
 
     public new DbSet<T> Set<T>()
-            where T : class => base.Set<T>();
+        where T : class => base.Set<T>();
+
+    public IDbContextTransaction BeginTransaction()
+        => Database.BeginTransaction();
+
+    public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+        => Database.BeginTransactionAsync(cancellationToken);
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.HasPostgresExtension("pgcrypto");          
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly); 
+        modelBuilder.HasPostgresExtension("pgcrypto");
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }

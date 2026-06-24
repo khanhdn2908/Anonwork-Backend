@@ -9,9 +9,13 @@ public class AnonImage
 
     public string Name { get; set; } = null!;
 
-    public string ImageUrl { get; set; } = null!;
+    public string FileKey { get; set; } = null!;
 
     public bool IsActive { get; set; } = true;
+
+    public string? ContentType { get; set; }
+
+    public long FileSize { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

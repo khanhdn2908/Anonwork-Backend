@@ -74,14 +74,14 @@ public class FollowUserUseCase(IUnitOfWork unitOfWork)
                 Id = follow.Follower.Id,
                 Username = follow.Follower.Username,
                 Email = follow.Follower.Email,
-                AvatarUrl = follow.Follower.AvatarUrl
+                AvatarUrl = follow.Follower.AvatarKey
             } : null,
             Following = follow.Following != null ? new UserBasicDto
             {
                 Id = follow.Following.Id,
                 Username = follow.Following.Username,
                 Email = follow.Following.Email,
-                AvatarUrl = follow.Following.AvatarUrl
+                AvatarUrl = follow.Following.AvatarKey
             } : null
         };
     }

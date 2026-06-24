@@ -39,7 +39,7 @@ public class GetUserUseCase(IUnitOfWork unitOfWork)
 
         var isAnon = user.IsAnonDefault;
         var displayUsername = isAnon ? user.AnonAlias : user.Username;
-        var displayAvatarUrl = isAnon ? user.AnonImage?.ImageUrl : user.AvatarUrl;
+        var displayAvatarUrl = isAnon ? user.AnonImage?.FileKey : user.AvatarKey;
         var displayBio = isAnon ? null : user.Bio;
         var displayEmail = isAnon ? null : user.Email;
 

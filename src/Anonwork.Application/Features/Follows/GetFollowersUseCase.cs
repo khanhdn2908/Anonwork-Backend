@@ -1,8 +1,8 @@
+using Anonwork.Application.Features.Follows.DTOs.Responses;
 using Anonwork.Application.Interfaces;
-using Microsoft.EntityFrameworkCore;
 using Anonwork.Domain.Entities;
 using Anonwork.Domain.Enums;
-using Anonwork.Application.Features.Follows.DTOs.Responses;
+using Microsoft.EntityFrameworkCore;
 
 namespace Anonwork.Application.Features.Follows;
 
@@ -73,14 +73,14 @@ public class GetFollowersUseCase(IUnitOfWork unitOfWork)
                 Id = follow.Follower.Id,
                 Username = follow.Follower.Username,
                 Email = follow.Follower.Email,
-                AvatarUrl = follow.Follower.AvatarUrl
+                AvatarUrl = follow.Follower.AvatarKey
             } : null,
             Following = follow.Following != null ? new UserBasicDto
             {
                 Id = follow.Following.Id,
                 Username = follow.Following.Username,
                 Email = follow.Following.Email,
-                AvatarUrl = follow.Following.AvatarUrl
+                AvatarUrl = follow.Following.AvatarKey
             } : null
         };
     }

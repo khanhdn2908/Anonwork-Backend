@@ -51,9 +51,9 @@ public class GoogleLoginUseCase(
         {
             user.LinkGoogleAccount(googleSubject, picture);
 
-            if (string.IsNullOrWhiteSpace(user.AvatarUrl) && !string.IsNullOrWhiteSpace(picture))
+            if (string.IsNullOrWhiteSpace(user.AvatarKey) && !string.IsNullOrWhiteSpace(picture))
             {
-                user.AvatarUrl = picture;
+                user.AvatarKey = picture;
             }
         }
 

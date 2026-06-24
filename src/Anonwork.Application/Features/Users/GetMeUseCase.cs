@@ -25,7 +25,7 @@ public class GetMeUseCase(IUnitOfWork unitOfWork)
             f => f.FollowerId == userId && f.Follower.Status == UserStatus.Active,
             ct);
 
-        var anonImageUrl = user.AnonImage?.ImageUrl ?? string.Empty;
+        var anonImageUrl = user.AnonImage?.FileKey ?? string.Empty;
 
         var userSubscriptionPlanActive = (await _userSubscriptionRepo.FindAsync(
                 us => us.UserId == userId && us.Status == SubscriptionStatus.Active && us.ExpiresAt > DateTime.UtcNow,
@@ -40,7 +40,7 @@ public class GetMeUseCase(IUnitOfWork unitOfWork)
             user.Id,
             user.Username,
             user.Email,
-            user.AvatarUrl,
+            user.AvatarKey,
             user.Bio,
             user.AnonAlias,
             user.IsAnonDefault,

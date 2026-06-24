@@ -7,10 +7,10 @@ using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.Users;
 
-public class UpdateUserUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudinaryService)
+public class UpdateUserUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
-    private readonly ICloudinaryService _cloudinaryService = cloudinaryService;
+    private readonly IR2Service _r2Service = r2Service;
 
     public async Task<UpdateUserResponseDto> ExecuteAsync(
         Guid userId,
@@ -37,7 +37,8 @@ public class UpdateUserUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudi
         {
             try
             {
-                user.AvatarUrl = await _cloudinaryService.UploadImageAsync(req.Avatar, "avatars", ct);
+                var file = await _r2Service.UploadFileAsync(req.Avatar, "avatars", ct);
+                user.AvatarKey = file.FileKey;
             }
             catch
             {
@@ -53,7 +54,7 @@ public class UpdateUserUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudi
         return new UpdateUserResponseDto(
             user.Username,
             user.Bio,
-            user.AvatarUrl
+            user.AvatarKey
         );
     }
 }

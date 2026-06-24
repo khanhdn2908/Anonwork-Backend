@@ -39,7 +39,7 @@ public partial class Post
 
     public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
 
-    public virtual ICollection<PostImage> PostImages { get; set; } = new List<PostImage>();
+    public virtual ICollection<PostMedia> PostMediaItems { get; set; } = new List<PostMedia>();
 
     public virtual ICollection<PostTag> PostTags { get; set; } = new List<PostTag>();
 

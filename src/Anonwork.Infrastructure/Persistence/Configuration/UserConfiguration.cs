@@ -19,7 +19,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()").HasColumnName("id");
         entity.Property(e => e.AnonAlias).HasMaxLength(80).HasColumnName("anon_alias");
         entity.Property(e => e.AnonImageId).HasColumnName("anon_image_id");
-        entity.Property(e => e.AvatarUrl).HasColumnName("avatar_url");
+        entity.Property(e => e.AvatarKey).HasColumnName("avatar_key");
         entity.Property(e => e.Bio).HasColumnName("bio");
         entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
         entity.Property(e => e.Email).HasMaxLength(255).HasColumnName("email");

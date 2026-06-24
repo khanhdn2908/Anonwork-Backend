@@ -1,7 +1,7 @@
 using Anonwork.Application.Interfaces;
-using Anonwork.Domain.Entities;
 using Anonwork.Application.Features.Posts.DTOs.Request;
 using Anonwork.Application.Features.Posts.DTOs.Response;
+using Anonwork.Domain.Entities;
 using Anonwork.Domain.Enums;
 
 namespace Anonwork.Application.Features.Posts;
@@ -9,9 +9,11 @@ namespace Anonwork.Application.Features.Posts;
 /// <summary>
 /// Use case for creating a new post
 /// </summary>
-public class CreatePostUseCase(IUnitOfWork unitOfWork)
+public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMediaService, IAppDbContext dbContext)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
+    private readonly IPostMediaService _postMediaService = postMediaService;
+    private readonly IAppDbContext _dbContext = dbContext;
 
     public async Task<PostResponseDto> ExecuteAsync(CreatePostRequest req, CancellationToken ct = default)
     {
@@ -52,39 +54,45 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork)
                 .ToList();
         }
 
-        // ── Add images if provided ──────────────────
-        if (req.ImageUrls is not null && req.ImageUrls.Count > 0)
+        // ── Add images and files if provided ─────────
+        post.PostMediaItems = await _postMediaService.BuildPostMediaAsync(
+            post.Id,
+            req.Images,
+            req.File,
+            ct);
+
+        await using var transaction = await _dbContext.BeginTransactionAsync(ct);
+        try
         {
-            post.PostImages = req.ImageUrls
-                .Take(5) // Max 5 images
-                .Select((url, index) => new PostImage
-                {
-                    Id = Guid.NewGuid(),
-                    PostId = post.Id,
-                    ImageUrl = url,
-                    DisplayOrder = index,
-                    CreatedAt = DateTime.UtcNow
-                })
-                .ToList();
+            // ── Save to database ────────────────────────
+            await _postRepo.AddAsync(post, ct);
+            await unitOfWork.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+
+            // ── Return response ─────────────────────────
+            return MapToResponse(post);
         }
-
-        // ── Save to database ────────────────────────
-        await _postRepo.AddAsync(post, ct);
-        await unitOfWork.SaveChangesAsync(ct);
-
-        // ── Return response ─────────────────────────
-        return MapToResponse(post);
+        catch
+        {
+            await transaction.RollbackAsync(ct);
+            throw;
+        }
     }
 
     private static PostResponseDto MapToResponse(Post post)
     {
-        var imageUrls = post.PostImages
-            .OrderBy(pi => pi.DisplayOrder)
-            .Select(pi => pi.ImageUrl)
+        var media = post.PostMediaItems
+            .OrderBy(pm => pm.DisplayOrder)
+            .Select(pm => new PostMediaResponseDto(
+                pm.Id,
+                pm.FileKey,
+                pm.FileKey,
+                pm.ContentType,
+                pm.DisplayOrder,
+                pm.FileSize,
+                pm.OriginalFileName,
+                pm.MediaType.ToString()))
             .ToList();
-
-        var previewImageUrls = imageUrls.Take(2).ToList();
-        var remainingImagesCount = Math.Max(0, imageUrls.Count - previewImageUrls.Count);
 
         return new PostResponseDto(
             Id: post.Id,
@@ -96,8 +104,7 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork)
             IsAnonymous: post.IsAnonymous,
             SubjectId: post.SubjectId,
             SubjectName: post.Subject?.Name,
-            ImageUrls: previewImageUrls,
-            RemainingImagesCount: remainingImagesCount,
+            Media: media,
             Tags: post.PostTags
                 .Select(pt => pt.Tag)
                 .ToList(),
@@ -110,4 +117,5 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork)
             IsUpvotedByMe: false
         );
     }
+
 }

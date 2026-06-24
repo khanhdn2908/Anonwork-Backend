@@ -15,7 +15,7 @@ public partial class User
 
     public string PasswordHash { get; set; } = null!;
 
-    public string? AvatarUrl { get; set; }
+    public string? AvatarKey { get; set; }
 
     public string? Bio { get; set; }
 
@@ -89,7 +89,7 @@ public partial class User
         string username,
         string email,
         string googleSubject,
-        string avatarUrl,
+        string avatarKey,
         string anonAlias)
     {
         return new User
@@ -99,7 +99,7 @@ public partial class User
             Email = email.ToLower().Trim(),
             PasswordHash = string.Empty,
             GoogleSubject = googleSubject,
-            AvatarUrl = avatarUrl,
+            AvatarKey = avatarKey,
             AnonAlias = anonAlias,
             IsAnonDefault = false,
             Status = UserStatus.Active,
@@ -137,22 +137,21 @@ public partial class User
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void LinkGoogleAccount(string googleSubject, string? avatarUrl = null)
+    public void LinkGoogleAccount(string googleSubject, string? avatarKey = null)
     {
         GoogleSubject = googleSubject;
-        if (!string.IsNullOrWhiteSpace(avatarUrl))
+        if (!string.IsNullOrWhiteSpace(avatarKey))
         {
-            AvatarUrl = avatarUrl;
+            AvatarKey = avatarKey;
         }
 
         Status = UserStatus.Active;
         UpdatedAt = DateTime.UtcNow;
     }
 
-    // Dùng cho login / update profile sau này
-    public void UpdateProfile(string? avatarUrl, string? bio)
+    public void UpdateProfile(string? avatarKey, string? bio)
     {
-        AvatarUrl = avatarUrl;
+        AvatarKey = avatarKey;
         Bio = bio;
         UpdatedAt = DateTime.UtcNow;
     }

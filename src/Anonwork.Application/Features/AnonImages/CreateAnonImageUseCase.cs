@@ -2,13 +2,14 @@ using Anonwork.Application.Features.AnonImages.DTOs.Requests;
 using Anonwork.Application.Features.AnonImages.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
+using Microsoft.Extensions.Options;
 
 namespace Anonwork.Application.Features.AnonImages;
 
-public class CreateAnonImageUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudinaryService)
+public class CreateAnonImageUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 {
     private readonly IGenericRepository<AnonImage> _anonImageRepo = unitOfWork.GetRepository<AnonImage>();
-    private readonly ICloudinaryService _cloudinaryService = cloudinaryService;
+    private readonly IR2Service _r2Service = r2Service;
 
     public async Task<AnonImageResponseDto> ExecuteAsync(CreateAnonImageRequestDto request, CancellationToken ct = default)
     {
@@ -18,16 +19,16 @@ public class CreateAnonImageUseCase(IUnitOfWork unitOfWork, ICloudinaryService c
         if (request.Image is null || request.Image.Length == 0)
             throw new ArgumentException("Anon image url is required.");
 
-        var imageUrl = await _cloudinaryService.UploadImageAsync(request.Image, "anon-images", ct);
+        var file = await _r2Service.UploadFileAsync(request.Image, "anon-images", ct);
 
-        if(string.IsNullOrWhiteSpace(imageUrl))
+        if(string.IsNullOrWhiteSpace(file.FileUrl))
             throw new ArgumentException("Upload image is fail.");
 
         var entity = new AnonImage
         {
             Id = Guid.NewGuid(),
             Name = request.Name.Trim(),
-            ImageUrl = imageUrl,
+            FileKey = file.FileKey,
             IsActive = request.IsActive,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -43,8 +44,9 @@ public class CreateAnonImageUseCase(IUnitOfWork unitOfWork, ICloudinaryService c
         => new(
             Id: anonImage.Id,
             Name: anonImage.Name,
-            ImageUrl: anonImage.ImageUrl,
+            FileKey: anonImage.FileKey,
             IsActive: anonImage.IsActive,
             CreatedAt: anonImage.CreatedAt,
-            UpdatedAt: anonImage.UpdatedAt);
+            UpdatedAt: anonImage.UpdatedAt
+        );
 }

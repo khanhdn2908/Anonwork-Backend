@@ -11,10 +11,11 @@ namespace Anonwork.Application.Features.Posts;
 /// <summary>
 /// Use case for getting posts by subject with pagination
 /// </summary>
-public class GetPostsBySubjectUseCase(IUnitOfWork unitOfWork)
+public class GetPostsBySubjectUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
     private readonly IGenericRepository<Vote> _voteRepo = unitOfWork.GetRepository<Vote>();
+    private readonly IR2Service _r2Service = r2Service;
 
     public async Task<PostListResponseDto> ExecuteAsync(
         bool hasPermission,
@@ -36,7 +37,7 @@ public class GetPostsBySubjectUseCase(IUnitOfWork unitOfWork)
         var query = _postRepo.GetQueryableNoTracking()
             .Include(p => p.Author)
             .Include(p => p.Subject)
-            .Include(p => p.PostImages)
+            .Include(p => p.PostMediaItems)
             .Include(p => p.PostTags)
             .Where(p => p.SubjectId == subjectId);
 
@@ -65,7 +66,7 @@ public class GetPostsBySubjectUseCase(IUnitOfWork unitOfWork)
             : new HashSet<Guid>();
 
         // ── Return response ─────────────────────────
-        var postDtos = posts.Select(p => PostVoteProjectionHelper.MapToResponse(p, upvotedSet.Contains(p.Id))).ToList();
+        var postDtos = posts.Select(p => PostVoteProjectionHelper.MapToResponse(p, upvotedSet.Contains(p.Id), _r2Service)).ToList();
         return new PostListResponseDto(postDtos, total, page, pageSize, totalPages);
     }
 }

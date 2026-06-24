@@ -15,11 +15,11 @@ public class PostsController(
     CreatePostUseCase createPostUseCase,
     GetPostByIdUseCase getPostByIdUseCase,
     GetPostsUseCase getPostsUseCase,
+    GetTopPostsByTimeUseCase getTopPostsByTimeUseCase,
     UpdatePostUseCase updatePostUseCase,
     DeletePostUseCase deletePostUseCase,
     DeletePostUseCasePermanent deletePostUseCasePermanent,
     TogglePostVoteUseCase togglePostVoteUseCase,
-    ICloudinaryService cloudinaryService,
     IAuthorizationService authorizationService) : BaseApiController
 {
 
@@ -34,20 +34,6 @@ public class PostsController(
         if (userId is null)
             return Unauthorized(new { message = "User not authenticated" });
 
-        // ── Upload images if provided ───────────────
-        List<string>? imageUrls = null;
-        if (req.Images is not null && req.Images.Count > 0)
-        {
-            try
-            {
-                imageUrls = await cloudinaryService.UploadImagesAsync(req.Images, "posts", ct);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = "Failed to upload images", error = ex.Message });
-            }
-        }
-
         // ── Create post ─────────────────────────────
         var request = new CreatePostRequest(
             AuthorId: userId.Value,
@@ -55,7 +41,8 @@ public class PostsController(
             Content: req.Content,
             SubjectId: req.SubjectId,
             Tags: req.Tags,
-            ImageUrls: imageUrls,
+            Images: req.Images,
+            File: req.File,
             IsAnonymous: req.IsAnonymous
         );
 
@@ -101,6 +88,23 @@ public class PostsController(
         return Ok(result);
     }
 
+    [HttpGet("top")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTopByTime(
+        [FromQuery] string range = "24h",
+        [FromQuery] string sort = "hot",
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
+    {
+        var userId = GetUserIdFromToken();
+        var authResult = await authorizationService.AuthorizeAsync(User, "Permission:posts.read:all");
+
+        var result = await getTopPostsByTimeUseCase.ExecuteAsync(authResult.Succeeded, range, sort, page, pageSize, userId, ct);
+        return Ok(result);
+    }
+
 
     [HttpPut("{id:guid}")]
     [Consumes("multipart/form-data")]
@@ -115,20 +119,6 @@ public class PostsController(
         if (userId is null)
             return Unauthorized(new { message = "User not authenticated" });
 
-        // ── Upload new images if provided ───────────
-        List<string>? newImageUrls = null;
-        if (req.NewImages is not null && req.NewImages.Count > 0)
-        {
-            try
-            {
-                newImageUrls = await cloudinaryService.UploadImagesAsync(req.NewImages, "posts", ct);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = "Failed to upload images", error = ex.Message });
-            }
-        }
-
         // ── Update post ─────────────────────────────
         var request = new UpdatePostRequest(
             PostId: id,
@@ -136,8 +126,9 @@ public class PostsController(
             Title: req.Title,
             Content: req.Content,
             Tags: req.Tags,
-            NewImageUrls: newImageUrls,
-            RemoveImageUrls: req.RemoveImageUrls
+            Images: req.NewImages,
+            Files: req.NewFiles,
+            RemoveMediaId: req.RemoveFileId
         );
 
         try

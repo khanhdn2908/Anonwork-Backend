@@ -8,10 +8,12 @@ namespace Anonwork.Application.Features.Posts;
 /// <summary>
 /// Use case for deleting a post
 /// </summary>
-public class DeletePostUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudinaryService)
+public class DeletePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMediaService, IAppDbContext dbContext)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
+    private readonly IPostMediaService _postMediaService = postMediaService;
+    private readonly IAppDbContext _dbContext = dbContext;
 
     public async Task ExecuteAsync(Guid postId, Guid userId, CancellationToken ct = default)
     {
@@ -29,26 +31,24 @@ public class DeletePostUseCase(IUnitOfWork unitOfWork, ICloudinaryService cloudi
         if (user is null)
             throw new UnauthorizedException("User not found.");
 
-        // ── Delete images from Cloudinary ──────────
-        //if (post.PostImages.Count > 0)
-        //{
-        //    try
-        //    {
-        //        var imageUrls = post.PostImages.Select(pi => pi.ImageUrl).ToList();
-        //        await cloudinaryService.DeleteImagesAsync(imageUrls, ct);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        // Log error but continue with post deletion
-        //        Console.WriteLine($"Failed to delete images from Cloudinary: {ex.Message}");
-        //    }
-        //}
+        var mediaItems = post.PostMediaItems.ToList();
 
-        // ── Soft delete post ────────────────────────
+        await using var transaction = await _dbContext.BeginTransactionAsync(ct);
+        try
+        {
+            await _postMediaService.RemoveMediaFilesAsync(mediaItems, ct);
 
-        post.Status = PostStatus.Deleted;
-        post.UpdatedAt = DateTime.UtcNow;
-        await unitOfWork.SaveChangesAsync(ct);
+            post.Status = PostStatus.Deleted;
+            post.UpdatedAt = DateTime.UtcNow;
+            await unitOfWork.SaveChangesAsync(ct);
+
+            await transaction.CommitAsync(ct);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(ct);
+            throw;
+        }
     }
 }
 

@@ -22,8 +22,7 @@ public class CreatePostRequestDto
 
     public bool IsAnonymous { get; set; }
 
-    /// <summary>
-    /// Image files to upload (max 5 files, max 5MB each)
-    /// </summary>
     public IFormFileCollection? Images { get; set; }
+
+    public IFormFileCollection? File { get; set; }
 }

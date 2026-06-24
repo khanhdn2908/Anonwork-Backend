@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http;
+
 namespace Anonwork.Application.Features.Posts.DTOs.Request;
 
 /// <summary>
@@ -9,6 +11,8 @@ public record UpdatePostRequest(
     string? Title = null,
     string? Content = null,
     List<string>? Tags = null,
-    List<string>? NewImageUrls = null,
-    List<string>? RemoveImageUrls = null
+    IFormFileCollection? Images = null,
+    IFormFileCollection? Files = null,
+    List<Guid>? RemoveMediaId = null,
+    bool ReplaceMedia = false
 );

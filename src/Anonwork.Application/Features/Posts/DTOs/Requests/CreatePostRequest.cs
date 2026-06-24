@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http;
+
 namespace Anonwork.Application.Features.Posts.DTOs.Request;
 
 /// <summary>
@@ -9,6 +11,7 @@ public record CreatePostRequest(
     string Content,
     Guid SubjectId,
     List<string>? Tags = null,
-    List<string>? ImageUrls = null,
+    IFormFileCollection? Images = null,
+    IFormFileCollection? File = null,
     bool IsAnonymous = false
 );

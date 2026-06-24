@@ -97,7 +97,7 @@ public class CreateCommentUseCase(IUnitOfWork unitOfWork)
                 Id: comment.Author.Id,
                 Username: comment.Author.Username,
                 AnonAlias: comment.Author.AnonAlias,
-                AvatarUrl: comment.Author.AvatarUrl
+                AvatarUrl: comment.Author.AvatarKey
             ),
             Parent: comment.Parent == null ? null : new CommentParentDto(
                 Id: comment.Parent.Id,

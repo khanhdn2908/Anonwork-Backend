@@ -38,7 +38,7 @@ public class GetBookmarksUseCase(IUnitOfWork unitOfWork)
             .Include(b => b.Post)
                 .ThenInclude(p => p.Subject)
             .Include(b => b.Post)
-                .ThenInclude(p => p.PostImages)
+                .ThenInclude(p => p.PostMediaItems)
             .Include(b => b.Post)
                 .ThenInclude(p => p.PostTags)
             .Where(b => b.UserId == currentUserId);
@@ -90,13 +90,18 @@ public class GetBookmarksUseCase(IUnitOfWork unitOfWork)
 
     private static BookmarkPostDto MapPostToDto(Post post)
     {
-        var imageUrls = post.PostImages
-            .OrderBy(pi => pi.DisplayOrder)
-            .Select(pi => pi.ImageUrl)
+        var media = post.PostMediaItems
+            .OrderBy(pm => pm.DisplayOrder)
             .ToList();
 
-        var previewImageUrls = imageUrls.Take(2).ToList();
-        var remainingImagesCount = Math.Max(0, imageUrls.Count - previewImageUrls.Count);
+        var previewImageUrls = media
+            .Where(pm => pm.MediaType == Anonwork.Domain.Enums.PostMediaType.Image)
+            .Select(pm => pm.FileKey)
+            .Take(2)
+            .ToList();
+
+        var remainingImagesCount = media.Count(pm => pm.MediaType == Anonwork.Domain.Enums.PostMediaType.Image) - previewImageUrls.Count;
+        remainingImagesCount = Math.Max(0, remainingImagesCount);
 
         return new BookmarkPostDto(
             Id: post.Id,

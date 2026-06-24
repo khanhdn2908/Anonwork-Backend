@@ -22,8 +22,10 @@ public class UpdatePostRequestDto
     /// </summary>
     public IFormFileCollection? NewImages { get; set; }
 
+    public IFormFileCollection? NewFiles { get; set; }
+
     /// <summary>
     /// Image URLs to remove
     /// </summary>
-    public List<string>? RemoveImageUrls { get; set; }
+    public List<Guid>? RemoveFileId{ get; set; }
 }

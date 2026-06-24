@@ -103,7 +103,7 @@ public class GetAllUsersUseCase(IUnitOfWork unitOfWork)
             u.Id,
             u.IsAnonDefault ? u.AnonAlias : u.Username,
             u.IsAnonDefault ? null : u.Email,
-            u.IsAnonDefault ? u.AnonImage?.ImageUrl : u.AvatarUrl,
+            u.IsAnonDefault ? u.AnonImage?.FileKey : u.AvatarKey,
             u.IsAnonDefault ? null : u.Bio,
             u.AnonAlias,
             u.IsAnonDefault,

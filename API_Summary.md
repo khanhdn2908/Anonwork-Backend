@@ -12,7 +12,8 @@ Mục tiêu chính:
 - Xác thực và phân quyền người dùng bằng JWT + role/permission.
 - Quản lý bài viết, bình luận, follow, bookmark, vote.
 - Hỗ trợ ảnh ẩn danh, thanh toán, gói đăng ký, webhook Sepay.
-- Có sẵn hạ tầng cho moderation, messaging, báo cáo, thông báo, caching, migration.
+- Có sẵn hạ tầng cho moderation, messaging, báo cáo, caching, migration.
+- Đang chuyển hướng lưu file/ảnh sang **Cloudflare R2** thay cho lưu URL trực tiếp.
 
 ---
 
@@ -45,14 +46,14 @@ Mục tiêu chính:
 
 Luồng xử lý chuẩn:
 
-`Request -> API Controller -> Use Case -> Repository/DbContext -> Database -> Response`
+`Request -> API Controller -> Use Case -> Repository/UnitOfWork abstraction -> Database -> Response`
 
 ### Vai trò từng layer
 
 - **API**: nhận request, validate input cơ bản, gọi use case, trả response HTTP.
-- **Application**: chứa logic nghiệp vụ chính, không phụ thuộc trực tiếp vào framework web.
+- **Application**: chứa logic nghiệp vụ chính, chỉ phụ thuộc vào các interface/abstraction trong Application hoặc Domain, không reference trực tiếp Infrastructure.
 - **Domain**: định nghĩa entity và quy tắc lõi của hệ thống.
-- **Infrastructure**: triển khai truy cập dữ liệu, dịch vụ ngoài, cấu hình EF, migrations, email, JWT, Cloudinary, Sepay.
+- **Infrastructure**: triển khai truy cập dữ liệu, dịch vụ ngoài, cấu hình EF, migrations, email, JWT, Cloudinary, Sepay, R2.
 
 ---
 
@@ -69,7 +70,6 @@ Các use case và thành phần liên quan:
 - `ResetPasswordUseCase`
 - `VerifyEmailUseCase`
 - `GoogleLoginUseCase`
-- `RefreshTokenUseCase`
 - `PermissionHandler`, `PermissionRequirement`, `PermissionPolicyProvider`
 - `PermissionAuthorizationExtensions`
 
@@ -119,6 +119,10 @@ Domain:
 - Lấy thông tin cá nhân (`me`).
 - Hỗ trợ anonymous alias và ảnh ẩn danh.
 
+### Thay đổi lưu file/ảnh cho User
+- `AvatarUrl` đã được đổi thành `AvatarKey`.
+- Ý nghĩa: DB chỉ giữ key file trên R2, URL sẽ được build ở tầng service/response.
+
 ---
 
 ## 4.3 Posts
@@ -151,14 +155,27 @@ API:
 
 Domain:
 - `Post`
-- `PostImage`
+- `PostMedia`
 - `PostTag`
 - `Vote`
 
 Lưu ý:
-- Có hỗ trợ vote, images, tags, subject association, pagination.
+- Có hỗ trợ vote, media, tags, subject association, pagination.
 - Có helper riêng cho projection vote để tối ưu query trả về.
-- Có cả file trùng chức năng ở `Features/Posts/Helpers` và `Features/Posts/DTOs/PostVoteProjectionHelper.cs`, nên nên kiểm tra khi refactor.
+- `PostImage` đã được thay bằng `PostMedia` để tránh giới hạn khi sau này hỗ trợ thêm file/video.
+
+### Thay đổi lưu file/ảnh cho Post
+- `PostMedia` là entity thay thế cho `PostImage`.
+- `PostMedia` có thêm phân loại media bằng `PostMediaType`.
+- Các field chính hiện tại:
+  - `MediaType`
+  - `FileKey`
+  - `ContentType`
+  - `DisplayOrder`
+  - `FileSize`
+  - `OriginalFileName`
+  - `CreatedAt`
+- `Post` đang giữ collection `PostMediaItems`.
 
 ---
 
@@ -282,6 +299,10 @@ API:
 
 Domain:
 - `AnonImage`
+
+### Thay đổi lưu file/ảnh cho AnonImage
+- `ImageUrl` đã được đổi thành `FileKey`.
+- Entity này giờ đóng vai trò metadata cho file ảnh trên R2.
 
 ---
 
@@ -441,7 +462,7 @@ Các entity đã thấy trong `src/Anonwork.Domain/Entities`:
 - `Permission`
 - `RolePermission`
 - `Post`
-- `PostImage`
+- `PostMedia`
 - `PostTag`
 - `Comment`
 - `Vote`
@@ -464,9 +485,17 @@ Base / common:
 - `BaseEntity`
 - enums trong `src/Anonwork.Domain/Enums/Enums.cs`
 
+### Ghi chú về media/file
+- `User` hiện lưu `AvatarKey`.
+- `PostMedia` là entity lưu media của bài viết.
+- `AnonImage` hiện lưu `FileKey`.
+- Database không nên lưu URL public là nguồn sự thật chính; key file trên R2 là nguồn sự thật.
+
 ---
 
 ## 6) Infrastructure quan trọng
+
+> Lưu ý kiến trúc: `Anonwork.Application` không reference trực tiếp `Anonwork.Infrastructure`. Application chỉ làm việc qua các interface/abstraction như `IUnitOfWork`, `IGenericRepository<T>`, `IR2Service`, `ISepayService`, ... còn Infrastructure là project implement các interface đó và được đăng ký qua DI ở tầng startup/API.
 
 ### DbContext / persistence
 - `AppDBContext.cs`
@@ -495,7 +524,7 @@ Có rất nhiều `IEntityTypeConfiguration<>` cho từng entity, ví dụ:
 - `AnonImageConfiguration`
 - `OneTimeTokenConfiguration`
 - `EmailVerificationTokenConfiguration`
-- `PostImageConfiguration`
+- `PostMediaConfiguration`
 - `PostTagConfiguration`
 
 ### Services
@@ -505,6 +534,7 @@ Có rất nhiều `IEntityTypeConfiguration<>` cho từng entity, ví dụ:
 - `CloudinaryService`
 - `RolePermissionService`
 - `SepayService`
+- `R2Service` (đã bổ sung cho Cloudflare R2)
 
 ### Options / config classes
 - `JwtOptions`
@@ -512,6 +542,7 @@ Có rất nhiều `IEntityTypeConfiguration<>` cho từng entity, ví dụ:
 - `CloudinaryOptions`
 - `SepayOptions`
 - `MaintenanceOptions`
+- `R2Options`
 
 ### Migrations
 - `20260619141755_AddPostReadScopes`
@@ -566,7 +597,6 @@ Trong repo có khá nhiều file tài liệu. Các file đáng nhớ:
 - `docs/CLOUDINARY_EXAMPLE.md`
 - `docs/PAYMENT_SEPAY_INTEGRATION.md`
 - `docs/PAYMENT_QUICK_START.md`
-- `docs/CLOUDINARY_SETUP.md`
 
 ---
 
@@ -580,6 +610,7 @@ Trong repo có khá nhiều file tài liệu. Các file đáng nhớ:
 
 ### Còn lại đáng chú ý
 - Một số task comment, notifications, messaging, reports, tests, logging, rate limiting, encryption, docs, CI/CD vẫn còn trong kế hoạch.
+- Đang trong quá trình chuyển hệ thống lưu ảnh/file từ URL trực tiếp sang R2-backed keys và metadata.
 
 ---
 
@@ -595,7 +626,13 @@ Trong repo có khá nhiều file tài liệu. Các file đáng nhớ:
 3. **Có file trong `.vs/`**
    - Đây là cache của Visual Studio, không nên đưa vào git.
 
-4. **Module đã khá lớn**
+4. **Media/file storage đã thay đổi mô hình**
+   - `AvatarUrl` -> `AvatarKey`
+   - `PostImage` -> `PostMedia`
+   - `ImageUrl` -> `FileKey`
+   - `PostMedia` có `MediaType` để phân biệt ảnh/file/video.
+
+5. **Module đã khá lớn**
    - Nếu cần hiểu sâu một chức năng, nên đọc thêm file controller + use case + DTO + entity tương ứng.
 
 ---
@@ -604,12 +641,13 @@ Trong repo có khá nhiều file tài liệu. Các file đáng nhớ:
 
 - **Auth**: đăng ký, đăng nhập, refresh, logout, Google login, quên mật khẩu, verify email.
 - **Users**: hồ sơ, role, anon image, quản trị user.
-- **Posts**: CRUD, list, filter by subject, images, vote.
+- **Posts**: CRUD, list, filter by subject, media, vote.
 - **Comments**: CRUD, nested replies, vote.
 - **Follow / Bookmark**: follow người dùng, lưu bài viết.
 - **Subjects**: quản lý chủ đề.
 - **Subscription / Payment**: gói đăng ký, order, webhook Sepay.
 - **Roles / Permissions**: hệ thống phân quyền chi tiết.
+- **Storage**: R2 đang được thêm vào để lưu ảnh/file.
 - **Infrastructure**: EF Core, repository, unit of work, external services, migrations.
 
 ---
@@ -618,4 +656,4 @@ Trong repo có khá nhiều file tài liệu. Các file đáng nhớ:
 
 Tài liệu này được tạo để làm “bản đồ nhanh” của repository. Khi codebase thay đổi đáng kể, nên cập nhật lại file này để giữ nó luôn là nguồn tham chiếu nhanh nhất.
 
-**Last updated**: 2026-06-21
+**Last updated**: 2026-06-22

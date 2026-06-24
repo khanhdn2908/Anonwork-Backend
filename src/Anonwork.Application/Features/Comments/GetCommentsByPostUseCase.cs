@@ -2,6 +2,7 @@ using Anonwork.Application.Features.Comments.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace Anonwork.Application.Features.Comments;
 
@@ -31,7 +32,7 @@ public class GetCommentsByPostUseCase(IUnitOfWork unitOfWork)
         var query = _commentRepository.GetQueryableNoTracking()
             .Include(c => c.Author)
             .Include(c => c.Parent)
-            .Where(c => c.PostId == postId && c.IsActive);
+            .Where(c => c.PostId == postId);
 
         if (!hasPermission)
         {
@@ -42,7 +43,7 @@ public class GetCommentsByPostUseCase(IUnitOfWork unitOfWork)
             .OrderBy(c => c.Depth)
             .ThenBy(c => c.CreatedAt);
 
-        var total = await query.CountAsync(ct); 
+        var total = await query.CountAsync(ct);
         var comments = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -74,7 +75,7 @@ public class GetCommentsByPostUseCase(IUnitOfWork unitOfWork)
                 Id: comment.Author.Id,
                 Username: comment.Author.Username,
                 AnonAlias: comment.Author.AnonAlias,
-                AvatarUrl: comment.Author.AvatarUrl
+                AvatarUrl: comment.Author.AvatarKey
             ),
             Parent: comment.Parent == null ? null : new CommentParentDto(
                 Id: comment.Parent.Id,

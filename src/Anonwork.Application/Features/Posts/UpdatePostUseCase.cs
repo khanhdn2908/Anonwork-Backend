@@ -1,42 +1,38 @@
 using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Features.Posts.DTOs.Request;
 using Anonwork.Application.Features.Posts.DTOs.Response;
+using Anonwork.Application.Features.Posts.Helpers;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
-using Post = Anonwork.Domain.Entities.Post;
+using Anonwork.Domain.Enums;
+using Microsoft.AspNetCore.Http;
 
 namespace Anonwork.Application.Features.Posts;
 
-/// <summary>
-/// Use case for updating a post
-/// </summary>
-public class UpdatePostUseCase(IUnitOfWork unitOfWork)
+public class UpdatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMediaService, IAppDbContext dbContext)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
+    private readonly IPostMediaService _postMediaService = postMediaService;
+    private readonly IAppDbContext _dbContext = dbContext;
 
     public async Task<PostResponseDto> ExecuteAsync(UpdatePostRequest req, CancellationToken ct = default)
     {
-        // ── Validation ──────────────────────────────
         if (req.PostId == Guid.Empty)
             throw new ArgumentException("Post id is required.");
 
-        // ── Get post ────────────────────────────────
         var post = await _postRepo.FindSingleWithTrackingAsync(p => p.Id == req.PostId, ct);
         if (post is null)
             throw new NotFoundException(nameof(Post), req.PostId);
 
-        // ── Authorization ──────────────────────────
         if (post.AuthorId != req.AuthorId)
             throw new UnauthorizedException("You can only update your own posts.");
 
-        // ── Update fields ──────────────────────────
         if (!string.IsNullOrWhiteSpace(req.Title))
             post.Title = req.Title.Trim();
 
         if (!string.IsNullOrWhiteSpace(req.Content))
             post.Content = req.Content.Trim();
 
-        // ── Update tags ────────────────────────────
         if (req.Tags is not null)
         {
             post.PostTags.Clear();
@@ -50,88 +46,85 @@ public class UpdatePostUseCase(IUnitOfWork unitOfWork)
             }
         }
 
-        // ── Remove images ──────────────────────────
-        if (req.RemoveImageUrls is not null && req.RemoveImageUrls.Count > 0)
+        var mediaToRemove = new List<PostMedia>();
+        if (req.RemoveMediaId is not null && req.RemoveMediaId.Count > 0)
         {
-            var imagesToRemove = post.PostImages
-                .Where(pi => req.RemoveImageUrls.Contains(pi.ImageUrl))
+            mediaToRemove = post.PostMediaItems
+                .Where(pm => req.RemoveMediaId.Contains(pm.Id))
                 .ToList();
-
-            foreach (var image in imagesToRemove)
-            {
-                post.PostImages.Remove(image);
-            }
         }
 
-        // ── Add new images ────────────────────────
-        if (req.NewImageUrls is not null && req.NewImageUrls.Count > 0)
-        {
-            var currentImageCount = post.PostImages.Count;
-            var maxNewImages = 5 - currentImageCount;
+        var remainingMedia = post.PostMediaItems
+            .Where(pm => !mediaToRemove.Contains(pm))
+            .ToList();
 
-            if (maxNewImages > 0)
-            {
-                var startOrder = post.PostImages.Count > 0
-                    ? post.PostImages.Max(pi => pi.DisplayOrder) + 1
-                    : 0;
+        if (req.ReplaceMedia)
+            remainingMedia.Clear();
 
-                foreach (var (url, index) in req.NewImageUrls.Take(maxNewImages).Select((u, i) => (u, i)))
-                {
-                    post.PostImages.Add(new PostImage
-                    {
-                        Id = Guid.NewGuid(),
-                        PostId = post.Id,
-                        ImageUrl = url,
-                        DisplayOrder = startOrder + index,
-                        CreatedAt = DateTime.UtcNow
-                    });
-                }
-            }
-        }
+        var finalMedia = await _postMediaService.AppendPostMediaAsync(
+            post.Id,
+            remainingMedia,
+            req.Images,
+            req.Files,
+            ct);
 
-        // ── Update timestamp ───────────────────────
+        post.PostMediaItems = finalMedia;
         post.UpdatedAt = DateTime.UtcNow;
 
-        // ── Save to database ───────────────────────
-        await _postRepo.UpdateAsync(post, ct);
-        await unitOfWork.SaveChangesAsync(ct);
+        await using var transaction = await _dbContext.BeginTransactionAsync(ct);
+        try
+        {
+            await _postRepo.UpdateAsync(post, ct);
+            await unitOfWork.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(ct);
+            await _postMediaService.RemoveMediaFilesAsync(finalMedia.Except(remainingMedia), ct);
+            throw;
+        }
 
-        // ── Return response ────────────────────────
+        await _postMediaService.RemoveMediaFilesAsync(mediaToRemove, ct);
+
         return MapToResponse(post);
     }
 
     private static PostResponseDto MapToResponse(Post post)
     {
-        var imageUrls = post.PostImages
-            .OrderBy(pi => pi.DisplayOrder)
-            .Select(pi => pi.ImageUrl)
+        var isAnon = post.IsAnonymous && post.Author.IsAnonDefault;
+        var media = post.PostMediaItems
+            .OrderBy(pm => pm.DisplayOrder)
+            .Select(pm => new PostMediaResponseDto(
+                pm.Id,
+                pm.FileKey,
+                pm.FileKey,
+                pm.ContentType,
+                pm.DisplayOrder,
+                pm.FileSize,
+                pm.OriginalFileName,
+                pm.MediaType.ToString()))
             .ToList();
-
-        var previewImageUrls = imageUrls.Take(2).ToList();
-        var remainingImagesCount = Math.Max(0, imageUrls.Count - previewImageUrls.Count);
 
         return new PostResponseDto(
             Id: post.Id,
             Title: post.Title,
             Content: post.Content,
             AuthorId: post.AuthorId,
-            AuthorUsername: post.Author?.Username,
-            AuthorAnonAlias: post.Author?.AnonAlias,
-            IsAnonymous: post.IsAnonymous,
+            AuthorUsername: isAnon ? null : post.Author?.Username,
+            AuthorAnonAlias: isAnon ? post.Author?.AnonAlias : null,
+            IsAnonymous: isAnon,
             SubjectId: post.SubjectId,
             SubjectName: post.Subject?.Name,
-            ImageUrls: previewImageUrls,
-            RemainingImagesCount: remainingImagesCount,
-            Tags: post.PostTags
-                .Select(pt => pt.Tag)
-                .ToList(),
+            Media: media,
+            Tags: post.PostTags.Select(pt => pt.Tag).ToList(),
             Upvotes: post.Upvotes,
             CommentsCount: post.CommentsCount,
             ViewCount: post.ViewCount,
             Status: post.Status.ToString(),
             CreatedAt: post.CreatedAt,
             UpdatedAt: post.UpdatedAt,
-            false
+            IsUpvotedByMe: false
         );
     }
 }

@@ -16,7 +16,7 @@ public class AnonImageConfiguration : IEntityTypeConfiguration<AnonImage>
 
         entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()").HasColumnName("id");
         entity.Property(e => e.Name).HasMaxLength(120).HasColumnName("name");
-        entity.Property(e => e.ImageUrl).HasColumnName("image_url");
+        entity.Property(e => e.FileKey).HasColumnName("file_key");
         entity.Property(e => e.IsActive).HasDefaultValue(true).HasColumnName("is_active");
         entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
         entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");
