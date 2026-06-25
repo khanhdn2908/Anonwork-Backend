@@ -19,23 +19,17 @@ public class UpdateAnonImageUseCase(IUnitOfWork unitOfWork, IR2Service r2Service
         var anonImage = await _anonImageRepo.GetByIdAsync(anonImageId, ct)
             ?? throw new NotFoundException(nameof(AnonImage), anonImageId);
 
-        if(!string.IsNullOrWhiteSpace(request.Name))
+        if (!string.IsNullOrWhiteSpace(request.Name))
             anonImage.Name = request.Name.Trim();
 
-        string? fileKey = null;
-        if (request.Image is null)
-        {
-            fileKey = anonImage.FileKey;
-        }
-        else 
-        {
-            var file = await _r2Service.UploadFileAsync(request.Image, "anon-images", ct);
-            fileKey = file.FileKey;
-        }
+        string? oldFileKey = null;
 
-        if (!string.IsNullOrWhiteSpace(fileKey))
+        if (request.Image is not null)
         {
-            anonImage.FileKey = fileKey;
+            oldFileKey = anonImage.FileKey;
+
+            var uploadedFile = await _r2Service.UploadFileAsync(request.Image, "anon-images", ct);
+            anonImage.FileKey = uploadedFile.FileKey;
         }
 
         anonImage.IsActive = request.IsActive;
@@ -43,6 +37,9 @@ public class UpdateAnonImageUseCase(IUnitOfWork unitOfWork, IR2Service r2Service
 
         await _anonImageRepo.UpdateAsync(anonImage, ct);
         await unitOfWork.SaveChangesAsync(ct);
+
+        if (!string.IsNullOrWhiteSpace(oldFileKey) && oldFileKey != anonImage.FileKey)
+            await _r2Service.DeleteFileAsync(oldFileKey, ct);
 
         return MapToResponse(anonImage);
     }
