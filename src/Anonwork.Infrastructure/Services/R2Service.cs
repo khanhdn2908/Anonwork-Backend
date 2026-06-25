@@ -62,9 +62,6 @@
                 Key = fileKey,
                 InputStream = stream,
                 ContentType = string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType,
-
-
-                DisablePayloadSigning = true,
                 AutoCloseStream = false
             };
 
@@ -141,4 +138,9 @@
             if (!AllowedExtensions.Contains(extension))
                 throw new ArgumentException($"File type '{extension}' is not allowed.", nameof(file));
         }
+
+    public string GetDefaultAvatarKey()
+    {
+        return _options.DefaultAvatarKey;
     }
+}

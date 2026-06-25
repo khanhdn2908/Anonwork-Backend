@@ -3,14 +3,16 @@ using Anonwork.Application.Features.Users.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 using Anonwork.Domain.Enums;
+using Microsoft.Extensions.Configuration;
 
 namespace Anonwork.Application.Features.Users;
 
-public class GetMeUseCase(IUnitOfWork unitOfWork)
+public class GetMeUseCase(IUnitOfWork unitOfWork, IConfiguration configuration)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
     private readonly IGenericRepository<Follow> _followRepo = unitOfWork.GetRepository<Follow>();
     private readonly IGenericRepository<UserSubscription> _userSubscriptionRepo = unitOfWork.GetRepository<UserSubscription>();
+    private readonly string _publicBaseUrl = configuration["R2:PublicBaseUrl"] ?? string.Empty;
 
     public async Task<GetMeResponseDto> ExecuteAsync(Guid userId, CancellationToken ct = default)
     {
@@ -41,6 +43,7 @@ public class GetMeUseCase(IUnitOfWork unitOfWork)
             user.Username,
             user.Email,
             user.AvatarKey,
+            BuildAvatarUrl(user.AvatarKey),
             user.Bio,
             user.AnonAlias,
             user.IsAnonDefault,
@@ -51,5 +54,13 @@ public class GetMeUseCase(IUnitOfWork unitOfWork)
             user.CreatedAt,
             user.UpdatedAt
         );
+    }
+
+    private string BuildAvatarUrl(string? avatarKey)
+    {
+        var key = string.IsNullOrWhiteSpace(avatarKey) ? "avatars/null.jpg" : avatarKey;
+        return string.IsNullOrWhiteSpace(_publicBaseUrl)
+            ? key
+            : $"{_publicBaseUrl.TrimEnd('/')}/{key.TrimStart('/')}";
     }
 }

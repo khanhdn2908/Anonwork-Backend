@@ -7,6 +7,7 @@ public record GetMeResponseDto(
     Guid Id,
     string Username,
     string Email,
+    string? AvatarKey,
     string? AvatarUrl,
     string? Bio,
     string AnonAlias,

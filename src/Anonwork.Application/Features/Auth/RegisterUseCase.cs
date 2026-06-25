@@ -12,10 +12,13 @@ namespace Anonwork.Application.Features.Auth;
 public class RegisterUseCase(
     IUnitOfWork unitOfWork,
     IPasswordHasher passwordHasher,
-    IEmailSender emailSender)
+    IEmailSender emailSender,
+    IR2Service r2Service)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
     private readonly IGenericRepository<OneTimeToken> _tokenRepo = unitOfWork.GetRepository<OneTimeToken>();
+    private readonly IR2Service _r2Service = r2Service;
+    private readonly string _defaultAvatarKey = r2Service.GetDefaultAvatarKey();
 
     public async Task ExecuteAsync(RegisterRequest req, CancellationToken ct = default)
     {
@@ -54,6 +57,7 @@ public class RegisterUseCase(
         if (existingUser is null)
         {
             var user = User.Create(username, email, passwordHasher.Hash(req.Password), alias);
+            user.AvatarKey = _defaultAvatarKey;
             await _userRepo.AddAsync(user, ct);
             return;
         }
@@ -61,6 +65,7 @@ public class RegisterUseCase(
         existingUser.Username = username;
         existingUser.PasswordHash = passwordHasher.Hash(req.Password);
         existingUser.AnonAlias = alias;
+        existingUser.AvatarKey = _defaultAvatarKey;
         existingUser.Status = UserStatus.PendingVerification;
         existingUser.UpdatedAt = DateTime.UtcNow;
         await _userRepo.UpdateAsync(existingUser, ct);

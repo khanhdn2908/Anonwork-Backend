@@ -137,14 +137,9 @@ public partial class User
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void LinkGoogleAccount(string googleSubject, string? avatarKey = null)
+    public void LinkGoogleAccount(string googleSubject)
     {
         GoogleSubject = googleSubject;
-        if (!string.IsNullOrWhiteSpace(avatarKey))
-        {
-            AvatarKey = avatarKey;
-        }
-
         Status = UserStatus.Active;
         UpdatedAt = DateTime.UtcNow;
     }

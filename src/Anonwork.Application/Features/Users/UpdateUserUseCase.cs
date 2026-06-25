@@ -51,10 +51,13 @@ public class UpdateUserUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
         await _userRepo.UpdateAsync(user, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
+        var defaultAvatarKey = "avatars/null.jpg";
+
         return new UpdateUserResponseDto(
             user.Username,
             user.Bio,
-            user.AvatarKey
+            user.AvatarKey,
+            _r2Service.GetPublicUrl(user.AvatarKey ?? defaultAvatarKey)
         );
     }
 }

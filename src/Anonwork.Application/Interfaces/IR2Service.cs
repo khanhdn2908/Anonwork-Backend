@@ -11,4 +11,6 @@ public interface IR2Service
     Task<bool> DeleteFileAsync(string fileKey, CancellationToken cancellationToken = default);
 
     string GetPublicUrl(string fileKey);
+
+    string GetDefaultAvatarKey();
 }

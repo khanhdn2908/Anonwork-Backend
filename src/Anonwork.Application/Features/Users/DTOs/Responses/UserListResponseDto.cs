@@ -16,6 +16,7 @@ public record UserListResponseDto(
     string Username,
     string? Email,
     string? AvatarKey,
+    string? AvatarUrl,
     string? Bio,
     string AnonAlias,
     bool IsAnonDefault,

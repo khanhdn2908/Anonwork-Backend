@@ -18,6 +18,8 @@ public class R2Options
 
     public string Endpoint { get; set; } = string.Empty;
 
+    public string DefaultAvatarKey { get; set; } = "avatars/null.jpg";
+
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(AccountId))

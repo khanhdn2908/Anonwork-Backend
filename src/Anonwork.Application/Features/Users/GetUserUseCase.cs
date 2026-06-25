@@ -3,14 +3,16 @@ using Anonwork.Application.Features.Users.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 using Anonwork.Domain.Enums;
+using Microsoft.Extensions.Configuration;
 
 namespace Anonwork.Application.Features.Users;
 
-public class GetUserUseCase(IUnitOfWork unitOfWork)
+public class GetUserUseCase(IUnitOfWork unitOfWork, IConfiguration configuration)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
     private readonly IGenericRepository<Follow> _followRepo = unitOfWork.GetRepository<Follow>();
     private readonly IGenericRepository<UserSubscription> _userSubscriptionRepo = unitOfWork.GetRepository<UserSubscription>();
+    private readonly string _publicBaseUrl = configuration["R2:PublicBaseUrl"] ?? string.Empty;
 
     public async Task<UserResponseDto> ExecuteAsync(Guid userId, bool hasPermission, CancellationToken ct = default)
     {
@@ -39,7 +41,8 @@ public class GetUserUseCase(IUnitOfWork unitOfWork)
 
         var isAnon = user.IsAnonDefault;
         var displayUsername = isAnon ? user.AnonAlias : user.Username;
-        var displayAvatarUrl = isAnon ? user.AnonImage?.FileKey : user.AvatarKey;
+        var displayAvatarKey = isAnon ? user.AnonImage?.FileKey : user.AvatarKey;
+        var avatarUrl = BuildAvatarUrl(displayAvatarKey);
         var displayBio = isAnon ? null : user.Bio;
         var displayEmail = isAnon ? null : user.Email;
 
@@ -47,7 +50,8 @@ public class GetUserUseCase(IUnitOfWork unitOfWork)
             user.Id,
             displayUsername,
             displayEmail,
-            displayAvatarUrl,
+            displayAvatarKey,
+            avatarUrl,
             displayBio,
             user.AnonAlias,
             user.IsAnonDefault,
@@ -57,5 +61,13 @@ public class GetUserUseCase(IUnitOfWork unitOfWork)
             user.CreatedAt,
             user.UpdatedAt
         );
+    }
+
+    private string BuildAvatarUrl(string? avatarKey)
+    {
+        var key = string.IsNullOrWhiteSpace(avatarKey) ? "avatars/null.jpg" : avatarKey;
+        return string.IsNullOrWhiteSpace(_publicBaseUrl)
+            ? key
+            : $"{_publicBaseUrl.TrimEnd('/')}/{key.TrimStart('/')}";
     }
 }

@@ -14,11 +14,13 @@ public class GoogleLoginUseCase(
     IUnitOfWork unitOfWork,
     IJwtService jwtService,
     IRolePermissionService rolePermissionService,
-    IConfiguration configuration)
+    IConfiguration configuration,
+    IR2Service r2Service)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
     private readonly IGenericRepository<Role> _roleRepo = unitOfWork.GetRepository<Role>();
     private readonly IGenericRepository<UserRole> _userRoleRepo = unitOfWork.GetRepository<UserRole>();
+    private readonly IR2Service _r2Service = r2Service;
 
     public async Task<AuthResult> ExecuteAsync(GoogleLoginRequest req, CancellationToken ct = default)
     {
@@ -33,28 +35,28 @@ public class GoogleLoginUseCase(
 
         var googleSubject = payload.Subject;
         var username = BuildUsername(payload.Name, email);
-        var picture = payload.Picture;
 
         var user = await _userRepo.FindSingleWithTrackingAsync(u => u.GoogleSubject == googleSubject, ct)
             ?? await _userRepo.FindSingleWithTrackingAsync(u => u.Email == email, ct);
 
         var isNewUser = false;
 
+        var defaultAvatarKey = _r2Service.GetDefaultAvatarKey();
+
         if (user is null)
         {
             var alias = await ResolveAnonAliasAsync(req.AnonAlias, ct);
-            user = User.CreateGoogleUser(username, email, googleSubject, picture ?? string.Empty, alias);
+            user = User.CreateGoogleUser(username, email, googleSubject, defaultAvatarKey, alias);
+            if (string.IsNullOrWhiteSpace(user.AvatarKey))
+            {
+                user.AvatarKey = defaultAvatarKey;
+            }
             await _userRepo.AddAsync(user, ct);
             isNewUser = true;
         }
         else
         {
-            user.LinkGoogleAccount(googleSubject, picture);
-
-            if (string.IsNullOrWhiteSpace(user.AvatarKey) && !string.IsNullOrWhiteSpace(picture))
-            {
-                user.AvatarKey = picture;
-            }
+            user.LinkGoogleAccount(googleSubject);
         }
 
         if (isNewUser)
