@@ -23,6 +23,7 @@ public class UpdateAnonImageUseCase(IUnitOfWork unitOfWork, IR2Service r2Service
             anonImage.Name = request.Name.Trim();
 
         string? oldFileKey = null;
+        string? fileUrl = null;
 
         if (request.Image is not null)
         {
@@ -30,6 +31,11 @@ public class UpdateAnonImageUseCase(IUnitOfWork unitOfWork, IR2Service r2Service
 
             var uploadedFile = await _r2Service.UploadFileAsync(request.Image, "anon-images", ct);
             anonImage.FileKey = uploadedFile.FileKey;
+            fileUrl = uploadedFile.FileUrl;
+        }
+        else
+        {
+            fileUrl = _r2Service.GetPublicUrl(anonImage.FileKey);
         }
 
         anonImage.IsActive = request.IsActive;
@@ -41,14 +47,15 @@ public class UpdateAnonImageUseCase(IUnitOfWork unitOfWork, IR2Service r2Service
         if (!string.IsNullOrWhiteSpace(oldFileKey) && oldFileKey != anonImage.FileKey)
             await _r2Service.DeleteFileAsync(oldFileKey, ct);
 
-        return MapToResponse(anonImage);
+        return MapToResponse(anonImage, fileUrl!);
     }
 
-    private static AnonImageResponseDto MapToResponse(AnonImage anonImage)
+    private static AnonImageResponseDto MapToResponse(AnonImage anonImage, string fileUrl)
         => new(
             Id: anonImage.Id,
             Name: anonImage.Name,
             FileKey: anonImage.FileKey,
+            FileUrl: fileUrl,
             IsActive: anonImage.IsActive,
             CreatedAt: anonImage.CreatedAt,
             UpdatedAt: anonImage.UpdatedAt);

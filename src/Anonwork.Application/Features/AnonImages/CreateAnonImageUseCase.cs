@@ -2,7 +2,6 @@ using Anonwork.Application.Features.AnonImages.DTOs.Requests;
 using Anonwork.Application.Features.AnonImages.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
-using Microsoft.Extensions.Options;
 
 namespace Anonwork.Application.Features.AnonImages;
 
@@ -37,14 +36,15 @@ public class CreateAnonImageUseCase(IUnitOfWork unitOfWork, IR2Service r2Service
         var created = await _anonImageRepo.AddAsync(entity, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
-        return MapToResponse(created);
+        return MapToResponse(created, file.FileUrl);
     }
 
-    private static AnonImageResponseDto MapToResponse(AnonImage anonImage)
+    private static AnonImageResponseDto MapToResponse(AnonImage anonImage, string fileUrl)
         => new(
             Id: anonImage.Id,
             Name: anonImage.Name,
             FileKey: anonImage.FileKey,
+            FileUrl: fileUrl,
             IsActive: anonImage.IsActive,
             CreatedAt: anonImage.CreatedAt,
             UpdatedAt: anonImage.UpdatedAt

@@ -4,9 +4,10 @@ using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.AnonImages;
 
-public class GetAllAnonImagesUseCase(IUnitOfWork unitOfWork)
+public class GetAllAnonImagesUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 {
     private readonly IGenericRepository<AnonImage> _anonImageRepo = unitOfWork.GetRepository<AnonImage>();
+    private readonly IR2Service _r2Service = r2Service;
 
     public async Task<IReadOnlyList<AnonImageResponseDto>> ExecuteAsync(
         bool hasPermision,
@@ -25,11 +26,12 @@ public class GetAllAnonImagesUseCase(IUnitOfWork unitOfWork)
             .ToList();
     }
 
-    private static AnonImageResponseDto MapToResponse(AnonImage anonImage)
+    private AnonImageResponseDto MapToResponse(AnonImage anonImage)
         => new(
             Id: anonImage.Id,
             Name: anonImage.Name,
             FileKey: anonImage.FileKey,
+            FileUrl: _r2Service.GetPublicUrl(anonImage.FileKey),
             IsActive: anonImage.IsActive,
             CreatedAt: anonImage.CreatedAt,
             UpdatedAt: anonImage.UpdatedAt);
