@@ -65,7 +65,7 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 
         var postDtos = posts.Select(p =>
         {
-            var isAnon = p.IsAnonymous && p.Author.IsAnonDefault;
+            var isAnon = p.IsAnonymous || p.Author.IsAnonDefault;
             var media = p.PostMediaItems
                 .OrderBy(i => i.DisplayOrder)
                 .Select(i => new PostMediaResponseDto(
