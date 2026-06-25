@@ -62,6 +62,7 @@
                 Key = fileKey,
                 InputStream = stream,
                 ContentType = string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType,
+                DisablePayloadSigning = true,
                 AutoCloseStream = false
             };
 

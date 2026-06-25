@@ -35,10 +35,19 @@ public class UpdateUserUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 
         if (req.Avatar is not null)
         {
+            var oldAvatarKey = user.AvatarKey;
+
             try
             {
-                var file = await _r2Service.UploadFileAsync(req.Avatar, "avatars", ct);
-                user.AvatarKey = file.FileKey;
+                var uploadedFile = await _r2Service.UploadFileAsync(req.Avatar, "avatars", ct);
+                user.AvatarKey = uploadedFile.FileKey;
+
+                if (!string.IsNullOrWhiteSpace(oldAvatarKey) &&
+                    oldAvatarKey != _r2Service.GetDefaultAvatarKey() &&
+                    oldAvatarKey != user.AvatarKey)
+                {
+                    await _r2Service.DeleteFileAsync(oldAvatarKey, ct);
+                }
             }
             catch
             {
@@ -51,7 +60,7 @@ public class UpdateUserUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
         await _userRepo.UpdateAsync(user, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
-        var defaultAvatarKey = "avatars/null.jpg";
+        var defaultAvatarKey = _r2Service.GetDefaultAvatarKey();
 
         return new UpdateUserResponseDto(
             user.Username,
