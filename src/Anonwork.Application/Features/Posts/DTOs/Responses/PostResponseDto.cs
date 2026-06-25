@@ -9,7 +9,6 @@ public record PostResponseDto(
     string Content,
     Guid AuthorId,
     string? AuthorUsername,
-    string? AuthorAnonAlias,
     bool IsAnonymous,
     Guid SubjectId,
     string? SubjectName,
