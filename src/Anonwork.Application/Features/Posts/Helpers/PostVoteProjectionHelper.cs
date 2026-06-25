@@ -8,7 +8,7 @@ public static class PostVoteProjectionHelper
 {
     public static PostResponseDto MapToResponse(Post post, bool isUpvotedByMe, IR2Service r2Service)
     {
-        var isAnon = post.IsAnonymous && post.Author.IsAnonDefault;
+        var isAnon = post.IsAnonymous || post.Author.IsAnonDefault;
         var media = post.PostMediaItems
             .OrderBy(pm => pm.DisplayOrder)
             .Select(pm => new PostMediaResponseDto(
