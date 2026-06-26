@@ -24,7 +24,7 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
         if (string.IsNullOrWhiteSpace(req.Content))
             throw new ArgumentException("Content is required.");
 
-        await _planAccessService.EnsureCanCreatePostAsync(req.AuthorId, req.Images, req.File, ct);
+        //await _planAccessService.EnsureCanCreatePostAsync(req.AuthorId, req.Images, req.File, ct);
 
         // ── Create post ─────────────────────────────
         var post = new Post
