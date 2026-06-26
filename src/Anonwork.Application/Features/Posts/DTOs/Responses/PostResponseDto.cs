@@ -20,5 +20,8 @@ public record PostResponseDto(
     string Status,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    bool IsUpvotedByMe
+    bool IsUpvotedByMe,
+    // For anonymous posts this is the author's anonymous-image URL; for normal
+    // posts it's the author's avatar URL. Null when none is set.
+    string? AuthorAvatarUrl = null
 );

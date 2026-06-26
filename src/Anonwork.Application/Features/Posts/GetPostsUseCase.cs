@@ -29,6 +29,7 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 
         var query = _postRepo.GetQueryableNoTracking()
             .Include(p => p.Author)
+                .ThenInclude(a => a.AnonImage)
             .Include(p => p.Subject)
             .Include(p => p.PostMediaItems)
             .Include(p => p.PostTags)
@@ -100,7 +101,8 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
                 p.Status.ToString(),
                 p.CreatedAt,
                 p.UpdatedAt,
-                upvotedSet.Contains(p.Id));
+                upvotedSet.Contains(p.Id),
+                Helpers.PostVoteProjectionHelper.ResolveAuthorAvatarUrl(p, isAnon, _r2Service));
         }).ToList();
 
         return new PostListResponseDto(postDtos, total, page, pageSize, totalPages);

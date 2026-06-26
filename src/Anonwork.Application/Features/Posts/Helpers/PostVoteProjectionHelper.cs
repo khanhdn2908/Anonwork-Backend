@@ -6,6 +6,24 @@ namespace Anonwork.Application.Features.Posts.Helpers;
 
 public static class PostVoteProjectionHelper
 {
+    /// <summary>
+    /// For anonymous posts returns the author's anonymous-image URL; for normal
+    /// posts the author's avatar URL. Null when the relevant key isn't set/loaded.
+    /// </summary>
+    public static string? ResolveAuthorAvatarUrl(Post post, bool isAnon, IR2Service r2Service)
+    {
+        if (isAnon)
+        {
+            return post.Author?.AnonImage != null
+                ? r2Service.GetPublicUrl(post.Author.AnonImage.FileKey)
+                : null;
+        }
+
+        return !string.IsNullOrWhiteSpace(post.Author?.AvatarKey)
+            ? r2Service.GetPublicUrl(post.Author!.AvatarKey!)
+            : null;
+    }
+
     public static PostResponseDto MapToResponse(Post post, bool isUpvotedByMe, IR2Service r2Service)
     {
         var isAnon = post.IsAnonymous || post.Author.IsAnonDefault;
@@ -39,7 +57,8 @@ public static class PostVoteProjectionHelper
             post.Status.ToString(),
             post.CreatedAt,
             post.UpdatedAt,
-            isUpvotedByMe
+            isUpvotedByMe,
+            ResolveAuthorAvatarUrl(post, isAnon, r2Service)
         );
     }
 }

@@ -36,6 +36,7 @@ public class GetPostsBySubjectUseCase(IUnitOfWork unitOfWork, IR2Service r2Servi
         // ── Get posts ───────────────────────────────
         var query = _postRepo.GetQueryableNoTracking()
             .Include(p => p.Author)
+                .ThenInclude(a => a.AnonImage)
             .Include(p => p.Subject)
             .Include(p => p.PostMediaItems)
             .Include(p => p.PostTags)
