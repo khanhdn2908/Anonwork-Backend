@@ -3,20 +3,24 @@ using Anonwork.Application.Features.Users.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 using Anonwork.Domain.Enums;
-using Microsoft.Extensions.Configuration;
 
 namespace Anonwork.Application.Features.Users;
 
-public class GetMeUseCase(IUnitOfWork unitOfWork, IConfiguration configuration)
+public class GetMeUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
     private readonly IGenericRepository<Follow> _followRepo = unitOfWork.GetRepository<Follow>();
     private readonly IGenericRepository<UserSubscription> _userSubscriptionRepo = unitOfWork.GetRepository<UserSubscription>();
-    private readonly string _publicBaseUrl = configuration["R2:PublicBaseUrl"] ?? string.Empty;
+    private readonly IR2Service _r2Service = r2Service;
 
     public async Task<GetMeResponseDto> ExecuteAsync(Guid userId, CancellationToken ct = default)
     {
-        var user = await _userRepo.GetByIdAsync(userId, ct)
+        var users = await _userRepo.FindWithIncludesAsync(
+            u => u.Id == userId,
+            u => u.AnonImage
+        );
+
+        var user = users.FirstOrDefault()
             ?? throw new NotFoundException("User not found.");
 
         var followerCount = await _followRepo.CountAsync(
@@ -27,7 +31,9 @@ public class GetMeUseCase(IUnitOfWork unitOfWork, IConfiguration configuration)
             f => f.FollowerId == userId && f.Follower.Status == UserStatus.Active,
             ct);
 
-        var anonImageUrl = user.AnonImage?.FileKey ?? string.Empty;
+        var anonImageUrl = !string.IsNullOrWhiteSpace(user.AnonImage?.FileKey)
+            ? _r2Service.GetPublicUrl(user.AnonImage.FileKey)
+            : string.Empty;
 
         var userSubscriptionPlanActive = (await _userSubscriptionRepo.FindAsync(
                 us => us.UserId == userId && us.Status == SubscriptionStatus.Active && us.ExpiresAt > DateTime.UtcNow,
@@ -58,9 +64,9 @@ public class GetMeUseCase(IUnitOfWork unitOfWork, IConfiguration configuration)
 
     private string BuildAvatarUrl(string? avatarKey)
     {
-        var key = string.IsNullOrWhiteSpace(avatarKey) ? "avatars/null.jpg" : avatarKey;
-        return string.IsNullOrWhiteSpace(_publicBaseUrl)
-            ? key
-            : $"{_publicBaseUrl.TrimEnd('/')}/{key.TrimStart('/')}";
+        return _r2Service.GetPublicUrl(
+            string.IsNullOrWhiteSpace(avatarKey) ? "avatars/null.jpg" : avatarKey
+        );
     }
 }
+
