@@ -19,11 +19,21 @@ public class GetSubscriptionPlanBySlugUseCase(IUnitOfWork unitOfWork)
             plan.Id,
             plan.Name,
             plan.Slug,
+            plan.Description,
             plan.Price,
             plan.DurationDays,
-            plan.Features,
+            plan.MaxPostsPerDay,
+            plan.MaxUploadsPerDay,
+            plan.MaxPostFileSizeMb,
+            plan.MaxPostImageCount,
+            plan.MaxPostMediaCount,
+            plan.CanAttachMediaToPost,
+            plan.CanUploadPostFiles,
+            plan.CanUseExclusiveAnonImages,
+            plan.CanUsePremiumFeatures,
             plan.IsActive,
-            plan.CreatedAt
+            plan.CreatedAt,
+            plan.UpdatedAt
         );
     }
 }

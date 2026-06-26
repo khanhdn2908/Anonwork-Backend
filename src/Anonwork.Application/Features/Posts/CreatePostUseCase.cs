@@ -9,20 +9,22 @@ namespace Anonwork.Application.Features.Posts;
 /// <summary>
 /// Use case for creating a new post
 /// </summary>
-public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMediaService, IAppDbContext dbContext)
+public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMediaService, IAppDbContext dbContext, IPlanAccessService planAccessService)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
     private readonly IPostMediaService _postMediaService = postMediaService;
     private readonly IAppDbContext _dbContext = dbContext;
+    private readonly IPlanAccessService _planAccessService = planAccessService;
 
     public async Task<PostResponseDto> ExecuteAsync(CreatePostRequest req, CancellationToken ct = default)
     {
-        // ── Validation ──────────────────────────────
         if (string.IsNullOrWhiteSpace(req.Title))
             throw new ArgumentException("Title is required.");
 
         if (string.IsNullOrWhiteSpace(req.Content))
             throw new ArgumentException("Content is required.");
+
+        await _planAccessService.EnsureCanCreatePostAsync(req.AuthorId, req.Images, req.File, ct);
 
         // ── Create post ─────────────────────────────
         var post = new Post

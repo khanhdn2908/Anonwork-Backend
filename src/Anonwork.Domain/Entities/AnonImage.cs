@@ -13,6 +13,8 @@ public class AnonImage
 
     public bool IsActive { get; set; } = true;
 
+    public bool IsExclusive { get; set; }
+
     public string? ContentType { get; set; }
 
     public long FileSize { get; set; }

@@ -16,71 +16,71 @@ public class UpdateSubscriptionPlanUseCase(IUnitOfWork unitOfWork)
         UpdateSubscriptionPlanRequestDto request,
         CancellationToken ct = default)
     {
-        // Get existing plan
         var existingPlan = await _subscriptionPlanRepo.GetByIdAsync(id, ct)
             ?? throw new NotFoundException($"Subscription plan with ID {id} not found.");
 
-        // Generate slug if not provided
-        var slug = !string.IsNullOrWhiteSpace(request.Slug) 
+        var slug = !string.IsNullOrWhiteSpace(request.Slug)
             ? request.Slug.Trim().ToLowerInvariant()
             : GenerateSlugFromName(request.Name);
 
-        // Validate slug format
         if (!IsValidSlug(slug))
-        {
             throw new BadRequestException("Slug must contain only lowercase letters, numbers, and hyphens.");
-        }
 
-        // Check if slug already exists (excluding current plan)
         if (await _subscriptionPlanRepo.ExistsAsync(s => s.Slug == slug && s.Id != id, ct))
-        {
             throw new ConflictException($"Subscription plan with slug '{slug}' already exists.");
-        }
 
-        // Update plan properties
         existingPlan.Name = request.Name.Trim();
         existingPlan.Slug = slug;
+        existingPlan.Description = request.Description?.Trim();
         existingPlan.Price = request.Price;
         existingPlan.DurationDays = request.DurationDays;
-        existingPlan.Features = request.Features?.Trim();
+        existingPlan.MaxPostsPerDay = request.MaxPostsPerDay;
+        existingPlan.MaxUploadsPerDay = request.MaxUploadsPerDay;
+        existingPlan.MaxPostFileSizeMb = request.MaxPostFileSizeMb;
+        existingPlan.MaxPostImageCount = request.MaxPostImageCount;
+        existingPlan.MaxPostMediaCount = request.MaxPostMediaCount;
+        existingPlan.CanAttachMediaToPost = request.CanAttachMediaToPost;
+        existingPlan.CanUploadPostFiles = request.CanUploadPostFiles;
+        existingPlan.CanUseExclusiveAnonImages = request.CanUseExclusiveAnonImages;
+        existingPlan.CanUsePremiumFeatures = request.CanUsePremiumFeatures;
         existingPlan.IsActive = request.IsActive;
+        existingPlan.UpdatedAt = DateTime.UtcNow;
 
         await _subscriptionPlanRepo.UpdateAsync(existingPlan, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
-        return new SubscriptionPlanResponseDto(
-            existingPlan.Id,
-            existingPlan.Name,
-            existingPlan.Slug,
-            existingPlan.Price,
-            existingPlan.DurationDays,
-            existingPlan.Features,
-            existingPlan.IsActive,
-            existingPlan.CreatedAt
-        );
+        return MapToResponse(existingPlan);
     }
+
+    private static SubscriptionPlanResponseDto MapToResponse(SubscriptionPlan plan)
+        => new(
+            plan.Id,
+            plan.Name,
+            plan.Slug,
+            plan.Description,
+            plan.Price,
+            plan.DurationDays,
+            plan.MaxPostsPerDay,
+            plan.MaxUploadsPerDay,
+            plan.MaxPostFileSizeMb,
+            plan.MaxPostImageCount,
+            plan.MaxPostMediaCount,
+            plan.CanAttachMediaToPost,
+            plan.CanUploadPostFiles,
+            plan.CanUseExclusiveAnonImages,
+            plan.CanUsePremiumFeatures,
+            plan.IsActive,
+            plan.CreatedAt,
+            plan.UpdatedAt);
 
     private static string GenerateSlugFromName(string name)
     {
-        // Convert to lowercase and replace spaces with hyphens
         var slug = name.Trim().ToLowerInvariant();
-        
-        // Remove special characters and replace with hyphens
         slug = Regex.Replace(slug, @"[^a-z0-9\s-]", "");
-        
-        // Replace multiple spaces/hyphens with single hyphen
         slug = Regex.Replace(slug, @"[\s-]+", "-");
-        
-        // Remove leading/trailing hyphens
-        slug = slug.Trim('-');
-        
-        return slug;
+        return slug.Trim('-');
     }
 
     private static bool IsValidSlug(string slug)
-    {
-        // Slug should only contain lowercase letters, numbers, and hyphens
-        // Should not start or end with hyphen
-        return Regex.IsMatch(slug, @"^[a-z0-9]+(?:-[a-z0-9]+)*$");
-    }
+        => Regex.IsMatch(slug, @"^[a-z0-9]+(?:-[a-z0-9]+)*$");
 }

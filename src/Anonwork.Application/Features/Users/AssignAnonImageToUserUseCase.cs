@@ -1,13 +1,15 @@
+using Anonwork.Application.Common;
 using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.Users;
 
-public class AssignAnonImageToUserUseCase(IUnitOfWork unitOfWork)
+public class AssignAnonImageToUserUseCase(IUnitOfWork unitOfWork, IPlanAccessService planAccessService)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
     private readonly IGenericRepository<AnonImage> _anonImageRepo = unitOfWork.GetRepository<AnonImage>();
+    private readonly IPlanAccessService _planAccessService = planAccessService;
 
     public async Task ExecuteAsync(
         Guid userId,
@@ -29,7 +31,8 @@ public class AssignAnonImageToUserUseCase(IUnitOfWork unitOfWork)
         if (!anonImage.IsActive)
             throw new InvalidOperationException("Anon image is inactive.");
 
-        user.SetAnonInfo(anonImageId, anonImage.Name);
+        var anonAlias = AnonAliasGenerator.GenerateFromImageName(anonImage.Name);
+        user.SetAnonInfo(anonImageId, anonAlias);
 
         await _userRepo.UpdateAsync(user, ct);
         await unitOfWork.SaveChangesAsync(ct);

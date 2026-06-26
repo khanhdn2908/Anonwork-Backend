@@ -5,9 +5,10 @@ using Microsoft.AspNetCore.Http;
 
 namespace Anonwork.Infrastructure.Services;
 
-public class PostMediaService(IR2Service r2Service) : IPostMediaService
+public class PostMediaService(IR2Service r2Service, IPlanAccessService planAccessService) : IPostMediaService
 {
     private readonly IR2Service _r2Service = r2Service;
+    private readonly IPlanAccessService _planAccessService = planAccessService;
 
     public async Task<List<PostMedia>> BuildPostMediaAsync(
         Guid postId,

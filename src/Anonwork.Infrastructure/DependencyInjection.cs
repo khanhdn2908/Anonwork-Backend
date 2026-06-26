@@ -58,6 +58,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddScoped<ICloudinaryService, CloudinaryService>();
         services.AddScoped<IR2Service, R2Service>();
+        services.AddScoped<IPlanAccessService, PlanAccessService>();
         services.AddScoped<IPostMediaService, PostMediaService>();
         services.AddScoped<ISepayService, SepayService>();
         services.AddScoped<IEmailSender, EmailSender>();

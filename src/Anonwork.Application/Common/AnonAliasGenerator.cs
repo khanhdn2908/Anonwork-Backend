@@ -18,7 +18,14 @@ public static class AnonAliasGenerator
     {
         var adj = Adjectives[Random.Shared.Next(Adjectives.Length)];
         var noun = Nouns[Random.Shared.Next(Nouns.Length)];
-        var num = Random.Shared.Next(10, 999);
+        var num = Random.Shared.Next(10, 99);
         return $"{adj}{noun}{num}";
+    }
+
+    public static string GenerateFromImageName(string imageName)
+    {
+        var adj = Adjectives[Random.Shared.Next(Adjectives.Length)];
+        var num = Random.Shared.Next(10, 99);
+        return $"{imageName}_{adj}{num}";
     }
 }

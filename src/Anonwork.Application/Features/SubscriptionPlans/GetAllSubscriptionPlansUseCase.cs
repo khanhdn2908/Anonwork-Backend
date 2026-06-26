@@ -43,11 +43,21 @@ public class GetAllSubscriptionPlansUseCase(IUnitOfWork unitOfWork)
             p.Id,
             p.Name,
             p.Slug,
+            p.Description,
             p.Price,
             p.DurationDays,
-            p.Features,
+            p.MaxPostsPerDay,
+            p.MaxUploadsPerDay,
+            p.MaxPostFileSizeMb,
+            p.MaxPostImageCount,
+            p.MaxPostMediaCount,
+            p.CanAttachMediaToPost,
+            p.CanUploadPostFiles,
+            p.CanUseExclusiveAnonImages,
+            p.CanUsePremiumFeatures,
             p.IsActive,
-            p.CreatedAt
+            p.CreatedAt,
+            p.UpdatedAt
         )).ToList();
 
         var totalPages = (int)Math.Ceiling(total / (double)pageSize);
