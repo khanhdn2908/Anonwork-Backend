@@ -3,23 +3,27 @@ using Anonwork.Application.Features.Users.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 using Anonwork.Domain.Enums;
-using Microsoft.Extensions.Configuration;
 
 namespace Anonwork.Application.Features.Users;
 
-public class GetUserUseCase(IUnitOfWork unitOfWork, IConfiguration configuration)
+public class GetUserUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
     private readonly IGenericRepository<Follow> _followRepo = unitOfWork.GetRepository<Follow>();
     private readonly IGenericRepository<UserSubscription> _userSubscriptionRepo = unitOfWork.GetRepository<UserSubscription>();
-    private readonly string _publicBaseUrl = configuration["R2:PublicBaseUrl"] ?? string.Empty;
+    private readonly IR2Service _r2Service = r2Service;
 
     public async Task<UserResponseDto> ExecuteAsync(Guid userId, bool hasPermission, CancellationToken ct = default)
     {
-        var user = await _userRepo.GetByIdAsync(userId, ct)
+        var user = await _userRepo.FindWithIncludesAsync(
+            u => u.Id == userId,
+            u => u.AnonImage
+        );
+        
+        var foundUser = user.FirstOrDefault()
             ?? throw new NotFoundException("User not found.");
 
-        if (!hasPermission && user.Status != UserStatus.Active)
+        if (!hasPermission && foundUser.Status != UserStatus.Active)
             throw new NotFoundException("User not found.");
 
         var followerCount = await _followRepo.CountAsync(
@@ -39,35 +43,29 @@ public class GetUserUseCase(IUnitOfWork unitOfWork, IConfiguration configuration
             .Distinct()
             .ToList();
 
-        var isAnon = user.IsAnonDefault;
-        var displayUsername = isAnon ? user.AnonAlias : user.Username;
-        var displayAvatarKey = isAnon ? user.AnonImage?.FileKey : user.AvatarKey;
-        var avatarUrl = BuildAvatarUrl(displayAvatarKey);
-        var displayBio = isAnon ? null : user.Bio;
-        var displayEmail = isAnon ? null : user.Email;
+        var isAnon = foundUser.IsAnonDefault;
+        var displayUsername = isAnon ? foundUser.AnonAlias : foundUser.Username;
+        var avatarKey = isAnon ? foundUser.AnonImage?.FileKey : foundUser.AvatarKey;
+        var avatarUrl = string.IsNullOrWhiteSpace(avatarKey)
+            ? _r2Service.GetPublicUrl("avatars/null.jpg")
+            : _r2Service.GetPublicUrl(avatarKey);
+        var displayBio = isAnon ? null : foundUser.Bio;
+        var displayEmail = isAnon ? null : foundUser.Email;
 
         return new UserResponseDto(
-            user.Id,
+            foundUser.Id,
             displayUsername,
             displayEmail,
-            displayAvatarKey,
+            avatarKey,
             avatarUrl,
             displayBio,
-            user.AnonAlias,
-            user.IsAnonDefault,
+            foundUser.AnonAlias,
+            foundUser.IsAnonDefault,
             followerCount,
             followingCount,
             userSubscriptionPlanActive,
-            user.CreatedAt,
-            user.UpdatedAt
+            foundUser.CreatedAt,
+            foundUser.UpdatedAt
         );
-    }
-
-    private string BuildAvatarUrl(string? avatarKey)
-    {
-        var key = string.IsNullOrWhiteSpace(avatarKey) ? "avatars/null.jpg" : avatarKey;
-        return string.IsNullOrWhiteSpace(_publicBaseUrl)
-            ? key
-            : $"{_publicBaseUrl.TrimEnd('/')}/{key.TrimStart('/')}";
     }
 }

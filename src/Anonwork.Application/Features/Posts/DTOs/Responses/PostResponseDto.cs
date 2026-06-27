@@ -10,6 +10,7 @@ public record PostResponseDto(
     Guid AuthorId,
     string? AuthorUsername,
     bool IsAnonymous,
+    string? AuthorAvatarUrl,
     Guid SubjectId,
     string? SubjectName,
     List<PostMediaResponseDto> Media,

@@ -29,6 +29,7 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 
         var query = _postRepo.GetQueryableNoTracking()
             .Include(p => p.Author)
+            .ThenInclude(a => a.AnonImage)
             .Include(p => p.Subject)
             .Include(p => p.PostMediaItems)
             .Include(p => p.PostTags)
@@ -83,6 +84,14 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
                 .Select(t => t.Tag)
                 .ToList();
 
+            var authorImageUrl = isAnon
+                ? (!string.IsNullOrWhiteSpace(p.Author.AnonImage?.FileKey)
+                    ? _r2Service.GetPublicUrl(p.Author.AnonImage.FileKey)
+                    : _r2Service.GetPublicUrl("avatars/null.jpg"))
+                : (string.IsNullOrWhiteSpace(p.Author.AvatarKey)
+                    ? _r2Service.GetPublicUrl("avatars/null.jpg")
+                    : _r2Service.GetPublicUrl(p.Author.AvatarKey));
+
             return new PostResponseDto(
                 p.Id,
                 p.Title,
@@ -90,6 +99,7 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
                 p.AuthorId,
                 isAnon ? p.Author.AnonAlias : p.Author.Username,
                 isAnon,
+                authorImageUrl,
                 p.SubjectId,
                 p.Subject?.Name,
                 media,

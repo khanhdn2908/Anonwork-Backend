@@ -22,6 +22,14 @@ public static class PostVoteProjectionHelper
                 pm.MediaType.ToString()))
             .ToList();
 
+        var authorImageUrl = isAnon
+            ? (!string.IsNullOrWhiteSpace(post.Author.AnonImage?.FileKey)
+                ? r2Service.GetPublicUrl(post.Author.AnonImage.FileKey)
+                : r2Service.GetPublicUrl("avatars/null.jpg"))
+            : (string.IsNullOrWhiteSpace(post.Author.AvatarKey)
+                ? r2Service.GetPublicUrl("avatars/null.jpg")
+                : r2Service.GetPublicUrl(post.Author.AvatarKey));
+
         return new PostResponseDto(
             post.Id,
             post.Title,
@@ -29,6 +37,7 @@ public static class PostVoteProjectionHelper
             post.AuthorId,
             isAnon ? post.Author.AnonAlias : post.Author.Username,
             isAnon,
+            authorImageUrl,
             post.SubjectId,
             post.Subject?.Name,
             media,

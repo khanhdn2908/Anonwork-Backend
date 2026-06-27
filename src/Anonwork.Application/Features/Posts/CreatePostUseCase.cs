@@ -9,12 +9,11 @@ namespace Anonwork.Application.Features.Posts;
 /// <summary>
 /// Use case for creating a new post
 /// </summary>
-public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMediaService, IAppDbContext dbContext, IPlanAccessService planAccessService)
+public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMediaService, IAppDbContext dbContext)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
     private readonly IPostMediaService _postMediaService = postMediaService;
     private readonly IAppDbContext _dbContext = dbContext;
-    private readonly IPlanAccessService _planAccessService = planAccessService;
 
     public async Task<PostResponseDto> ExecuteAsync(CreatePostRequest req, CancellationToken ct = default)
     {
@@ -24,9 +23,6 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
         if (string.IsNullOrWhiteSpace(req.Content))
             throw new ArgumentException("Content is required.");
 
-        //await _planAccessService.EnsureCanCreatePostAsync(req.AuthorId, req.Images, req.File, ct);
-
-        // ── Create post ─────────────────────────────
         var post = new Post
         {
             Id = Guid.NewGuid(),
@@ -43,11 +39,10 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
             UpdatedAt = DateTime.UtcNow
         };
 
-        // ── Add tags if provided ────────────────────
         if (req.Tags is not null && req.Tags.Count > 0)
         {
             post.PostTags = req.Tags
-                .Take(5) // Max 5 tags
+                .Take(5)
                 .Select(tag => new PostTag
                 {
                     PostId = post.Id,
@@ -56,7 +51,6 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
                 .ToList();
         }
 
-        // ── Add images and files if provided ─────────
         post.PostMediaItems = await _postMediaService.BuildPostMediaAsync(
             post.Id,
             req.Images,
@@ -66,12 +60,10 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
         await using var transaction = await _dbContext.BeginTransactionAsync(ct);
         try
         {
-            // ── Save to database ────────────────────────
             await _postRepo.AddAsync(post, ct);
             await unitOfWork.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
 
-            // ── Return response ─────────────────────────
             return MapToResponse(post);
         }
         catch
@@ -83,6 +75,7 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
 
     private static PostResponseDto MapToResponse(Post post)
     {
+        var isAnon = post.IsAnonymous || post.Author.IsAnonDefault;
         var media = post.PostMediaItems
             .OrderBy(pm => pm.DisplayOrder)
             .Select(pm => new PostMediaResponseDto(
@@ -96,13 +89,22 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
                 pm.MediaType.ToString()))
             .ToList();
 
+        var authorImageUrl = isAnon
+            ? (!string.IsNullOrWhiteSpace(post.Author.AnonImage?.FileKey)
+                ? post.Author.AnonImage.FileKey
+                : "avatars/null.jpg")
+            : (string.IsNullOrWhiteSpace(post.Author.AvatarKey)
+                ? "avatars/null.jpg"
+                : post.Author.AvatarKey);
+
         return new PostResponseDto(
             Id: post.Id,
             Title: post.Title,
             Content: post.Content,
             AuthorId: post.AuthorId,
-            AuthorUsername: post.IsAnonymous ? post.Author?.AnonAlias : post.Author?.Username,
-            IsAnonymous: post.IsAnonymous,
+            AuthorUsername: isAnon ? post.Author?.AnonAlias : post.Author?.Username,
+            IsAnonymous: isAnon,
+            AuthorAvatarUrl: authorImageUrl,
             SubjectId: post.SubjectId,
             SubjectName: post.Subject?.Name,
             Media: media,
@@ -118,5 +120,4 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
             IsUpvotedByMe: false
         );
     }
-
 }

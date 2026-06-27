@@ -3,17 +3,16 @@ using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 using Anonwork.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 
 namespace Anonwork.Application.Features.Users;
 
-public class GetAllUsersUseCase(IUnitOfWork unitOfWork, IConfiguration configuration)
+public class GetAllUsersUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
     private readonly IGenericRepository<UserSubscription> _userSubscriptionRepo = unitOfWork.GetRepository<UserSubscription>();
     private readonly IGenericRepository<SubscriptionPlan> _subscriptionPlanRepo = unitOfWork.GetRepository<SubscriptionPlan>();
     private readonly IGenericRepository<Follow> _followRepo = unitOfWork.GetRepository<Follow>();
-    private readonly string _publicBaseUrl = configuration["R2:PublicBaseUrl"] ?? string.Empty;
+    private readonly IR2Service _r2Service = r2Service;
 
     public async Task<UserListPaginatedResponseDto> ExecuteAsync(
         bool hasPermission,
@@ -103,16 +102,22 @@ public class GetAllUsersUseCase(IUnitOfWork unitOfWork, IConfiguration configura
 
         var userDtos = pagedUsers.Select(u =>
         {
-            var avatarKey = u.IsAnonDefault ? u.AnonImage?.FileKey : u.AvatarKey;
-            var avatarUrl = BuildAvatarUrl(avatarKey);
+            var isAnon = u.IsAnonDefault;
+            var displayUsername = isAnon ? u.AnonAlias : u.Username;
+            var avatarKey = isAnon ? u.AnonImage?.FileKey : u.AvatarKey;
+            var avatarUrl = string.IsNullOrWhiteSpace(avatarKey)
+                ? _r2Service.GetPublicUrl("avatars/null.jpg")
+                : _r2Service.GetPublicUrl(avatarKey);
+            var displayBio = isAnon ? null : u.Bio;
+            var displayEmail = isAnon ? null : u.Email;
 
             return new UserListResponseDto(
                 u.Id,
-                u.IsAnonDefault ? u.AnonAlias : u.Username,
-                u.IsAnonDefault ? null : u.Email,
+                displayUsername,
+                displayEmail,
                 avatarKey,
                 avatarUrl,
-                u.IsAnonDefault ? null : u.Bio,
+                displayBio,
                 u.AnonAlias,
                 u.IsAnonDefault,
                 followerCounts.TryGetValue(u.Id, out var followerCount) ? followerCount : 0,
@@ -127,13 +132,5 @@ public class GetAllUsersUseCase(IUnitOfWork unitOfWork, IConfiguration configura
         var totalPages = (int)Math.Ceiling(total / (double)pageSize);
 
         return new UserListPaginatedResponseDto(userDtos, total, page, pageSize, totalPages);
-    }
-
-    private string BuildAvatarUrl(string? avatarKey)
-    {
-        var key = string.IsNullOrWhiteSpace(avatarKey) ? "avatars/null.jpg" : avatarKey;
-        return string.IsNullOrWhiteSpace(_publicBaseUrl)
-            ? key
-            : $"{_publicBaseUrl.TrimEnd('/')}/{key.TrimStart('/')}";
     }
 }

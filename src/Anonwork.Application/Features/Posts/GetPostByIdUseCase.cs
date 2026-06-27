@@ -24,6 +24,7 @@ public class GetPostByIdUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 
         var post = await _postRepo.GetQueryableNoTracking()
             .Include(p => p.Author)
+            .ThenInclude(a => a.AnonImage)
             .Include(p => p.Subject)
             .Include(p => p.PostMediaItems)
             .Include(p => p.PostTags)

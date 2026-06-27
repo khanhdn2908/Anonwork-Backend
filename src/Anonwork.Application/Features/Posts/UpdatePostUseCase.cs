@@ -92,7 +92,7 @@ public class UpdatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
 
     private static PostResponseDto MapToResponse(Post post)
     {
-        var isAnon = post.IsAnonymous && post.Author.IsAnonDefault;
+        var isAnon = post.IsAnonymous || post.Author.IsAnonDefault;
         var media = post.PostMediaItems
             .OrderBy(pm => pm.DisplayOrder)
             .Select(pm => new PostMediaResponseDto(
@@ -106,6 +106,14 @@ public class UpdatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
                 pm.MediaType.ToString()))
             .ToList();
 
+        var authorImageUrl = isAnon
+            ? (!string.IsNullOrWhiteSpace(post.Author.AnonImage?.FileKey)
+                ? post.Author.AnonImage.FileKey
+                : "avatars/null.jpg")
+            : (string.IsNullOrWhiteSpace(post.Author.AvatarKey)
+                ? "avatars/null.jpg"
+                : post.Author.AvatarKey);
+
         return new PostResponseDto(
             Id: post.Id,
             Title: post.Title,
@@ -113,6 +121,7 @@ public class UpdatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
             AuthorId: post.AuthorId,
             AuthorUsername: isAnon ? post.Author?.AnonAlias : post.Author?.Username,
             IsAnonymous: isAnon,
+            AuthorAvatarUrl: authorImageUrl,
             SubjectId: post.SubjectId,
             SubjectName: post.Subject?.Name,
             Media: media,
