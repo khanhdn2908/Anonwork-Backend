@@ -6,6 +6,7 @@ public record AnonImageResponseDto(
     string FileKey,
     string FileUrl,
     bool IsActive,
+    bool IsExclusive,
     DateTime CreatedAt,
     DateTime UpdatedAt
 );

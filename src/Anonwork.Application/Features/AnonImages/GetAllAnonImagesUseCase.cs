@@ -33,6 +33,7 @@ public class GetAllAnonImagesUseCase(IUnitOfWork unitOfWork, IR2Service r2Servic
             FileKey: anonImage.FileKey,
             FileUrl: _r2Service.GetPublicUrl(anonImage.FileKey),
             IsActive: anonImage.IsActive,
+            IsExclusive: anonImage.IsExclusive,
             CreatedAt: anonImage.CreatedAt,
             UpdatedAt: anonImage.UpdatedAt);
 }

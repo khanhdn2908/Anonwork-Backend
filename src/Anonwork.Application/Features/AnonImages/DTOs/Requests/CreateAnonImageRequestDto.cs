@@ -9,4 +9,6 @@ public class CreateAnonImageRequestDto
     public IFormFile Image { get; set; } = null!;
 
     public bool IsActive { get; set; } = true;
+
+    public bool IsExclusive { get; set; } = false;
 };

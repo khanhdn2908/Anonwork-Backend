@@ -29,6 +29,7 @@ public class CreateAnonImageUseCase(IUnitOfWork unitOfWork, IR2Service r2Service
             Name = request.Name.Trim(),
             FileKey = file.FileKey,
             IsActive = request.IsActive,
+            IsExclusive = request.IsExclusive,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -46,6 +47,7 @@ public class CreateAnonImageUseCase(IUnitOfWork unitOfWork, IR2Service r2Service
             FileKey: anonImage.FileKey,
             FileUrl: fileUrl,
             IsActive: anonImage.IsActive,
+            IsExclusive: anonImage.IsExclusive,
             CreatedAt: anonImage.CreatedAt,
             UpdatedAt: anonImage.UpdatedAt
         );

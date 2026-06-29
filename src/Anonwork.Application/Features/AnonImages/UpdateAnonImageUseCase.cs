@@ -39,6 +39,7 @@ public class UpdateAnonImageUseCase(IUnitOfWork unitOfWork, IR2Service r2Service
         }
 
         anonImage.IsActive = request.IsActive;
+        anonImage.IsExclusive = request.IsExclusive;
         anonImage.UpdatedAt = DateTime.UtcNow;
 
         await _anonImageRepo.UpdateAsync(anonImage, ct);
@@ -57,6 +58,7 @@ public class UpdateAnonImageUseCase(IUnitOfWork unitOfWork, IR2Service r2Service
             FileKey: anonImage.FileKey,
             FileUrl: fileUrl,
             IsActive: anonImage.IsActive,
+            IsExclusive: anonImage.IsExclusive,
             CreatedAt: anonImage.CreatedAt,
             UpdatedAt: anonImage.UpdatedAt);
 }

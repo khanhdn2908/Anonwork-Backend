@@ -9,4 +9,6 @@ public class UpdateAnonImageRequestDto
     public IFormFile? Image { get; set; }
 
     public bool IsActive { get; set; }
+
+    public bool IsExclusive { get; set; }
 };
