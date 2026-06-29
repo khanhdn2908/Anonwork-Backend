@@ -33,8 +33,8 @@ public class PlanAccessService(IUnitOfWork unitOfWork) : IPlanAccessService
         var plan = await GetCurrentPlanAsync(userId, ct);
         if (plan is null)
         {
-            if (images is not null && images.Count > 0)
-                throw new BadRequestException("Free plan does not allow post images.");
+            if (images is not null && images.Count > 1)
+                throw new BadRequestException("Free plan allow 1 post images.");
 
             if (files is not null && files.Count > 0)
                 throw new BadRequestException("Free plan does not allow post files.");

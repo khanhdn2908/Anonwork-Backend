@@ -14,25 +14,41 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unhandled exception");
+            if (IsClientError(ex))
+                logger.LogWarning(ex, "Client error occurred");
+            else
+                logger.LogError(ex, "Unhandled exception");
+
             await HandleAsync(ctx, ex);
         }
     }
 
+    private static bool IsClientError(Exception ex) => ex is BadRequestException or ConflictException or UnauthorizedException or NotFoundException;
+
     private static Task HandleAsync(HttpContext ctx, Exception ex)
     {
-        var (status, message) = ex switch
+        var (status, code, message) = ex switch
         {
-            ConflictException e => (HttpStatusCode.Conflict, e.Message),
-            UnauthorizedException e => (HttpStatusCode.Unauthorized, e.Message),
-            NotFoundException e => (HttpStatusCode.NotFound, e.Message),
-            _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred.")
+            BadRequestException e => (HttpStatusCode.BadRequest, "bad_request", e.Message),
+            ConflictException e => (HttpStatusCode.Conflict, "conflict", e.Message),
+            UnauthorizedException e => (HttpStatusCode.Unauthorized, "unauthorized", e.Message),
+            NotFoundException e => (HttpStatusCode.NotFound, "not_found", e.Message),
+            _ => (HttpStatusCode.InternalServerError, "internal_server_error", "An unexpected error occurred.")
         };
 
         ctx.Response.StatusCode = (int)status;
         ctx.Response.ContentType = "application/json";
 
-        var body = JsonSerializer.Serialize(new { error = message });
+        var body = JsonSerializer.Serialize(new
+        {
+            status = (int)status,
+            error = new
+            {
+                code,
+                message
+            }
+        });
+
         return ctx.Response.WriteAsync(body);
     }
 }

@@ -9,14 +9,17 @@ namespace Anonwork.Application.Features.Posts;
 /// <summary>
 /// Use case for creating a new post
 /// </summary>
-public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMediaService, IAppDbContext dbContext)
+public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMediaService, IAppDbContext dbContext, IPlanAccessService planAccessService)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
     private readonly IPostMediaService _postMediaService = postMediaService;
     private readonly IAppDbContext _dbContext = dbContext;
+    private readonly IPlanAccessService _planAccessService = planAccessService;
 
     public async Task<PostResponseDto> ExecuteAsync(CreatePostRequest req, CancellationToken ct = default)
     {
+        await _planAccessService.EnsureCanCreatePostAsync(req.AuthorId, req.Images, req.File, ct);
+
         if (string.IsNullOrWhiteSpace(req.Title))
             throw new ArgumentException("Title is required.");
 
@@ -75,7 +78,8 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
 
     private static PostResponseDto MapToResponse(Post post)
     {
-        var isAnon = post.IsAnonymous || post.Author.IsAnonDefault;
+        var author = post.Author;
+        var isAnon = post.IsAnonymous || author?.IsAnonDefault == true;
         var media = post.PostMediaItems
             .OrderBy(pm => pm.DisplayOrder)
             .Select(pm => new PostMediaResponseDto(
@@ -90,19 +94,19 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
             .ToList();
 
         var authorImageUrl = isAnon
-            ? (!string.IsNullOrWhiteSpace(post.Author.AnonImage?.FileKey)
-                ? post.Author.AnonImage.FileKey
+            ? (!string.IsNullOrWhiteSpace(author?.AnonImage?.FileKey)
+                ? author!.AnonImage!.FileKey
                 : "avatars/null.jpg")
-            : (string.IsNullOrWhiteSpace(post.Author.AvatarKey)
+            : (string.IsNullOrWhiteSpace(author?.AvatarKey)
                 ? "avatars/null.jpg"
-                : post.Author.AvatarKey);
+                : author!.AvatarKey);
 
         return new PostResponseDto(
             Id: post.Id,
             Title: post.Title,
             Content: post.Content,
             AuthorId: post.AuthorId,
-            AuthorUsername: isAnon ? post.Author?.AnonAlias : post.Author?.Username,
+            AuthorUsername: isAnon ? author?.AnonAlias : author?.Username,
             IsAnonymous: isAnon,
             AuthorAvatarUrl: authorImageUrl,
             SubjectId: post.SubjectId,
