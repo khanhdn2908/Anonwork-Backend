@@ -28,6 +28,8 @@ public class AssignAnonImageToUserUseCase(IUnitOfWork unitOfWork, IPlanAccessSer
         var anonImage = await _anonImageRepo.GetByIdAsync(anonImageId, ct)
             ?? throw new NotFoundException(nameof(AnonImage), anonImageId);
 
+        await _planAccessService.EnsureCanUseAnonImageAsync(userId, anonImage, ct);
+
         if (!anonImage.IsActive)
             throw new InvalidOperationException("Anon image is inactive.");
 
