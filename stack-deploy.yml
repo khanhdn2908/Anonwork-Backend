@@ -1,0 +1,185 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Elastic Beanstalk - ASP.NET Core Docker API Server
+  Cau hinh toi uu cho AWS Free Tier: t3.micro, SingleInstance (khong ALB),
+  MinSize=MaxSize=1 de khong vuot qua 750 gio free/thang.
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: anonwork-api
+  EnvironmentName:
+    Type: String
+    Default: anonwork-api-env
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    Description: t3.micro (hoac t2.micro tuy region) nam trong AWS Free Tier - 750h/thang
+  SolutionStackName:
+    Type: String
+    Default: "64bit Amazon Linux 2023 v4.13.3 running Docker"
+    Description: >
+      Lay qua lenh: aws elasticbeanstalk list-available-solution-stacks --query "SolutionStacks[?contains(@, 'Docker')]" --output table
+      Luu y: AWS release version moi dinh ky, neu deploy sau nay bao loi "No Solution Stack found", chay lai lenh tren de lay version moi nhat.
+  SSHKeyName:
+    Type: String
+    Default: ""
+    Description: (Tuy chon) Ten EC2 KeyPair de SSH vao instance khi can debug. De trong neu khong can.
+
+Conditions:
+  HasSSHKey: !Not [!Equals [!Ref SSHKeyName, ""]]
+
+Resources:
+
+  # IAM Role cho EC2 instance (ben trong EB environment)
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref InstanceRole
+
+  # Service role cho EB tu thao tac (health check, managed updates...)
+  ServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: elasticbeanstalk.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: elasticbeanstalk
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkEnhancedHealth
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkManagedUpdatesCustomerRolePolicy
+
+  # ECR repository chua Docker image build san tu GitHub Actions (Huong 2)
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref ApplicationName
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: >
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Chi giu 10 image gan nhat de tiet kiem dung luong ECR",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": { "type": "expire" }
+              }
+            ]
+          }
+
+  Application:
+    Type: AWS::ElasticBeanstalk::Application
+    Properties:
+      ApplicationName: !Ref ApplicationName
+      Description: ASP.NET Core API server chay tren Docker (Free Tier)
+
+  ConfigTemplate:
+    Type: AWS::ElasticBeanstalk::ConfigurationTemplate
+    Properties:
+      ApplicationName: !Ref Application
+      SolutionStackName: !Ref SolutionStackName
+      OptionSettings:
+
+        # ---- Instance & IAM ----
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: IamInstanceProfile
+          Value: !Ref InstanceProfile
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: InstanceType
+          Value: !Ref InstanceType
+        - !If
+          - HasSSHKey
+          - Namespace: aws:autoscaling:launchconfiguration
+            OptionName: EC2KeyName
+            Value: !Ref SSHKeyName
+          - !Ref AWS::NoValue
+
+        # ---- Service role ----
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: ServiceRole
+          Value: !Ref ServiceRole
+
+        # ---- QUAN TRONG: SingleInstance = KHONG tao Application Load Balancer ----
+        # Load Balancer KHONG nam trong free tier va se phat sinh phi ~$16-20/thang
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: EnvironmentType
+          Value: SingleInstance
+
+        # ---- QUAN TRONG: gioi han dung 1 instance de khong vuot 750h free/thang ----
+        - Namespace: aws:autoscaling:asg
+          OptionName: MinSize
+          Value: "1"
+        - Namespace: aws:autoscaling:asg
+          OptionName: MaxSize
+          Value: "1"
+
+        # ---- Health check ----
+        - Namespace: aws:elasticbeanstalk:environment:process:default
+          OptionName: HealthCheckPath
+          Value: /health
+
+        # ---- App environment variables ----
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: ASPNETCORE_ENVIRONMENT
+          Value: Production
+
+        # ---- EBS volume: giu trong nguong free tier (30GB) ----
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: RootVolumeSize
+          Value: "20"
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: RootVolumeType
+          Value: gp3
+
+  Environment:
+    Type: AWS::ElasticBeanstalk::Environment
+    Properties:
+      ApplicationName: !Ref Application
+      EnvironmentName: !Ref EnvironmentName
+      TemplateName: !Ref ConfigTemplate
+
+Outputs:
+  EnvironmentURL:
+    Description: URL cua EB environment (SingleInstance - EC2 Public IP/Elastic IP truc tiep)
+    Value: !GetAtt Environment.EndpointURL
+  ApplicationName:
+    Value: !Ref Application
+  EnvironmentName:
+    Value: !Ref EnvironmentName
+  ECRRepositoryURI:
+    Description: URI cua ECR repository - dung trong GitHub Actions de push image
+    Value: !GetAtt ECRRepository.RepositoryUri
+  FreeTierNote:
+    Description: Luu y ve Free Tier
+    Value: >
+      Free tier gom: 750h/thang t3.micro (hoac t2.micro), 30GB EBS, 5GB S3, 100GB data transfer out.
+      KHONG bao gom: Load Balancer (da loai bo qua SingleInstance), NAT Gateway, Elastic IP khong gan instance dang chay.
+      Kiem tra Free Tier hien tai cua tai khoan tai: AWS Billing Console > Free Tier.
