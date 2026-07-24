@@ -64,6 +64,13 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
                 .ToListAsync(ct)).ToHashSet()
             : new HashSet<Guid>();
 
+        var ratingRepo = unitOfWork.GetRepository<PostRating>();
+        var myRatingsDict = currentUserId.HasValue && postIds.Count > 0
+            ? await ratingRepo.GetQueryableNoTracking()
+                .Where(r => r.UserId == currentUserId.Value && postIds.Contains(r.PostId))
+                .ToDictionaryAsync(r => r.PostId, r => r.Stars, ct)
+            : new Dictionary<Guid, int>();
+
         var postDtos = posts.Select(p =>
         {
             var isAnon = p.IsAnonymous || p.Author.IsAnonDefault;
@@ -107,6 +114,10 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
                 p.Upvotes,
                 p.CommentsCount,
                 p.ViewCount,
+                p.AverageRating,
+                p.RatingsCount,
+                p.QualityScore,
+                myRatingsDict.TryGetValue(p.Id, out var stars) ? stars : null,
                 p.Status.ToString(),
                 p.CreatedAt,
                 p.UpdatedAt,

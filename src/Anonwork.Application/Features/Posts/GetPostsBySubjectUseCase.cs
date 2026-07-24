@@ -65,8 +65,20 @@ public class GetPostsBySubjectUseCase(IUnitOfWork unitOfWork, IR2Service r2Servi
                 .ToListAsync(ct)).ToHashSet()
             : new HashSet<Guid>();
 
+        var ratingRepo = unitOfWork.GetRepository<PostRating>();
+        var myRatingsDict = usedId.HasValue && postIds.Count > 0
+            ? await ratingRepo.GetQueryableNoTracking()
+                .Where(r => r.UserId == usedId.Value && postIds.Contains(r.PostId))
+                .ToDictionaryAsync(r => r.PostId, r => r.Stars, ct)
+            : new Dictionary<Guid, int>();
+
         // ── Return response ─────────────────────────
-        var postDtos = posts.Select(p => PostVoteProjectionHelper.MapToResponse(p, upvotedSet.Contains(p.Id), _r2Service)).ToList();
+        var postDtos = posts.Select(p => PostVoteProjectionHelper.MapToResponse(
+            p,
+            upvotedSet.Contains(p.Id),
+            _r2Service,
+            myRatingsDict.TryGetValue(p.Id, out var stars) ? stars : null
+        )).ToList();
         return new PostListResponseDto(postDtos, total, page, pageSize, totalPages);
     }
 }

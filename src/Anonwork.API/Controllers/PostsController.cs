@@ -1,5 +1,7 @@
 using Anonwork.API.DTOs;
 using Anonwork.Application.Common.Exceptions;
+using Anonwork.Application.Features.PostRatings;
+using Anonwork.Application.Features.PostRatings.DTOs.Requests;
 using Anonwork.Application.Features.Posts;
 using Anonwork.Application.Features.Posts.DTOs.Request;
 using Anonwork.Application.Interfaces;
@@ -20,6 +22,9 @@ public class PostsController(
     DeletePostUseCase deletePostUseCase,
     DeletePostUseCasePermanent deletePostUseCasePermanent,
     TogglePostVoteUseCase togglePostVoteUseCase,
+    RatePostUseCase ratePostUseCase,
+    GetPostRatingSummaryUseCase getPostRatingSummaryUseCase,
+    DeletePostRatingUseCase deletePostRatingUseCase,
     IAuthorizationService authorizationService) : BaseApiController
 {
 
@@ -209,6 +214,71 @@ public class PostsController(
             return Ok(result);
         }
         catch (Exception ex) when (ex.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("{id:guid}/rate")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RatePost(Guid id, [FromBody] RatePostRequestDto req, CancellationToken ct)
+    {
+        var userId = GetUserIdFromToken();
+        if (userId is null)
+            return Unauthorized(new { message = "User not authenticated" });
+
+        try
+        {
+            var result = await ratePostUseCase.ExecuteAsync(userId.Value, id, req, ct);
+            return Ok(result);
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("{id:guid}/ratings")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetRatings(Guid id, CancellationToken ct)
+    {
+        var userId = GetUserIdFromToken();
+        try
+        {
+            var result = await getPostRatingSummaryUseCase.ExecuteAsync(id, userId, ct);
+            return Ok(result);
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id:guid}/rate")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteRating(Guid id, CancellationToken ct)
+    {
+        var userId = GetUserIdFromToken();
+        if (userId is null)
+            return Unauthorized(new { message = "User not authenticated" });
+
+        try
+        {
+            var result = await deletePostRatingUseCase.ExecuteAsync(userId.Value, id, ct);
+            return Ok(result);
+        }
+        catch (NotFoundException ex)
         {
             return NotFound(new { message = ex.Message });
         }

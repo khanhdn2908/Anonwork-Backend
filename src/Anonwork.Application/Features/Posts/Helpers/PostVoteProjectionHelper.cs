@@ -6,7 +6,7 @@ namespace Anonwork.Application.Features.Posts.Helpers;
 
 public static class PostVoteProjectionHelper
 {
-    public static PostResponseDto MapToResponse(Post post, bool isUpvotedByMe, IR2Service r2Service)
+    public static PostResponseDto MapToResponse(Post post, bool isUpvotedByMe, IR2Service r2Service, int? myStars = null)
     {
         var isAnon = post.IsAnonymous || post.Author.IsAnonDefault;
         var media = post.PostMediaItems
@@ -45,6 +45,10 @@ public static class PostVoteProjectionHelper
             post.Upvotes,
             post.CommentsCount,
             post.ViewCount,
+            post.AverageRating,
+            post.RatingsCount,
+            post.QualityScore,
+            myStars,
             post.Status.ToString(),
             post.CreatedAt,
             post.UpdatedAt,

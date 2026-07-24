@@ -23,6 +23,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public virtual DbSet<AnonImage> AnonImages { get; set; } = null!;
     public virtual DbSet<Post> Posts { get; set; } = null!;
     public virtual DbSet<PostMedia> PostMedia { get; set; } = null!;
+    public virtual DbSet<PostRating> PostRatings { get; set; } = null!;
     public virtual DbSet<PostTag> PostTags { get; set; } = null!;
     public virtual DbSet<Report> Reports { get; set; } = null!;
     public virtual DbSet<Subject> Subjects { get; set; } = null!;

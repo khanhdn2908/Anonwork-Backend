@@ -45,6 +45,15 @@ public class GetPostByIdUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
             v => v.UserId == currentUserId.Value && v.TargetId == postId && v.TargetType == "post" && v.VoteType == "up",
             ct);
 
-        return PostVoteProjectionHelper.MapToResponse(post, isUpvotedByMe, _r2Service);
+        int? myStars = null;
+        if (currentUserId.HasValue && currentUserId.Value != Guid.Empty)
+        {
+            var ratingRepo = unitOfWork.GetRepository<PostRating>();
+            var rating = await ratingRepo.GetQueryableNoTracking()
+                .FirstOrDefaultAsync(r => r.UserId == currentUserId.Value && r.PostId == postId, ct);
+            myStars = rating?.Stars;
+        }
+
+        return PostVoteProjectionHelper.MapToResponse(post, isUpvotedByMe, _r2Service, myStars);
     }
 }

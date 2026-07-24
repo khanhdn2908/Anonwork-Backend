@@ -16,6 +16,7 @@ public interface IAppDbContext
     public DbSet<Notification> Notifications { get; }
     public DbSet<Post> Posts { get; }
     public DbSet<PostMedia> PostMedia { get; }
+    public DbSet<PostRating> PostRatings { get; }
     public DbSet<PostTag> PostTags { get; }
     public DbSet<Report> Reports { get; }
     public DbSet<Subject> Subjects { get; }

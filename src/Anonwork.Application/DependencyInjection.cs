@@ -1,4 +1,4 @@
-﻿using Anonwork.Application.Features.AnonImages;
+using Anonwork.Application.Features.AnonImages;
 using Anonwork.Application.Features.Auth;
 using Anonwork.Application.Features.Bookmarks;
 using Anonwork.Application.Features.Comments;
@@ -6,6 +6,7 @@ using Anonwork.Application.Features.Follows;
 using Anonwork.Application.Features.Maintenance;
 using Anonwork.Application.Features.Payments;
 using Anonwork.Application.Features.Permissions;
+using Anonwork.Application.Features.PostRatings;
 using Anonwork.Application.Features.Posts;
 using Anonwork.Application.Features.Roles;
 using Anonwork.Application.Features.Subjects;
@@ -43,6 +44,11 @@ public static class DependencyInjection
         services.AddScoped<DeletePostUseCase>();
         services.AddScoped<DeletePostUseCasePermanent>();
         services.AddScoped<TogglePostVoteUseCase>();
+
+        // ── PostRatings Use Cases ───────────────
+        services.AddScoped<RatePostUseCase>();
+        services.AddScoped<GetPostRatingSummaryUseCase>();
+        services.AddScoped<DeletePostRatingUseCase>();
 
         // ── Subjects Use Cases ──────────────────
         services.AddScoped<GetSubjectsUseCase>();

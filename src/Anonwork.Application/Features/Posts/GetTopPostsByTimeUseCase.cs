@@ -55,7 +55,12 @@ public class GetTopPostsByTimeUseCase(IUnitOfWork unitOfWork, IR2Service r2Servi
                            .ThenByDescending(p => p.CommentsCount)
                            .ThenByDescending(p => p.ViewCount)
                            .ThenByDescending(p => p.CreatedAt),
-            _ => query.OrderByDescending(p => p.Upvotes)
+            "rating" or "quality" => query.OrderByDescending(p => p.QualityScore)
+                                         .ThenByDescending(p => p.AverageRating)
+                                         .ThenByDescending(p => p.RatingsCount)
+                                         .ThenByDescending(p => p.CreatedAt),
+            _ => query.OrderByDescending(p => p.QualityScore)
+                      .ThenByDescending(p => p.Upvotes)
                       .ThenByDescending(p => p.CommentsCount)
                       .ThenByDescending(p => p.ViewCount)
                       .ThenByDescending(p => p.CreatedAt)
@@ -76,7 +81,19 @@ public class GetTopPostsByTimeUseCase(IUnitOfWork unitOfWork, IR2Service r2Servi
                 .ToListAsync(ct)).ToHashSet()
             : new HashSet<Guid>();
 
-        var postDtos = posts.Select(p => PostVoteProjectionHelper.MapToResponse(p, upvotedSet.Contains(p.Id), _r2Service)).ToList();
+        var ratingRepo = unitOfWork.GetRepository<PostRating>();
+        var myRatingsDict = currentUserId.HasValue && postIds.Count > 0
+            ? await ratingRepo.GetQueryableNoTracking()
+                .Where(r => r.UserId == currentUserId.Value && postIds.Contains(r.PostId))
+                .ToDictionaryAsync(r => r.PostId, r => r.Stars, ct)
+            : new Dictionary<Guid, int>();
+
+        var postDtos = posts.Select(p => PostVoteProjectionHelper.MapToResponse(
+            p,
+            upvotedSet.Contains(p.Id),
+            _r2Service,
+            myRatingsDict.TryGetValue(p.Id, out var stars) ? stars : null
+        )).ToList();
 
         return new PostListResponseDto(postDtos, total, page, pageSize, totalPages);
     }
@@ -99,7 +116,8 @@ public class GetTopPostsByTimeUseCase(IUnitOfWork unitOfWork, IR2Service r2Servi
             "hot" => "hot",
             "new" => "new",
             "top" => "top",
-            _ => throw new ArgumentException("sort must be one of: hot, new, top.")
+            "rating" or "quality" => "rating",
+            _ => throw new ArgumentException("sort must be one of: hot, new, top, rating.")
         };
     }
 }

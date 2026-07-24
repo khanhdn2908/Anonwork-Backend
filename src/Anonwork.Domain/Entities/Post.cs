@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Anonwork.Domain.Enums;
 using NpgsqlTypes;
@@ -27,6 +27,12 @@ public partial class Post
 
     public int ViewCount { get; set; }
 
+    public decimal AverageRating { get; set; }
+
+    public int RatingsCount { get; set; }
+
+    public double QualityScore { get; set; }
+
     public PostStatus Status { get; set; }
 
     public DateTime CreatedAt { get; set; }
@@ -42,6 +48,8 @@ public partial class Post
     public virtual ICollection<PostMedia> PostMediaItems { get; set; } = new List<PostMedia>();
 
     public virtual ICollection<PostTag> PostTags { get; set; } = new List<PostTag>();
+
+    public virtual ICollection<PostRating> PostRatings { get; set; } = new List<PostRating>();
 
     public virtual Subject Subject { get; set; } = null!;
 }

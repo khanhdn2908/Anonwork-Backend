@@ -32,6 +32,9 @@ public class PostConfiguration : IEntityTypeConfiguration<Post>
         entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");
         entity.Property(e => e.Upvotes).HasDefaultValue(0).HasColumnName("upvotes");
         entity.Property(e => e.ViewCount).HasDefaultValue(0).HasColumnName("view_count");
+        entity.Property(e => e.AverageRating).HasPrecision(3, 2).HasDefaultValue(0.00m).HasColumnName("average_rating");
+        entity.Property(e => e.RatingsCount).HasDefaultValue(0).HasColumnName("ratings_count");
+        entity.Property(e => e.QualityScore).HasDefaultValue(0.0).HasColumnName("quality_score");
         entity.HasOne(d => d.Author).WithMany(p => p.Posts).HasForeignKey(d => d.AuthorId).HasConstraintName("posts_author_id_fkey");
         entity.HasOne(d => d.Subject).WithMany(p => p.Posts).HasForeignKey(d => d.SubjectId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("posts_subject_id_fkey");
     }
