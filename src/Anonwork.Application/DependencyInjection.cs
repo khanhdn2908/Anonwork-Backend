@@ -84,6 +84,7 @@ public static class DependencyInjection
         services.AddScoped<DeleteUserUseCase>();
         services.AddScoped<DeleteUserUseCasePermanent>();
         services.AddScoped<GetAllUsersUseCase>();
+        services.AddScoped<GetTopContributorsUseCase>();
         services.AddScoped<AssignRoleToUserUseCase>();
         services.AddScoped<RemoveRoleFromUserUseCase>();
         services.AddScoped<GetUserRolesUseCase>();

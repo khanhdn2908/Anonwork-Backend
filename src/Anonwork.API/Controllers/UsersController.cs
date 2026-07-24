@@ -1,4 +1,4 @@
-﻿using Anonwork.Application.Features.Users;
+using Anonwork.Application.Features.Users;
 using Anonwork.Application.Features.Users.DTOs.Requests;
 using Anonwork.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -18,6 +18,7 @@ public class UsersController(
     DeleteUserUseCase deleteUserUseCase,
     DeleteUserUseCasePermanent deleteUserUseCasePermanent,
     GetAllUsersUseCase getAllUsersUseCase,
+    GetTopContributorsUseCase getTopContributorsUseCase,
     AssignRoleToUserUseCase assignRoleToUserUseCase,
     RemoveRoleFromUserUseCase removeRoleFromUserUseCase,
     GetUserRolesUseCase getUserRolesUseCase,
@@ -30,6 +31,19 @@ public class UsersController(
         if (userId is null) return Unauthorized();
 
         var result = await getMeUseCase.ExecuteAsync(userId.Value, ct);
+        return Ok(result);
+    }
+
+    [HttpGet("top-contributors")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTopContributors(
+        [FromQuery] int? month = null,
+        [FromQuery] int? year = null,
+        [FromQuery] int limit = 10,
+        CancellationToken ct = default)
+    {
+        var result = await getTopContributorsUseCase.ExecuteAsync(month, year, limit, ct);
         return Ok(result);
     }
 
