@@ -291,18 +291,34 @@ curl -X DELETE https://localhost:5001/api/v1/posts/550e8400-e29b-41d4-a716-44665
   "content": "string",
   "authorId": "GUID",
   "authorUsername": "string",
-  "authorAnonAlias": "string",
   "isAnonymous": "boolean",
+  "authorAvatarUrl": "string",
   "subjectId": "GUID",
   "subjectName": "string",
-  "imageUrls": ["string"],
+  "media": [
+    {
+      "id": "GUID",
+      "fileKey": "string",
+      "publicUrl": "string",
+      "contentType": "string",
+      "displayOrder": "int",
+      "fileSize": "long",
+      "originalFileName": "string",
+      "mediaType": "string"
+    }
+  ],
   "tags": ["string"],
   "upvotes": "int",
   "commentsCount": "int",
   "viewCount": "int",
+  "averageRating": "decimal",
+  "ratingsCount": "int",
+  "qualityScore": "double",
+  "myStars": "int?",
   "status": "string",
   "createdAt": "DateTime",
-  "updatedAt": "DateTime"
+  "updatedAt": "DateTime",
+  "isUpvotedByMe": "boolean"
 }
 ```
 
@@ -475,6 +491,39 @@ GET /api/v1/posts/search?q=C%23&page=2&pageSize=20
 }
 ```
 
+### 6. Rate Post
+**POST** `/api/v1/posts/{id}/rate`
+
+Rates or updates rating for a post (1 to 5 stars).
+
+**Authentication:** Required (Bearer Token)
+
+**Request Body:**
+```json
+{
+  "stars": 5,
+  "review": "Bài viết rất chi tiết và bổ ích!"
+}
+```
+
+---
+
+### 7. Get Post Ratings Summary
+**GET** `/api/v1/posts/{id}/ratings`
+
+Gets rating summary, star breakdown, user's rating, and recent reviews for a post.
+
+**Authentication:** Public (Optional Bearer Token)
+
+---
+
+### 8. Delete Post Rating
+**DELETE** `/api/v1/posts/{id}/rate`
+
+Deletes current user's rating for a post.
+
+**Authentication:** Required (Bearer Token)
+
 ---
 
 ## Testing Examples
@@ -495,23 +544,12 @@ curl -X POST https://localhost:5001/api/v1/posts \
 curl -X GET https://localhost:5001/api/v1/posts/550e8400-e29b-41d4-a716-446655440001
 ```
 
-### Test 3: Search Posts
+### Test 3: Rate Post
 ```bash
-curl -X GET "https://localhost:5001/api/v1/posts/search?q=test&page=1&pageSize=10"
-```
-
-### Test 4: Update Post
-```bash
-curl -X PUT https://localhost:5001/api/v1/posts/550e8400-e29b-41d4-a716-446655440001 \
+curl -X POST https://localhost:5001/api/v1/posts/550e8400-e29b-41d4-a716-446655440001/rate \
   -H "Authorization: Bearer {access_token}" \
-  -F "title=Updated Title" \
-  -F "content=Updated content..."
-```
-
-### Test 5: Delete Post
-```bash
-curl -X DELETE https://localhost:5001/api/v1/posts/550e8400-e29b-41d4-a716-446655440001 \
-  -H "Authorization: Bearer {access_token}"
+  -H "Content-Type: application/json" \
+  -d '{"stars": 5, "review": "Rất hay!"}'
 ```
 
 ---
@@ -524,5 +562,5 @@ curl -X DELETE https://localhost:5001/api/v1/posts/550e8400-e29b-41d4-a716-44665
 
 ---
 
-**Last Updated:** May 2026  
-**Version:** 1.0.0
+**Last Updated:** July 2026  
+**Version:** 1.1.0

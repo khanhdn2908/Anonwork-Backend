@@ -134,10 +134,14 @@ Use case đáng chú ý:
 - `GetPostByIdUseCase`
 - `GetPostsUseCase`
 - `GetPostsBySubjectUseCase`
+- `GetTopPostsByTimeUseCase`
 - `UpdatePostUseCase`
 - `DeletePostUseCase`
 - `DeletePostUseCasePermanent`
 - `TogglePostVoteUseCase`
+- `RatePostUseCase`
+- `GetPostRatingSummaryUseCase`
+- `DeletePostRatingUseCase`
 - `PostVoteProjectionHelper`
 
 DTOs:
@@ -146,22 +150,31 @@ DTOs:
 - `UpdatePostRequestDto`
 - `UpdatePostRequest`
 - `UploadPostImagesRequestDto`
-- `PostResponseDto`
+- `RatePostRequestDto`
+- `PostRatingResponseDto`
+- `PostRatingSummaryDto`
+- `PostResponseDto` (chứa `averageRating`, `ratingsCount`, `qualityScore`, `myStars`)
 - `PostListResponseDto`
 - `PostVoteResponseDto`
+- `TopContributorDto`
+- `TopContributorsListResponseDto`
 
 API:
-- `PostsController`
+- `PostsController` (`POST /rate`, `GET /ratings`, `DELETE /rate`)
+- `UsersController` (`GET /top-contributors`)
 
 Domain:
 - `Post`
+- `PostRating`
 - `PostMedia`
 - `PostTag`
 - `Vote`
 
 Lưu ý:
-- Có hỗ trợ vote, media, tags, subject association, pagination.
-- Có helper riêng cho projection vote để tối ưu query trả về.
+- Có hỗ trợ vote, rating 1-5 sao, quality score, media, tags, subject association, pagination.
+- `PostResponseDto` tự động đồng bộ trả về các trường rating (`averageRating`, `ratingsCount`, `qualityScore`, `myStars`).
+- Có API riêng lấy Bảng vinh danh Top người dùng đóng góp nhiều nhất theo tháng (`GET /api/v1/users/top-contributors`).
+- Có helper riêng cho projection vote/rating để tối ưu query trả về.
 - `PostImage` đã được thay bằng `PostMedia` để tránh giới hạn khi sau này hỗ trợ thêm file/video.
 
 ### Thay đổi lưu file/ảnh cho Post

@@ -119,6 +119,9 @@ public class GetBookmarksUseCase(IUnitOfWork unitOfWork)
             Upvotes: post.Upvotes,
             CommentsCount: post.CommentsCount,
             ViewCount: post.ViewCount,
+            AverageRating: post.AverageRating,
+            RatingsCount: post.RatingsCount,
+            QualityScore: post.QualityScore,
             Status: post.Status.ToString(),
             CreatedAt: post.CreatedAt,
             UpdatedAt: post.UpdatedAt

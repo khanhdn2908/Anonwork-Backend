@@ -30,6 +30,9 @@ public record BookmarkPostDto(
     int Upvotes,
     int CommentsCount,
     int ViewCount,
+    decimal AverageRating,
+    int RatingsCount,
+    double QualityScore,
     string Status,
     DateTime CreatedAt,
     DateTime UpdatedAt
