@@ -30,6 +30,7 @@ public interface IAppDbContext
     public DbSet<RolePermission> RolePermissions { get; }
     public DbSet<UserRole> UserRoles { get; }
     public DbSet<UserSubscription> UserSubscriptions { get; }
+    public DbSet<UserActivityLog> UserActivityLogs { get; }
 
     DbSet<T> Set<T>()
            where T : class;

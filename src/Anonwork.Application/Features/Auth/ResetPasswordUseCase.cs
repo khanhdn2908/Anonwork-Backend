@@ -8,10 +8,12 @@ namespace Anonwork.Application.Features.Auth;
 
 public class ResetPasswordUseCase(
     IUnitOfWork unitOfWork,
-    IPasswordHasher passwordHasher)
+    IPasswordHasher passwordHasher,
+    IActivityLogService activityLogService)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
     private readonly IGenericRepository<OneTimeToken> _tokenRepo = unitOfWork.GetRepository<OneTimeToken>();
+    private readonly IActivityLogService _activityLogService = activityLogService;
 
     public async Task ExecuteAsync(ResetPasswordRequest req, CancellationToken ct = default)
     {
@@ -49,6 +51,15 @@ public class ResetPasswordUseCase(
         resetToken.MarkUsed();
 
         await unitOfWork.SaveChangesAsync(ct);
+
+        _ = _activityLogService.LogAsync(
+            user.Id,
+            "RESET_PASSWORD_SUCCESS",
+            "Auth",
+            $"Đặt lại mật khẩu thành công cho tài khoản '{user.Username}'",
+            "user",
+            user.Id.ToString(),
+            ct: ct);
     }
 
     private static string NormalizeEmail(string email)

@@ -8,11 +8,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Anonwork.Application.Features.Payments;
 
-public class HandleSepayWebhookUseCase(IUnitOfWork unitOfWork, ILogger<HandleSepayWebhookUseCase> logger)
+public class HandleSepayWebhookUseCase(IUnitOfWork unitOfWork, IActivityLogService activityLogService, ILogger<HandleSepayWebhookUseCase> logger)
 {
     private readonly IGenericRepository<Order> _orderRepository = unitOfWork.GetRepository<Order>();
     private readonly IGenericRepository<UserSubscription> _userSubscriptionRepository = unitOfWork.GetRepository<UserSubscription>();
     private readonly IGenericRepository<SubscriptionPlan> _subscriptionPlanRepository = unitOfWork.GetRepository<SubscriptionPlan>();
+    private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly ILogger<HandleSepayWebhookUseCase> _logger = logger;
 
     public async Task<WebhookResult> ExecuteAsync(SepayWebhookRequest request, CancellationToken ct = default)
@@ -181,5 +182,14 @@ public class HandleSepayWebhookUseCase(IUnitOfWork unitOfWork, ILogger<HandleSep
                 "Subscription created. UserId={UserId}, PlanId={PlanId}, ExpiresAt={ExpiresAt}",
                 order.UserId, order.PlanId, subscription.ExpiresAt);
         }
+
+        _ = _activityLogService.LogAsync(
+            order.UserId,
+            "PAYMENT_SUCCESS",
+            "Payment",
+            $"Thanh toán đơn hàng thành công cho gói '{plan.Name}' (Mã đơn: {order.OrderCode}, Số tiền: {order.Amount:N0} VND)",
+            "order",
+            order.Id.ToString(),
+            ct: ct);
     }
 }

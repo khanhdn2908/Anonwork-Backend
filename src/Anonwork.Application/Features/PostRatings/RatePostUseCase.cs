@@ -13,10 +13,11 @@ using Microsoft.Extensions.Caching.Distributed;
 
 namespace Anonwork.Application.Features.PostRatings;
 
-public class RatePostUseCase(IUnitOfWork unitOfWork, IDistributedCache? cache = null)
+public class RatePostUseCase(IUnitOfWork unitOfWork, IActivityLogService activityLogService, IDistributedCache? cache = null)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
     private readonly IGenericRepository<PostRating> _ratingRepo = unitOfWork.GetRepository<PostRating>();
+    private readonly IActivityLogService _activityLogService = activityLogService;
 
     public async Task<PostRatingResponseDto> ExecuteAsync(
         Guid currentUserId,
@@ -83,6 +84,15 @@ public class RatePostUseCase(IUnitOfWork unitOfWork, IDistributedCache? cache = 
                 // Ignore cache error in development
             }
         }
+        
+        _ = _activityLogService.LogAsync(
+            currentUserId,
+            "RATE_POST",
+            "Rating",
+            $"Đánh giá bài viết '{post.Title}' {request.Stars} sao",
+            "post",
+            post.Id.ToString(),
+            ct: ct);
 
         return new PostRatingResponseDto(
             PostId: post.Id,

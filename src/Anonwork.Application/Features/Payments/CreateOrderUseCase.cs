@@ -9,10 +9,12 @@ namespace Anonwork.Application.Features.Payments;
 
 public class CreateOrderUseCase(
     IUnitOfWork unitOfWork,
-    ISepayService sepayService)
+    ISepayService sepayService,
+    IActivityLogService activityLogService)
 {
     private readonly IGenericRepository<Order> _orderRepo = unitOfWork.GetRepository<Order>();
     private readonly IGenericRepository<SubscriptionPlan> _planRepo = unitOfWork.GetRepository<SubscriptionPlan>();
+    private readonly IActivityLogService _activityLogService = activityLogService;
 
     public async Task<OrderResponse> ExecuteAsync(
     Guid userId,
@@ -55,6 +57,15 @@ public class CreateOrderUseCase(
 
         await _orderRepo.AddAsync(order, ct);
         await unitOfWork.SaveChangesAsync(ct);
+
+        _ = _activityLogService.LogAsync(
+            userId,
+            "CREATE_ORDER",
+            "Payment",
+            $"Tạo đơn hàng thanh toán gói '{plan.Name}' (Mã đơn: {order.OrderCode}, Số tiền: {order.Amount:N0} VND)",
+            "order",
+            order.Id.ToString(),
+            ct: ct);
 
         return new OrderResponse(
             order.Id,

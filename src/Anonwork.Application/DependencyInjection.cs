@@ -1,3 +1,4 @@
+using Anonwork.Application.Features.Admin;
 using Anonwork.Application.Features.AnonImages;
 using Anonwork.Application.Features.Auth;
 using Anonwork.Application.Features.Bookmarks;
@@ -23,6 +24,9 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
+        // ── Admin / Log Use Cases ──────────────
+        services.AddScoped<GetActivityLogsUseCase>();
+
         // ── Auth Use Cases ──────────────────────
         services.AddScoped<RegisterUseCase>();
         services.AddScoped<LoginUseCase>();

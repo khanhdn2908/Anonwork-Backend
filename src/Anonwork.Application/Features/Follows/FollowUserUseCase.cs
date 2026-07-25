@@ -9,10 +9,11 @@ namespace Anonwork.Application.Features.Follows;
 /// <summary>
 /// Use case for following a user
 /// </summary>
-public class FollowUserUseCase(IUnitOfWork unitOfWork)
+public class FollowUserUseCase(IUnitOfWork unitOfWork, IActivityLogService activityLogService)
 {
     private readonly IGenericRepository<Follow> _followRepository = unitOfWork.GetRepository<Follow>();
     private readonly IGenericRepository<User> _userRepository = unitOfWork.GetRepository<User>();
+    private readonly IActivityLogService _activityLogService = activityLogService;
 
     public async Task<FollowResponseDto> ExecuteAsync(Guid currentUserId, FollowUserRequest request, CancellationToken ct = default)
     {
@@ -48,6 +49,15 @@ public class FollowUserUseCase(IUnitOfWork unitOfWork)
 
         var createdFollow = await _followRepository.AddAsync(follow, ct);
         await unitOfWork.SaveChangesAsync(ct);
+
+        _ = _activityLogService.LogAsync(
+            currentUserId,
+            "FOLLOW_USER",
+            "User",
+            $"Theo dõi người dùng ID '{request.FollowingId}'",
+            "user",
+            request.FollowingId.ToString(),
+            ct: ct);
 
         // ── Load follow relationship with user data ─
         var followWithUsers = await _followRepository.GetQueryableNoTracking()

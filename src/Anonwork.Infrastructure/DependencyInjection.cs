@@ -1,4 +1,4 @@
-﻿using Anonwork.Application.Common.Authorization;
+using Anonwork.Application.Common.Authorization;
 using Anonwork.Application.Interfaces;
 using Anonwork.Application.Common;
 using Anonwork.Infrastructure.Common;
@@ -62,6 +62,7 @@ public static class DependencyInjection
         services.AddScoped<IPostMediaService, PostMediaService>();
         services.AddScoped<ISepayService, SepayService>();
         services.AddScoped<IEmailSender, EmailSender>();
+        services.AddScoped<IActivityLogService, ActivityLogService>();
         services.AddScoped<IRolePermissionService, RolePermissionService>();
         services.AddScoped<IAuthorizationHandler, PermissionHandler>();
         services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();

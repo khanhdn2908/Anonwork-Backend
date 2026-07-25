@@ -5,11 +5,12 @@ using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.Users;
 
-public class AssignAnonImageToUserUseCase(IUnitOfWork unitOfWork, IPlanAccessService planAccessService)
+public class AssignAnonImageToUserUseCase(IUnitOfWork unitOfWork, IPlanAccessService planAccessService, IActivityLogService activityLogService)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
     private readonly IGenericRepository<AnonImage> _anonImageRepo = unitOfWork.GetRepository<AnonImage>();
     private readonly IPlanAccessService _planAccessService = planAccessService;
+    private readonly IActivityLogService _activityLogService = activityLogService;
 
     public async Task ExecuteAsync(
         Guid userId,
@@ -38,5 +39,14 @@ public class AssignAnonImageToUserUseCase(IUnitOfWork unitOfWork, IPlanAccessSer
 
         await _userRepo.UpdateAsync(user, ct);
         await unitOfWork.SaveChangesAsync(ct);
+
+        _ = _activityLogService.LogAsync(
+            userId,
+            "CHANGE_ANON_IMAGE",
+            "User",
+            $"Thay đổi ảnh ẩn danh thành '{anonImage.Name}' (Alias: {anonAlias})",
+            "anon_image",
+            anonImageId.ToString(),
+            ct: ct);
     }
 }

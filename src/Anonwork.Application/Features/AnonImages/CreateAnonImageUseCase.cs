@@ -5,10 +5,11 @@ using Anonwork.Domain.Entities;
 
 namespace Anonwork.Application.Features.AnonImages;
 
-public class CreateAnonImageUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
+public class CreateAnonImageUseCase(IUnitOfWork unitOfWork, IR2Service r2Service, IActivityLogService activityLogService)
 {
     private readonly IGenericRepository<AnonImage> _anonImageRepo = unitOfWork.GetRepository<AnonImage>();
     private readonly IR2Service _r2Service = r2Service;
+    private readonly IActivityLogService _activityLogService = activityLogService;
 
     public async Task<AnonImageResponseDto> ExecuteAsync(CreateAnonImageRequestDto request, CancellationToken ct = default)
     {
@@ -36,6 +37,15 @@ public class CreateAnonImageUseCase(IUnitOfWork unitOfWork, IR2Service r2Service
 
         var created = await _anonImageRepo.AddAsync(entity, ct);
         await unitOfWork.SaveChangesAsync(ct);
+
+        _ = _activityLogService.LogAsync(
+            null,
+            "CREATE_ANON_IMAGE",
+            "Admin",
+            $"Thêm ảnh ẩn danh mới '{created.Name}'",
+            "anon_image",
+            created.Id.ToString(),
+            ct: ct);
 
         return MapToResponse(created, file.FileUrl);
     }

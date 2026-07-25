@@ -10,13 +10,14 @@ namespace Anonwork.Application.Features.Posts;
 /// <summary>
 /// Use case for creating a new post
 /// </summary>
-public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMediaService, IAppDbContext dbContext, IPlanAccessService planAccessService, IR2Service r2Service)
+public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMediaService, IAppDbContext dbContext, IPlanAccessService planAccessService, IR2Service r2Service, IActivityLogService activityLogService)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
     private readonly IPostMediaService _postMediaService = postMediaService;
     private readonly IAppDbContext _dbContext = dbContext;
     private readonly IPlanAccessService _planAccessService = planAccessService;
     private readonly IR2Service _r2Service = r2Service;
+    private readonly IActivityLogService _activityLogService = activityLogService;
 
     public async Task<PostResponseDto> ExecuteAsync(CreatePostRequest req, CancellationToken ct = default)
     {
@@ -71,6 +72,15 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
             await _postRepo.AddAsync(post, ct);
             await unitOfWork.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
+
+            _ = _activityLogService.LogAsync(
+                post.AuthorId,
+                "CREATE_POST",
+                "Post",
+                $"Tạo bài viết '{post.Title}'",
+                "post",
+                post.Id.ToString(),
+                ct: ct);
 
             var createdPost = await _dbContext.Posts
                 .Include(p => p.Author)

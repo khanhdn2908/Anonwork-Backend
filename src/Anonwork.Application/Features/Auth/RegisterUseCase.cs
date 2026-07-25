@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text;
 using Anonwork.Application.Common;
 using Anonwork.Application.Common.Exceptions;
@@ -13,11 +13,13 @@ public class RegisterUseCase(
     IUnitOfWork unitOfWork,
     IPasswordHasher passwordHasher,
     IEmailSender emailSender,
-    IR2Service r2Service)
+    IR2Service r2Service,
+    IActivityLogService activityLogService)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
     private readonly IGenericRepository<OneTimeToken> _tokenRepo = unitOfWork.GetRepository<OneTimeToken>();
     private readonly IR2Service _r2Service = r2Service;
+    private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly string _defaultAvatarKey = r2Service.GetDefaultAvatarKey();
 
     public async Task ExecuteAsync(RegisterRequest req, CancellationToken ct = default)
@@ -34,6 +36,16 @@ public class RegisterUseCase(
         await UpsertUserAsync(existingUser, req, username, email, alias, ct);
         await SaveVerificationTokenAsync(verification, ct);
         await unitOfWork.SaveChangesAsync(ct);
+
+        _ = _activityLogService.LogAsync(
+            existingUser?.Id,
+            "REGISTER_SUCCESS",
+            "Auth",
+            $"Đăng ký tài khoản thành công cho email '{email}' (Username: {username})",
+            "user",
+            existingUser?.Id.ToString(),
+            ct: ct);
+
         await SendVerificationEmailAsync(email, username, verification.Token, ct);
     }
 

@@ -1,4 +1,4 @@
-﻿using Anonwork.Application.Common.Exceptions;
+using Anonwork.Application.Common.Exceptions;
 using Anonwork.Application.Features.Auth.DTOs.Requests;
 using Anonwork.Application.Features.Auth.DTOs.Responses;
 using Anonwork.Application.Interfaces;
@@ -11,9 +11,11 @@ public class LoginUseCase(
     IUnitOfWork unitOfWork,
     IJwtService jwtService,
     IPasswordHasher passwordHasher,
-    IRolePermissionService rolePermissionService)
+    IRolePermissionService rolePermissionService,
+    IActivityLogService activityLogService)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
+    private readonly IActivityLogService _activityLogService = activityLogService;
 
     public async Task<AuthResult> ExecuteAsync(LoginRequest req, CancellationToken ct = default)
     {
@@ -38,6 +40,15 @@ public class LoginUseCase(
         var roles = await rolePermissionService.GetRoleCodesAsync(user.Id, ct);
         var accessToken = jwtService.GenerateAccessToken(user, permissions, roles);
         var refreshToken = await jwtService.GenerateRefreshTokenAsync(user.Id, ct);
+
+        _ = _activityLogService.LogAsync(
+            user.Id,
+            "LOGIN_SUCCESS",
+            "Auth",
+            $"Người dùng '{user.Username}' đăng nhập thành công",
+            "user",
+            user.Id.ToString(),
+            ct: ct);
 
         return new AuthResult(accessToken, refreshToken, user.Id, user.AnonAlias);
     }

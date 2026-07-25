@@ -15,12 +15,14 @@ public class GoogleLoginUseCase(
     IJwtService jwtService,
     IRolePermissionService rolePermissionService,
     IConfiguration configuration,
-    IR2Service r2Service)
+    IR2Service r2Service,
+    IActivityLogService activityLogService)
 {
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
     private readonly IGenericRepository<Role> _roleRepo = unitOfWork.GetRepository<Role>();
     private readonly IGenericRepository<UserRole> _userRoleRepo = unitOfWork.GetRepository<UserRole>();
     private readonly IR2Service _r2Service = r2Service;
+    private readonly IActivityLogService _activityLogService = activityLogService;
 
     public async Task<AuthResult> ExecuteAsync(GoogleLoginRequest req, CancellationToken ct = default)
     {
@@ -65,6 +67,15 @@ public class GoogleLoginUseCase(
         }
 
         await unitOfWork.SaveChangesAsync(ct);
+
+        _ = _activityLogService.LogAsync(
+            user.Id,
+            isNewUser ? "REGISTER_GOOGLE_SUCCESS" : "LOGIN_GOOGLE_SUCCESS",
+            "Auth",
+            isNewUser ? $"Đăng ký tài khoản mới qua Google ({user.Email})" : $"Đăng nhập qua Google ({user.Email})",
+            "user",
+            user.Id.ToString(),
+            ct: ct);
 
         var permissions = await rolePermissionService.GetPermissionCodesAsync(user.Id, ct);
         var roles = await rolePermissionService.GetRoleCodesAsync(user.Id, ct);

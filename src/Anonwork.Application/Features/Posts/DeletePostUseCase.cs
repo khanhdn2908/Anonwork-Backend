@@ -8,12 +8,13 @@ namespace Anonwork.Application.Features.Posts;
 /// <summary>
 /// Use case for deleting a post
 /// </summary>
-public class DeletePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMediaService, IAppDbContext dbContext)
+public class DeletePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMediaService, IAppDbContext dbContext, IActivityLogService activityLogService)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
     private readonly IGenericRepository<User> _userRepo = unitOfWork.GetRepository<User>();
     private readonly IPostMediaService _postMediaService = postMediaService;
     private readonly IAppDbContext _dbContext = dbContext;
+    private readonly IActivityLogService _activityLogService = activityLogService;
 
     public async Task ExecuteAsync(Guid postId, Guid userId, CancellationToken ct = default)
     {
@@ -43,6 +44,15 @@ public class DeletePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
             await unitOfWork.SaveChangesAsync(ct);
 
             await transaction.CommitAsync(ct);
+
+            _ = _activityLogService.LogAsync(
+                userId,
+                "DELETE_POST",
+                "Post",
+                $"Xóa bài viết '{post.Title}'",
+                "post",
+                post.Id.ToString(),
+                ct: ct);
         }
         catch
         {
