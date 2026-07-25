@@ -465,6 +465,21 @@ Một số module này đã có entity/config nhưng controller hoặc use case 
 
 ---
 
+## 4.14 Search
+
+Use cases:
+- `SearchAllUseCase` (Global Search trả về cả Posts và Users)
+- `SearchPostsUseCase` (Tìm kiếm bài viết nâng cao)
+- `SearchUsersUseCase` (Tìm kiếm người dùng nâng cao)
+
+DTOs:
+- `SearchAllResponseDto`
+
+API:
+- `SearchController` (`GET /api/v1/search`, `GET /api/v1/search/posts`, `GET /api/v1/search/users`)
+
+---
+
 ## 5) Domain entities chính
 
 Các entity đã thấy trong `src/Anonwork.Domain/Entities`:

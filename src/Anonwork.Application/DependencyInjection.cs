@@ -9,6 +9,7 @@ using Anonwork.Application.Features.Permissions;
 using Anonwork.Application.Features.PostRatings;
 using Anonwork.Application.Features.Posts;
 using Anonwork.Application.Features.Roles;
+using Anonwork.Application.Features.Search;
 using Anonwork.Application.Features.Subjects;
 using Anonwork.Application.Features.SubscriptionPlans;
 using Anonwork.Application.Features.UserSubscriptions;
@@ -143,6 +144,11 @@ public static class DependencyInjection
         services.AddScoped<DeleteBookmarkUseCase>();
         services.AddScoped<GetBookmarksUseCase>();
         services.AddScoped<IsBookmarkedUseCase>();
+
+        // ── Search Use Cases ────────────────────
+        services.AddScoped<SearchAllUseCase>();
+        services.AddScoped<SearchPostsUseCase>();
+        services.AddScoped<SearchUsersUseCase>();
 
         return services;
     }
