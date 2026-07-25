@@ -7,6 +7,9 @@
     using Microsoft.AspNetCore.Http;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Options;
+    using SixLabors.ImageSharp;
+    using SixLabors.ImageSharp.Formats.Webp;
+    using SixLabors.ImageSharp.Processing;
 
     namespace Anonwork.Infrastructure.Services;
 
@@ -15,6 +18,11 @@
         private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
             ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".ico", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".txt", ".mp4", ".mp3"
+        };
+
+        private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg", ".jpeg", ".png", ".bmp", ".webp"
         };
 
         private const long MaxFileSize = 50 * 1024 * 1024;
@@ -54,20 +62,68 @@
             if (stream == null) throw new ArgumentNullException(nameof(stream));
             if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("File name is required.", nameof(fileName));
 
-            var fileKey = BuildFileKey(folder, fileName);
+            var extension = Path.GetExtension(fileName);
+            Stream uploadStream = stream;
+            MemoryStream? optimizedStream = null;
+            string finalContentType = contentType;
 
-            var putRequest = new PutObjectRequest
+            if (ImageExtensions.Contains(extension))
             {
-                BucketName = _options.BucketName,
-                Key = fileKey,
-                InputStream = stream,
-                ContentType = string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType,
-                DisablePayloadSigning = true,
-                AutoCloseStream = false
-            };
+                try
+                {
+                    optimizedStream = new MemoryStream();
+                    using var image = await Image.LoadAsync(stream, cancellationToken);
+
+                    // Resize if larger than 1920px max dimension
+                    const int maxDimension = 1920;
+                    if (image.Width > maxDimension || image.Height > maxDimension)
+                    {
+                        image.Mutate(x => x.Resize(new ResizeOptions
+                        {
+                            Size = new Size(maxDimension, maxDimension),
+                            Mode = ResizeMode.Max
+                        }));
+                    }
+
+                    // Encode to WebP with 82% quality for optimal compression and clarity
+                    var encoder = new WebpEncoder
+                    {
+                        Quality = 82
+                    };
+
+                    await image.SaveAsync(optimizedStream, encoder, cancellationToken);
+                    optimizedStream.Position = 0;
+
+                    uploadStream = optimizedStream;
+                    finalContentType = "image/webp";
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to optimize image {FileName}, uploading original stream.", fileName);
+                    if (stream.CanSeek)
+                    {
+                        stream.Position = 0;
+                    }
+                    uploadStream = stream;
+                    optimizedStream?.Dispose();
+                    optimizedStream = null;
+                }
+            }
 
             try
             {
+                var fileKey = BuildFileKey(folder, fileName);
+
+                var putRequest = new PutObjectRequest
+                {
+                    BucketName = _options.BucketName,
+                    Key = fileKey,
+                    InputStream = uploadStream,
+                    ContentType = string.IsNullOrWhiteSpace(finalContentType) ? "application/octet-stream" : finalContentType,
+                    DisablePayloadSigning = true,
+                    AutoCloseStream = false
+                };
+
                 await _s3Client.PutObjectAsync(putRequest, cancellationToken);
                 var url = GetPublicUrl(fileKey);
                 return (fileKey, url);
@@ -76,6 +132,10 @@
             {
                 _logger.LogError(ex, "Error uploading file to R2: {FileName}", fileName);
                 throw;
+            }
+            finally
+            {
+                optimizedStream?.Dispose();
             }
         }
 
