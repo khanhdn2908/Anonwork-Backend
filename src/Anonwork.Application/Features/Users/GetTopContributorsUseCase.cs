@@ -87,7 +87,7 @@ public class GetTopContributorsUseCase(IUnitOfWork unitOfWork, IR2Service r2Serv
             .Select((x, index) => new TopContributorDto(
                 Rank: index + 1,
                 UserId: x.User.Id,
-                Username: x.User.Username,
+                Username: x.IsAnonymous ? x.DisplayName : x.User.Username,
                 DisplayName: x.DisplayName,
                 AvatarUrl: x.AvatarUrl,
                 IsAnonymous: x.IsAnonymous,

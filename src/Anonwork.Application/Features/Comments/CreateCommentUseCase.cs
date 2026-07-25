@@ -9,11 +9,12 @@ namespace Anonwork.Application.Features.Comments;
 /// <summary>
 /// Use case for creating a comment
 /// </summary>
-public class CreateCommentUseCase(IUnitOfWork unitOfWork)
+public class CreateCommentUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 {
     private readonly IGenericRepository<Comment> _commentRepository = unitOfWork.GetRepository<Comment>();
     private readonly IGenericRepository<Post> _postRepository = unitOfWork.GetRepository<Post>();
     private readonly IGenericRepository<User> _userRepository = unitOfWork.GetRepository<User>();
+    private readonly IR2Service _r2Service = r2Service;
 
     public async Task<CommentResponseDto> ExecuteAsync(Guid currentUserId, CreateCommentRequest request, CancellationToken ct = default)
     {
@@ -33,8 +34,8 @@ public class CreateCommentUseCase(IUnitOfWork unitOfWork)
             throw new KeyNotFoundException("Post not found.");
 
         // ── Check user exists ───────────────────────
-        var userExists = await _userRepository.ExistsAsync(currentUserId, ct);
-        if (!userExists)
+        var user = (await _userRepository.FindAsync(u => u.Id == currentUserId, ct)).FirstOrDefault();
+        if (user == null)
             throw new KeyNotFoundException("User not found.");
 
         // ── Validate parent comment if provided ─────
@@ -49,13 +50,15 @@ public class CreateCommentUseCase(IUnitOfWork unitOfWork)
         }
 
         // ── Create comment ──────────────────────────
+        var isAnon = request.IsAnonymous || user.IsAnonDefault;
+
         var comment = new Comment
         {
             Id = Guid.NewGuid(),
             PostId = request.PostId,
             AuthorId = currentUserId,
             ParentId = request.ParentId,
-            IsAnonymous = request.IsAnonymous,
+            IsAnonymous = isAnon,
             Content = request.Content.Trim(),
             Upvotes = 0,
             Depth = parentComment == null ? 0 : parentComment.Depth + 1,
@@ -70,6 +73,7 @@ public class CreateCommentUseCase(IUnitOfWork unitOfWork)
         // ── Load created comment with relations ─────
         var commentWithRelations = await _commentRepository.GetQueryableNoTracking()
             .Include(c => c.Author)
+                .ThenInclude(a => a != null ? a.AnonImage : null)
             .Include(c => c.Parent)
             .FirstOrDefaultAsync(c => c.Id == createdComment.Id, ct);
 
@@ -79,14 +83,21 @@ public class CreateCommentUseCase(IUnitOfWork unitOfWork)
         return MapToResponse(commentWithRelations);
     }
 
-    private static CommentResponseDto MapToResponse(Comment comment)
+    private CommentResponseDto MapToResponse(Comment comment)
     {
+        var isAnon = comment.IsAnonymous || (comment.Author != null && comment.Author.IsAnonDefault);
+        var displayUsername = isAnon ? (comment.Author?.AnonAlias ?? "Ẩn danh") : (comment.Author?.Username ?? "Unknown");
+        var avatarKey = isAnon ? comment.Author?.AnonImage?.FileKey : comment.Author?.AvatarKey;
+        var avatarUrl = string.IsNullOrWhiteSpace(avatarKey)
+            ? _r2Service.GetPublicUrl("avatars/null.jpg")
+            : _r2Service.GetPublicUrl(avatarKey);
+
         return new CommentResponseDto(
             Id: comment.Id,
             PostId: comment.PostId,
             AuthorId: comment.AuthorId,
             ParentId: comment.ParentId,
-            IsAnonymous: comment.IsAnonymous,
+            IsAnonymous: isAnon,
             Content: comment.Content,
             Upvotes: comment.Upvotes,
             Depth: comment.Depth,
@@ -95,9 +106,9 @@ public class CreateCommentUseCase(IUnitOfWork unitOfWork)
             UpdatedAt: comment.UpdatedAt,
             Author: comment.Author == null ? null : new CommentAuthorDto(
                 Id: comment.Author.Id,
-                Username: comment.Author.Username,
+                Username: displayUsername,
                 AnonAlias: comment.Author.AnonAlias,
-                AvatarUrl: comment.Author.AvatarKey
+                AvatarUrl: avatarUrl
             ),
             Parent: comment.Parent == null ? null : new CommentParentDto(
                 Id: comment.Parent.Id,

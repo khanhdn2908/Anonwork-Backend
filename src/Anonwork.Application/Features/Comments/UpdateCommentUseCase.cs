@@ -44,18 +44,26 @@ public class UpdateCommentUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 
         var updatedComment = await _commentRepository.GetQueryableNoTracking()
             .Include(c => c.Author)
+                .ThenInclude(a => a != null ? a.AnonImage : null)
             .Include(c => c.Parent)
             .FirstOrDefaultAsync(c => c.Id == commentId, ct);
 
         if (updatedComment is null)
             throw new InvalidOperationException("Failed to retrieve updated comment.");
 
+        var isAnon = updatedComment.IsAnonymous || (updatedComment.Author != null && updatedComment.Author.IsAnonDefault);
+        var displayUsername = isAnon ? (updatedComment.Author?.AnonAlias ?? "Ẩn danh") : (updatedComment.Author?.Username ?? "Unknown");
+        var avatarKey = isAnon ? updatedComment.Author?.AnonImage?.FileKey : updatedComment.Author?.AvatarKey;
+        var avatarUrl = string.IsNullOrWhiteSpace(avatarKey)
+            ? _r2Service.GetPublicUrl("avatars/null.jpg")
+            : _r2Service.GetPublicUrl(avatarKey);
+
         return new CommentResponseDto(
             Id: updatedComment.Id,
             PostId: updatedComment.PostId,
             AuthorId: updatedComment.AuthorId,
             ParentId: updatedComment.ParentId,
-            IsAnonymous: updatedComment.IsAnonymous,
+            IsAnonymous: isAnon,
             Content: updatedComment.Content,
             Upvotes: updatedComment.Upvotes,
             Depth: updatedComment.Depth,
@@ -64,9 +72,9 @@ public class UpdateCommentUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
             UpdatedAt: updatedComment.UpdatedAt,
             Author: updatedComment.Author == null ? null : new CommentAuthorDto(
                 Id: updatedComment.Author.Id,
-                Username: updatedComment.Author.Username,
+                Username: displayUsername,
                 AnonAlias: updatedComment.Author.AnonAlias,
-                AvatarUrl: updatedComment.Author.AvatarKey is null ? null : _r2Service.GetPublicUrl(updatedComment.Author.AvatarKey)
+                AvatarUrl: avatarUrl
             ),
             Parent: updatedComment.Parent == null ? null : new CommentParentDto(
                 Id: updatedComment.Parent.Id,

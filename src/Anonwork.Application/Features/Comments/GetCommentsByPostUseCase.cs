@@ -9,9 +9,10 @@ namespace Anonwork.Application.Features.Comments;
 /// <summary>
 /// Use case for getting comments by post with pagination
 /// </summary>
-public class GetCommentsByPostUseCase(IUnitOfWork unitOfWork)
+public class GetCommentsByPostUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 {
     private readonly IGenericRepository<Comment> _commentRepository = unitOfWork.GetRepository<Comment>();
+    private readonly IR2Service _r2Service = r2Service;
 
     public async Task<CommentListResponseDto> ExecuteAsync(
         Guid postId,
@@ -31,6 +32,7 @@ public class GetCommentsByPostUseCase(IUnitOfWork unitOfWork)
         // ── Get comments ────────────────────────────
         var query = _commentRepository.GetQueryableNoTracking()
             .Include(c => c.Author)
+                .ThenInclude(a => a != null ? a.AnonImage : null)
             .Include(c => c.Parent)
             .Where(c => c.PostId == postId);
 
@@ -57,14 +59,21 @@ public class GetCommentsByPostUseCase(IUnitOfWork unitOfWork)
         return new CommentListResponseDto(commentDtos, total, page, pageSize, totalPages);
     }
 
-    private static CommentResponseDto MapToResponse(Comment comment)
+    private CommentResponseDto MapToResponse(Comment comment)
     {
+        var isAnon = comment.IsAnonymous || (comment.Author != null && comment.Author.IsAnonDefault);
+        var displayUsername = isAnon ? (comment.Author?.AnonAlias ?? "Ẩn danh") : (comment.Author?.Username ?? "Unknown");
+        var avatarKey = isAnon ? comment.Author?.AnonImage?.FileKey : comment.Author?.AvatarKey;
+        var avatarUrl = string.IsNullOrWhiteSpace(avatarKey)
+            ? _r2Service.GetPublicUrl("avatars/null.jpg")
+            : _r2Service.GetPublicUrl(avatarKey);
+
         return new CommentResponseDto(
             Id: comment.Id,
             PostId: comment.PostId,
             AuthorId: comment.AuthorId,
             ParentId: comment.ParentId,
-            IsAnonymous: comment.IsAnonymous,
+            IsAnonymous: isAnon,
             Content: comment.Content,
             Upvotes: comment.Upvotes,
             Depth: comment.Depth,
@@ -73,9 +82,9 @@ public class GetCommentsByPostUseCase(IUnitOfWork unitOfWork)
             UpdatedAt: comment.UpdatedAt,
             Author: comment.Author == null ? null : new CommentAuthorDto(
                 Id: comment.Author.Id,
-                Username: comment.Author.Username,
+                Username: displayUsername,
                 AnonAlias: comment.Author.AnonAlias,
-                AvatarUrl: comment.Author.AvatarKey
+                AvatarUrl: avatarUrl
             ),
             Parent: comment.Parent == null ? null : new CommentParentDto(
                 Id: comment.Parent.Id,
