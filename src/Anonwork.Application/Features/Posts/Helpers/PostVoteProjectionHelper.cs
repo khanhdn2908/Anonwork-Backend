@@ -8,8 +8,9 @@ public static class PostVoteProjectionHelper
 {
     public static PostResponseDto MapToResponse(Post post, bool isUpvotedByMe, IR2Service r2Service, int? myStars = null)
     {
-        var isAnon = post.IsAnonymous || post.Author.IsAnonDefault;
-        var media = post.PostMediaItems
+        var author = post.Author;
+        var isAnon = post.IsAnonymous || author?.IsAnonDefault == true;
+        var media = (post.PostMediaItems ?? new List<PostMedia>())
             .OrderBy(pm => pm.DisplayOrder)
             .Select(pm => new PostMediaResponseDto(
                 pm.Id,
@@ -23,25 +24,25 @@ public static class PostVoteProjectionHelper
             .ToList();
 
         var authorImageUrl = isAnon
-            ? (!string.IsNullOrWhiteSpace(post.Author.AnonImage?.FileKey)
-                ? r2Service.GetPublicUrl(post.Author.AnonImage.FileKey)
+            ? (!string.IsNullOrWhiteSpace(author?.AnonImage?.FileKey)
+                ? r2Service.GetPublicUrl(author!.AnonImage!.FileKey)
                 : r2Service.GetPublicUrl("avatars/null.jpg"))
-            : (string.IsNullOrWhiteSpace(post.Author.AvatarKey)
+            : (string.IsNullOrWhiteSpace(author?.AvatarKey)
                 ? r2Service.GetPublicUrl("avatars/null.jpg")
-                : r2Service.GetPublicUrl(post.Author.AvatarKey));
+                : r2Service.GetPublicUrl(author!.AvatarKey));
 
         return new PostResponseDto(
             post.Id,
             post.Title,
             post.Content,
             post.AuthorId,
-            isAnon ? post.Author.AnonAlias : post.Author.Username,
+            isAnon ? author?.AnonAlias : author?.Username,
             isAnon,
             authorImageUrl,
             post.SubjectId,
             post.Subject?.Name,
             media,
-            post.PostTags.Select(pt => pt.Tag).ToList(),
+            (post.PostTags ?? new List<PostTag>()).Select(pt => pt.Tag).ToList(),
             post.Upvotes,
             post.CommentsCount,
             post.ViewCount,

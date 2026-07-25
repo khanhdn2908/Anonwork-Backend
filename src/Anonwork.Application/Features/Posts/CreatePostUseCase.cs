@@ -3,6 +3,7 @@ using Anonwork.Application.Features.Posts.DTOs.Request;
 using Anonwork.Application.Features.Posts.DTOs.Response;
 using Anonwork.Domain.Entities;
 using Anonwork.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Anonwork.Application.Features.Posts;
 
@@ -45,11 +46,14 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
         if (req.Tags is not null && req.Tags.Count > 0)
         {
             post.PostTags = req.Tags
+                .Where(tag => !string.IsNullOrWhiteSpace(tag))
+                .Select(tag => tag.Trim().ToLower())
+                .Distinct()
                 .Take(5)
                 .Select(tag => new PostTag
                 {
                     PostId = post.Id,
-                    Tag = tag.Trim().ToLower()
+                    Tag = tag
                 })
                 .ToList();
         }
@@ -67,7 +71,15 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
             await unitOfWork.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
 
-            return MapToResponse(post);
+            var createdPost = await _dbContext.Posts
+                .Include(p => p.Author)
+                    .ThenInclude(a => a.AnonImage)
+                .Include(p => p.Subject)
+                .Include(p => p.PostTags)
+                .Include(p => p.PostMediaItems)
+                .FirstOrDefaultAsync(p => p.Id == post.Id, ct);
+
+            return MapToResponse(createdPost ?? post);
         }
         catch
         {
@@ -80,7 +92,7 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
     {
         var author = post.Author;
         var isAnon = post.IsAnonymous || author?.IsAnonDefault == true;
-        var media = post.PostMediaItems
+        var media = (post.PostMediaItems ?? new List<PostMedia>())
             .OrderBy(pm => pm.DisplayOrder)
             .Select(pm => new PostMediaResponseDto(
                 pm.Id,
@@ -112,7 +124,7 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
             SubjectId: post.SubjectId,
             SubjectName: post.Subject?.Name,
             Media: media,
-            Tags: post.PostTags
+            Tags: (post.PostTags ?? new List<PostTag>())
                 .Select(pt => pt.Tag)
                 .ToList(),
             Upvotes: post.Upvotes,

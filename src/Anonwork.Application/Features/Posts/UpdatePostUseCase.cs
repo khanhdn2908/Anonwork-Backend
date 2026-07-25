@@ -6,6 +6,7 @@ using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 using Anonwork.Domain.Enums;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace Anonwork.Application.Features.Posts;
 
@@ -20,7 +21,14 @@ public class UpdatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
         if (req.PostId == Guid.Empty)
             throw new ArgumentException("Post id is required.");
 
-        var post = await _postRepo.FindSingleWithTrackingAsync(p => p.Id == req.PostId, ct);
+        var post = await _dbContext.Posts
+            .Include(p => p.PostTags)
+            .Include(p => p.PostMediaItems)
+            .Include(p => p.Author)
+                .ThenInclude(a => a.AnonImage)
+            .Include(p => p.Subject)
+            .FirstOrDefaultAsync(p => p.Id == req.PostId, ct);
+
         if (post is null)
             throw new NotFoundException(nameof(Post), req.PostId);
 
@@ -35,13 +43,20 @@ public class UpdatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
 
         if (req.Tags is not null)
         {
+            post.PostTags ??= new List<PostTag>();
             post.PostTags.Clear();
-            foreach (var tag in req.Tags.Take(5))
+            var validTags = req.Tags
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .Select(t => t.Trim().ToLower())
+                .Distinct()
+                .Take(5);
+
+            foreach (var tag in validTags)
             {
                 post.PostTags.Add(new PostTag
                 {
                     PostId = post.Id,
-                    Tag = tag.Trim().ToLower()
+                    Tag = tag
                 });
             }
         }
@@ -92,8 +107,9 @@ public class UpdatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
 
     private static PostResponseDto MapToResponse(Post post)
     {
-        var isAnon = post.IsAnonymous || post.Author.IsAnonDefault;
-        var media = post.PostMediaItems
+        var author = post.Author;
+        var isAnon = post.IsAnonymous || author?.IsAnonDefault == true;
+        var media = (post.PostMediaItems ?? new List<PostMedia>())
             .OrderBy(pm => pm.DisplayOrder)
             .Select(pm => new PostMediaResponseDto(
                 pm.Id,
@@ -107,25 +123,25 @@ public class UpdatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
             .ToList();
 
         var authorImageUrl = isAnon
-            ? (!string.IsNullOrWhiteSpace(post.Author.AnonImage?.FileKey)
-                ? post.Author.AnonImage.FileKey
+            ? (!string.IsNullOrWhiteSpace(author?.AnonImage?.FileKey)
+                ? author!.AnonImage!.FileKey
                 : "avatars/null.jpg")
-            : (string.IsNullOrWhiteSpace(post.Author.AvatarKey)
+            : (string.IsNullOrWhiteSpace(author?.AvatarKey)
                 ? "avatars/null.jpg"
-                : post.Author.AvatarKey);
+                : author!.AvatarKey);
 
         return new PostResponseDto(
             Id: post.Id,
             Title: post.Title,
             Content: post.Content,
             AuthorId: post.AuthorId,
-            AuthorUsername: isAnon ? post.Author?.AnonAlias : post.Author?.Username,
+            AuthorUsername: isAnon ? author?.AnonAlias : author?.Username,
             IsAnonymous: isAnon,
             AuthorAvatarUrl: authorImageUrl,
             SubjectId: post.SubjectId,
             SubjectName: post.Subject?.Name,
             Media: media,
-            Tags: post.PostTags.Select(pt => pt.Tag).ToList(),
+            Tags: (post.PostTags ?? new List<PostTag>()).Select(pt => pt.Tag).ToList(),
             Upvotes: post.Upvotes,
             CommentsCount: post.CommentsCount,
             ViewCount: post.ViewCount,
