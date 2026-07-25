@@ -13,6 +13,7 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
     private readonly IGenericRepository<Vote> _voteRepo = unitOfWork.GetRepository<Vote>();
+    private readonly IGenericRepository<Follow> _followRepo = unitOfWork.GetRepository<Follow>();
     private readonly IR2Service _r2Service = r2Service;
 
     public async Task<PostListResponseDto> ExecuteAsync(
@@ -45,8 +46,18 @@ public class GetPostsUseCase(IUnitOfWork unitOfWork, IR2Service r2Service)
 
         var total = await query.CountAsync(ct);
 
+        var followedAuthorIds = currentUserId.HasValue
+            ? await _followRepo.GetQueryableNoTracking()
+                .Where(f => f.FollowerId == currentUserId.Value)
+                .Select(f => f.FollowingId)
+                .ToListAsync(ct)
+            : new List<Guid>();
+
         var posts = await query
-            .OrderByDescending(p => p.CreatedAt)
+            .OrderByDescending(p => followedAuthorIds.Contains(p.AuthorId))
+            .ThenByDescending(p => p.CreatedAt.Date)
+            .ThenByDescending(p => p.QualityScore)
+            .ThenByDescending(p => p.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);

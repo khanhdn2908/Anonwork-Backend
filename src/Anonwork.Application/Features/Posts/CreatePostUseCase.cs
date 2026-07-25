@@ -10,12 +10,13 @@ namespace Anonwork.Application.Features.Posts;
 /// <summary>
 /// Use case for creating a new post
 /// </summary>
-public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMediaService, IAppDbContext dbContext, IPlanAccessService planAccessService)
+public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMediaService, IAppDbContext dbContext, IPlanAccessService planAccessService, IR2Service r2Service)
 {
     private readonly IGenericRepository<Post> _postRepo = unitOfWork.GetRepository<Post>();
     private readonly IPostMediaService _postMediaService = postMediaService;
     private readonly IAppDbContext _dbContext = dbContext;
     private readonly IPlanAccessService _planAccessService = planAccessService;
+    private readonly IR2Service _r2Service = r2Service;
 
     public async Task<PostResponseDto> ExecuteAsync(CreatePostRequest req, CancellationToken ct = default)
     {
@@ -88,7 +89,7 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
         }
     }
 
-    private static PostResponseDto MapToResponse(Post post)
+    private PostResponseDto MapToResponse(Post post)
     {
         var author = post.Author;
         var isAnon = post.IsAnonymous || author?.IsAnonDefault == true;
@@ -97,7 +98,7 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
             .Select(pm => new PostMediaResponseDto(
                 pm.Id,
                 pm.FileKey,
-                pm.FileKey,
+                _r2Service.GetPublicUrl(pm.FileKey),
                 pm.ContentType,
                 pm.DisplayOrder,
                 pm.FileSize,
@@ -107,11 +108,11 @@ public class CreatePostUseCase(IUnitOfWork unitOfWork, IPostMediaService postMed
 
         var authorImageUrl = isAnon
             ? (!string.IsNullOrWhiteSpace(author?.AnonImage?.FileKey)
-                ? author!.AnonImage!.FileKey
-                : "avatars/null.jpg")
+                ? _r2Service.GetPublicUrl(author!.AnonImage!.FileKey)
+                : _r2Service.GetPublicUrl("avatars/null.jpg"))
             : (string.IsNullOrWhiteSpace(author?.AvatarKey)
-                ? "avatars/null.jpg"
-                : author!.AvatarKey);
+                ? _r2Service.GetPublicUrl("avatars/null.jpg")
+                : _r2Service.GetPublicUrl(author!.AvatarKey));
 
         return new PostResponseDto(
             Id: post.Id,
