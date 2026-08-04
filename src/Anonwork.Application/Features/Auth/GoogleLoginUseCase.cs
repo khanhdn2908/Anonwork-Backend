@@ -26,6 +26,9 @@ public class GoogleLoginUseCase(
 
     public async Task<AuthResult> ExecuteAsync(GoogleLoginRequest req, CancellationToken ct = default)
     {
+        if (string.IsNullOrWhiteSpace(req.IdToken))
+            throw new BadRequestException("Google ID Token is required.");
+
         var payload = await ValidateGoogleTokenAsync(req.IdToken, configuration, ct);
 
         if (!payload.EmailVerified)
@@ -92,20 +95,35 @@ public class GoogleLoginUseCase(
     {
         var clientId = configuration["Google:ClientId"];
         if (string.IsNullOrWhiteSpace(clientId))
-            throw new InvalidOperationException("Google:ClientId is not configured.");
+            throw new BadRequestException("Google:ClientId is not configured on the server.");
 
         var settings = new GoogleJsonWebSignature.ValidationSettings
         {
             Audience = [clientId]
         };
 
-        return await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
+        try
+        {
+            return await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
+        }
+        catch (InvalidJwtException ex)
+        {
+            throw new UnauthorizedException($"Google token validation failed: {ex.Message}");
+        }
+        catch (ArgumentException ex)
+        {
+            throw new BadRequestException($"Invalid Google ID Token format: {ex.Message}");
+        }
+        catch (Exception ex) when (ex is not BadRequestException && ex is not UnauthorizedException)
+        {
+            throw new UnauthorizedException($"Failed to verify Google token: {ex.Message}");
+        }
     }
 
     private async Task AssignDefaultUserRoleAsync(Guid userId, CancellationToken ct)
     {
-        var role = await _roleRepo.FindSingleAsync(r => r.Name == "menber", ct)
-            ?? throw new InvalidOperationException("Default role 'menber' was not found.");
+        var role = await _roleRepo.FindSingleAsync(r => r.Name == "menber" || r.Name == "member", ct)
+            ?? throw new BadRequestException("Default role 'menber' or 'member' was not found in the system.");
 
         var existing = await _userRoleRepo.ExistsAsync(ur => ur.UserId == userId && ur.RoleId == role.Id, ct);
         if (existing)
