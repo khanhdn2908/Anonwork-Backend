@@ -1,4 +1,4 @@
-﻿using Anonwork.API.Middlewares;
+using Anonwork.API.Middlewares;
 using Anonwork.Application;
 using Anonwork.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -110,6 +110,11 @@ app.UseSwaggerUI(c =>
 app.MapHealthChecks("/health");
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors("AllowAll");
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    await next();
+});
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
