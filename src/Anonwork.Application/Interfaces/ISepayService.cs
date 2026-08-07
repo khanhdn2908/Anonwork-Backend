@@ -37,4 +37,9 @@ public interface ISepayService
     bool VerifyWebhookSignature(
         string payload,
         string signature);
+
+    /// <summary>
+    /// Verify Webhook Authorization header against configured ApiKey / ApiSecret
+    /// </summary>
+    bool VerifyApiKey(string? authorizationHeader);
 }

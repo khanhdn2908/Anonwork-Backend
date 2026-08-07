@@ -73,4 +73,37 @@ public class SepayService : ISepayService
             return false;
         }
     }
+
+    public bool VerifyApiKey(string? authorizationHeader)
+    {
+        var expectedKey = !string.IsNullOrWhiteSpace(_options.ApiKey)
+            ? _options.ApiKey
+            : _options.ApiSecret;
+
+        if (string.IsNullOrWhiteSpace(expectedKey))
+        {
+            _logger.LogWarning("Sepay ApiKey/ApiSecret is not configured in appsettings. Skipping webhook Authorization header verification.");
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(authorizationHeader))
+        {
+            _logger.LogWarning("Webhook request is missing Authorization header.");
+            return false;
+        }
+
+        var token = authorizationHeader.Trim();
+        if (token.StartsWith("Apikey ", StringComparison.OrdinalIgnoreCase))
+        {
+            token = token["Apikey ".Length..].Trim();
+        }
+        else if (token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            token = token["Bearer ".Length..].Trim();
+        }
+
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(token),
+            Encoding.UTF8.GetBytes(expectedKey));
+    }
 }

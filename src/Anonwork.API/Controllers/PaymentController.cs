@@ -2,6 +2,7 @@ using Anonwork.Application.Features.Payments;
 using Anonwork.Application.Features.Payments.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Anonwork.Application.Interfaces;
 
 namespace Anonwork.API.Controllers;
 
@@ -12,7 +13,8 @@ public class PaymentController(
     CreateOrderUseCase createOrderUseCase,
     GetOrderStatusUseCase getOrderStatusUseCase,
     HandleSepayWebhookUseCase handleSepayWebhookUseCase,
-    RenewSubscriptionUseCase renewSubscriptionUseCase) : BaseApiController
+    RenewSubscriptionUseCase renewSubscriptionUseCase,
+    ISepayService sepayService) : BaseApiController
 {
 
     [HttpPost("create-order")]
@@ -44,14 +46,20 @@ public class PaymentController(
     }
 
     /// <summary>
-    /// Webhook từ Sepay (không cần authorization)
+    /// Webhook từ Sepay (xác thực qua Authorization Header)
     /// </summary>
     [HttpPost("webhook")]
     [AllowAnonymous]
     public async Task<IActionResult> HandleWebhook(
+        [FromHeader(Name = "Authorization")] string? authHeader,
         [FromBody] SepayWebhookRequest request,
         CancellationToken ct)
     {
+        if (!sepayService.VerifyApiKey(authHeader))
+        {
+            return Unauthorized(new { message = "Invalid SePay API key / authorization token" });
+        }
+
         await handleSepayWebhookUseCase.ExecuteAsync(request, ct);
         return Ok(new { success = true });
     }
