@@ -46,22 +46,49 @@ public class SepayService : ISepayService
     public string GetAccountName() => _options.AccountName;
 
     public bool VerifyWebhookSignature(
-        string payload,
-        string signature)
+        string rawBody,
+        string? timestamp,
+        string? signatureHeader)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(signature))
+            if (string.IsNullOrWhiteSpace(signatureHeader))
                 return false;
 
-            using var hmac = new HMACSHA256(
-                Encoding.UTF8.GetBytes(_options.ApiSecret));
+            var secretKey = !string.IsNullOrWhiteSpace(_options.ApiSecret)
+                ? _options.ApiSecret
+                : _options.ApiKey;
 
-            var hash = hmac.ComputeHash(
-                Encoding.UTF8.GetBytes(payload));
+            if (string.IsNullOrWhiteSpace(secretKey))
+            {
+                _logger.LogWarning("Sepay ApiSecret is not configured. Webhook signature verification failed.");
+                return false;
+            }
 
-            var computedSignature =
-                Convert.ToHexString(hash).ToLowerInvariant();
+            var signature = signatureHeader.Trim();
+            if (signature.StartsWith("sha256=", StringComparison.OrdinalIgnoreCase))
+            {
+                signature = signature["sha256=".Length..].Trim();
+            }
+
+            if (long.TryParse(timestamp, out var ts))
+            {
+                var requestTime = DateTimeOffset.FromUnixTimeSeconds(ts);
+                var timeDiff = Math.Abs((DateTimeOffset.UtcNow - requestTime).TotalMinutes);
+                if (timeDiff > 5)
+                {
+                    _logger.LogWarning("Webhook request timestamp difference is too large: {Minutes} minutes", timeDiff);
+                    return false;
+                }
+            }
+
+            var dataToSign = string.IsNullOrEmpty(timestamp)
+                ? rawBody
+                : $"{timestamp}.{rawBody}";
+
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
+            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(dataToSign));
+            var computedSignature = Convert.ToHexString(hash).ToLowerInvariant();
 
             return CryptographicOperations.FixedTimeEquals(
                 Encoding.UTF8.GetBytes(computedSignature),

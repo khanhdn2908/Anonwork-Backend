@@ -1,6 +1,9 @@
+using System.Text;
+using System.Text.Json;
 using Anonwork.Application.Features.Payments;
 using Anonwork.Application.Features.Payments.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Anonwork.Application.Interfaces;
 
@@ -46,18 +49,54 @@ public class PaymentController(
     }
 
     /// <summary>
-    /// Webhook từ Sepay (xác thực qua Authorization Header)
+    /// Webhook từ Sepay (Hỗ trợ xác thực HMAC-SHA256 qua x-SePay-Signature hoặc Authorization Header)
     /// </summary>
     [HttpPost("webhook")]
     [AllowAnonymous]
     public async Task<IActionResult> HandleWebhook(
         [FromHeader(Name = "Authorization")] string? authHeader,
-        [FromBody] SepayWebhookRequest request,
+        [FromHeader(Name = "x-SePay-Signature")] string? sepaySignature,
+        [FromHeader(Name = "x-SePay-Timestamp")] string? sepayTimestamp,
         CancellationToken ct)
     {
-        if (!sepayService.VerifyApiKey(authHeader))
+        Request.EnableBuffering();
+        Request.Body.Position = 0;
+        using var reader = new StreamReader(Request.Body, Encoding.UTF8, leaveOpen: true);
+        var rawBody = await reader.ReadToEndAsync(ct);
+        Request.Body.Position = 0;
+
+        bool isAuthenticated = false;
+
+        if (!string.IsNullOrWhiteSpace(sepaySignature))
         {
-            return Unauthorized(new { message = "Invalid SePay API key / authorization token" });
+            isAuthenticated = sepayService.VerifyWebhookSignature(rawBody, sepayTimestamp, sepaySignature);
+        }
+        else if (!string.IsNullOrWhiteSpace(authHeader))
+        {
+            isAuthenticated = sepayService.VerifyApiKey(authHeader);
+        }
+
+        if (!isAuthenticated)
+        {
+            return Unauthorized(new { message = "Invalid SePay webhook authentication / signature" });
+        }
+
+        SepayWebhookRequest? request;
+        try
+        {
+            request = JsonSerializer.Deserialize<SepayWebhookRequest>(rawBody, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = "Invalid JSON payload format", error = ex.Message });
+        }
+
+        if (request is null)
+        {
+            return BadRequest(new { message = "Empty webhook payload" });
         }
 
         await handleSepayWebhookUseCase.ExecuteAsync(request, ct);

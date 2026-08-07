@@ -32,11 +32,12 @@ public interface ISepayService
     string GetAccountName();
 
     /// <summary>
-    /// Verify Sepay webhook signature
+    /// Verify Sepay webhook signature (HMAC-SHA256)
     /// </summary>
     bool VerifyWebhookSignature(
-        string payload,
-        string signature);
+        string rawBody,
+        string? timestamp,
+        string? signatureHeader);
 
     /// <summary>
     /// Verify Webhook Authorization header against configured ApiKey / ApiSecret
