@@ -22,12 +22,12 @@ public class HandleSepayWebhookUseCase(IUnitOfWork unitOfWork, IActivityLogServi
             "Received Sepay webhook. TransactionId={Id}, ReferenceCode={ReferenceCode}, Content={Content}",
             request.Id, request.ReferenceCode, request.Content);
 
-        var orderCode = ExtractOrderCode(request.Content);
+        var orderCode = GetOrderCode(request);
         if (orderCode is null)
         {
             _logger.LogWarning(
-                "Cannot extract OrderCode from Content. TransactionId={Id}, Content={Content}",
-                request.Id, request.Content);
+                "Cannot extract OrderCode from request. TransactionId={Id}, Code={Code}, Content={Content}",
+                request.Id, request.Code, request.Content);
 
             // Trả 200 để Sepay không retry — đây là giao dịch không liên quan đến hệ thống
             return WebhookResult.Ok("Transaction not related to any order");
@@ -97,6 +97,26 @@ public class HandleSepayWebhookUseCase(IUnitOfWork unitOfWork, IActivityLogServi
     }
 
     // ─── Private Helpers ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Lấy OrderCode từ request.Ưu tiên sử dụng request.Code (mã thanh toán SePay nhận diện), 
+    /// nếu không có thì bóc tách từ request.Content.
+    /// </summary>
+    private static string? GetOrderCode(SepayWebhookRequest request)
+    {
+        if (!string.IsNullOrWhiteSpace(request.Code))
+        {
+            var code = request.Code.Trim();
+            // Nếu SePay giữ lại prefix ANON (vd: ANONORD-xxx), loại bỏ prefix
+            if (code.StartsWith("ANON", StringComparison.OrdinalIgnoreCase))
+            {
+                return code["ANON".Length..];
+            }
+            return code;
+        }
+
+        return ExtractOrderCode(request.Content);
+    }
 
     /// <summary>
     /// Parse OrderCode từ nội dung chuyển khoản.
