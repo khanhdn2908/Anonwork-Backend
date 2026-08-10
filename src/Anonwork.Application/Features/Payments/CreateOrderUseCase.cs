@@ -4,6 +4,7 @@ using Anonwork.Application.Features.Payments.DTOs.Responses;
 using Anonwork.Application.Interfaces;
 using Anonwork.Domain.Entities;
 using Anonwork.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Anonwork.Application.Features.Payments;
 
@@ -14,6 +15,7 @@ public class CreateOrderUseCase(
 {
     private readonly IGenericRepository<Order> _orderRepo = unitOfWork.GetRepository<Order>();
     private readonly IGenericRepository<SubscriptionPlan> _planRepo = unitOfWork.GetRepository<SubscriptionPlan>();
+    private readonly IGenericRepository<UserSubscription> _subRepo = unitOfWork.GetRepository<UserSubscription>();
     private readonly IActivityLogService _activityLogService = activityLogService;
 
     public async Task<OrderResponse> ExecuteAsync(

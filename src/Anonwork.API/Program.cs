@@ -100,14 +100,6 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-app.UseSwagger();
-app.UseSwaggerUI(c =>
-{
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Anonwork API V1");
-    c.RoutePrefix = string.Empty;
-});
-
-app.MapHealthChecks("/health");
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors("AllowAll");
 app.Use(async (context, next) =>
@@ -117,6 +109,15 @@ app.Use(async (context, next) =>
 });
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Anonwork API V1");
+    c.RoutePrefix = string.Empty;
+});
+
+app.MapHealthChecks("/health");
 app.MapControllers();
 
 app.Run();
