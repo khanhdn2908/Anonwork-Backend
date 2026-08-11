@@ -14,11 +14,11 @@ public class PlanAccessService(IUnitOfWork unitOfWork) : IPlanAccessService
     public async Task<SubscriptionPlan?> GetCurrentPlanAsync(Guid userId, CancellationToken ct = default)
     {
         var now = DateTime.UtcNow;
-        var subscription = await _subscriptionRepo.FindSingleAsync(
+        var subscriptions = await _subscriptionRepo.FindWithIncludesAsync(
             s => s.UserId == userId && s.Status == SubscriptionStatus.Active && s.ExpiresAt > now,
-            ct);
+            s => s.Plan);
 
-        return subscription?.Plan;
+        return subscriptions.FirstOrDefault()?.Plan;
     }
 
     public async Task<int> GetTodayPostCountAsync(Guid userId, CancellationToken ct = default)
